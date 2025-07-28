@@ -1,0 +1,795 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<title>FGTools</title>
+		<AssemblyName>FGTools</AssemblyName>
+		<Description>Fall Guys level loader by @floyzi102 on Twitter</Description>
+		<Version>1.4.4</Version>
+		<AssemblyVersion>1.4.4</AssemblyVersion>
+		<FileVersion>1.4.4</FileVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>latest</LangVersion>
+		<RestoreAdditionalProjectSources>
+			https://api.nuget.org/v3/index.json; https://nuget.bepinex.dev/v3/index.json; https://nuget.samboy.dev/v3/index.json
+		</RestoreAdditionalProjectSources>
+		<RootNamespace>FGTools</RootNamespace>
+		<Authors>floyzi</Authors>
+		<PackageProjectUrl>https://github.com/floyzi/FGTools</PackageProjectUrl>
+		<Configurations>DEV;ClosedBeta;PROD</Configurations>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<ReleaseDir>$(SolutionDir)Release\</ReleaseDir>
+		<OutLibsDir>$(ReleaseDir)Assets\Lib\</OutLibsDir>
+		<LibsDir>$(SolutionDir)Lib\</LibsDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\discord_api\discord_api.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyMetadata Include="BuildDate" Value="$([System.DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" />
+		<AssemblyMetadata Include="BuildGuid" Value="$([System.Guid]::NewGuid())" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Dev'">
+		<AssemblyMetadata Include="DefineConstants" Value="$(DefineConstants)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Asio.dll" />
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Core.dll" />
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.dll" />
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Midi.dll" />
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Wasapi.dll" />
+		<NAudioCore Include="$(LibsDir)NAudio\NAudio.WinMM.dll" />
+
+		<DiscordSDK Include="$(LibsDir)discord_game_sdk.dll" />
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ReleaseDir)" />
+		<Copy SourceFiles="$(OutputPath)$(AssemblyName).pdb" DestinationFolder="$(ReleaseDir)" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+		<Copy SourceFiles="$(OutputPath)discord_api.dll" DestinationFolder="$(OutLibsDir)" />
+		<Copy SourceFiles="$(OutputPath)discord_api.pdb" DestinationFolder="$(OutLibsDir)" Condition="Exists('$(OutputPath)discord_api.pdb')" />
+		<Copy SourceFiles="@(NAudioCore)" DestinationFolder="$(OutLibsDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(DiscordSDK)" DestinationFolder="$(OutLibsDir)" SkipUnchangedFiles="true" />
+	</Target>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
+		<DefineConstants>$(DefineConstants);AUDIODEBUG;LAN_MULTIPLAYER;LOCAL_CONTENT</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ClosedBeta|AnyCPU'">
+		<DefineConstants>$(DefineConstants);AUDIODEBUG;</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PROD|AnyCPU'">
+		<DefineConstants>$(DefineConstants);</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
+		<PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="NAudio">
+			<HintPath>$(LibsDir)NAudio\NAudio.dll</HintPath>
+		</Reference>
+		<Reference Include="NAudio.Asio">
+			<HintPath>$(LibsDir)NAudio\NAudio.Asio.dll</HintPath>
+		</Reference>
+		<Reference Include="NAudio.Core">
+			<HintPath>$(LibsDir)NAudio\NAudio.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="NAudio.Midi">
+			<HintPath>$(LibsDir)NAudio\NAudio.Midi.dll</HintPath>
+		</Reference>
+		<Reference Include="NAudio.Wasapi">
+			<HintPath>$(LibsDir)NAudio\NAudio.Wasapi.dll</HintPath>
+		</Reference>
+		<Reference Include="NAudio.WinMM">
+			<HintPath>$(LibsDir)NAudio\NAudio.WinMM.dll</HintPath>
+		</Reference>
+		<!--i'm using CUE version for testing, you can change this if needed-->
+		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' == 'Dev'">
+			<HintPath>$(LibsDir)UniverseLib\UniverseLib.BIE.IL2CPP.Interop_CUE.dll</HintPath>
+		</Reference>
+		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' != 'Dev'">
+			<HintPath>$(LibsDir)UniverseLib\UniverseLib.IL2CPP.Interop.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>$(LibsDir)FallGuys\Assembly-CSharp.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Assembly-CSharp-firstpass">
+			<HintPath>$(LibsDir)FallGuys\Assembly-CSharp-firstpass.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Catapult.Core">
+			<HintPath>$(LibsDir)FallGuys\Catapult.Core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Catapult.Modules.Items.Protocol">
+			<HintPath>$(LibsDir)FallGuys\Catapult.Modules.Items.Protocol.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Catapult.Protocol">
+			<HintPath>$(LibsDir)FallGuys\Catapult.Protocol.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Catapult.Services.Gateway.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\Catapult.Services.Gateway.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Catapult.Services.Login.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\Catapult.Services.Login.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Cinemachine">
+			<HintPath>$(LibsDir)FallGuys\Cinemachine.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="CMS_Runtime">
+			<HintPath>$(LibsDir)FallGuys\CMS_Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Coffee.UIParticle">
+			<HintPath>$(LibsDir)FallGuys\Coffee.UIParticle.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="com.Epic.OnlineServices">
+			<HintPath>$(LibsDir)FallGuys\com.Epic.OnlineServices.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="com.playeveryware.eos">
+			<HintPath>$(LibsDir)FallGuys\com.playeveryware.eos.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="com.playeveryware.eos.core">
+			<HintPath>$(LibsDir)FallGuys\com.playeveryware.eos.core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="DeviceIO">
+			<HintPath>$(LibsDir)FallGuys\DeviceIO.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="DOTween">
+			<HintPath>$(LibsDir)FallGuys\DOTween.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="DOTween.Modules">
+			<HintPath>$(LibsDir)FallGuys\DOTween.Modules.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="EOS.K3S">
+			<HintPath>$(LibsDir)FallGuys\EOS.K3S.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Client.Protocol">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Client.Protocol.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Common.Debug.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Common.Debug.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Common.Targeting.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Common.Targeting.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Gateway.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Gateway.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.GeneratedProtocol">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.GeneratedProtocol.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Level.Protocol.AuthTokens">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Level.Protocol.AuthTokens.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Lobby.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Lobby.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Lobby.Protocol.Common">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Lobby.Protocol.Common.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Match.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Match.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Player.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Player.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Scheduling.Config">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Scheduling.Config.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Scheduling.Resolution">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Scheduling.Resolution.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FallGuys.Store.Protocol.Client">
+			<HintPath>$(LibsDir)FallGuys\FallGuys.Store.Protocol.Client.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FMODUnity">
+			<HintPath>$(LibsDir)FallGuys\FMODUnity.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FMODUnityResonance">
+			<HintPath>$(LibsDir)FallGuys\FMODUnityResonance.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Hazel">
+			<HintPath>$(LibsDir)FallGuys\Hazel.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppMono.Security">
+			<HintPath>$(LibsDir)FallGuys\Il2CppMono.Security.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2Cppmscorlib">
+			<HintPath>$(LibsDir)FallGuys\Il2Cppmscorlib.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Configuration">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Configuration.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Core">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Data">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Data.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Net.Http">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Net.Http.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Numerics">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Numerics.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Runtime.Serialization">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Runtime.Serialization.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Xml">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Xml.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Il2CppSystem.Xml.Linq">
+			<HintPath>$(LibsDir)FallGuys\Il2CppSystem.Xml.Linq.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="io.sentry.unity.runtime">
+			<HintPath>$(LibsDir)FallGuys\io.sentry.unity.runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.Automation.FallGuys">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.Automation.FallGuys.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.Benchmarking">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.Benchmarking.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.Catapult.ClientSdk.Runtime">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.Catapult.ClientSdk.Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.CommandLineUtils">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.CommandLineUtils.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.ErrorMonitor">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.ErrorMonitor.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.Pooling">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.Pooling.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Mediatonic.Strings">
+			<HintPath>$(LibsDir)FallGuys\Mediatonic.Strings.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="MiniJson_Runtime">
+			<HintPath>$(LibsDir)FallGuys\MiniJson_Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="MPG.PreInit.Config">
+			<HintPath>$(LibsDir)FallGuys\MPG.PreInit.Config.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="MT.FGClient">
+			<HintPath>$(LibsDir)FallGuys\MT.FGClient.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="MTLog">
+			<HintPath>$(LibsDir)FallGuys\MTLog.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="MTNetwork">
+			<HintPath>$(LibsDir)FallGuys\MTNetwork.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="mvvmbindings">
+			<HintPath>$(LibsDir)FallGuys\mvvmbindings.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>$(LibsDir)FallGuys\Newtonsoft.Json.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="OEBIF">
+			<HintPath>$(LibsDir)FallGuys\OEBIF.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ParsingUtils_Runtime">
+			<HintPath>$(LibsDir)FallGuys\ParsingUtils_Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="protobuf-net">
+			<HintPath>$(LibsDir)FallGuys\protobuf-net.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="RemoteImages">
+			<HintPath>$(LibsDir)FallGuys\RemoteImages.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Rewired_Core">
+			<HintPath>$(LibsDir)FallGuys\Rewired_Core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Rewired_Windows">
+			<HintPath>$(LibsDir)FallGuys\Rewired_Windows.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Rewired_Windows_Functions">
+			<HintPath>$(LibsDir)FallGuys\Rewired_Windows_Functions.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry">
+			<HintPath>$(LibsDir)FallGuys\Sentry.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.Microsoft.Bcl.AsyncInterfaces">
+			<HintPath>$(LibsDir)FallGuys\Sentry.Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Buffers">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Buffers.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Collections.Immutable">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Collections.Immutable.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Memory">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Memory.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Numerics.Vectors">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Numerics.Vectors.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Reflection.Metadata">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Reflection.Metadata.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Runtime.CompilerServices.Unsafe">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Text.Encodings.Web">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Text.Encodings.Web.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Text.Json">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Text.Json.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.System.Threading.Tasks.Extensions">
+			<HintPath>$(LibsDir)FallGuys\Sentry.System.Threading.Tasks.Extensions.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.Unity">
+			<HintPath>$(LibsDir)FallGuys\Sentry.Unity.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Sentry.Unity.Native">
+			<HintPath>$(LibsDir)FallGuys\Sentry.Unity.Native.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="spine-unity">
+			<HintPath>$(LibsDir)FallGuys\spine-unity.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="SplineEditor">
+			<HintPath>$(LibsDir)FallGuys\SplineEditor.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TheMultiplayerGuys.FGCommon">
+			<HintPath>$(LibsDir)FallGuys\TheMultiplayerGuys.FGCommon.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TheMultiplayerGuys.Utility">
+			<HintPath>$(LibsDir)FallGuys\TheMultiplayerGuys.Utility.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TonicSounds">
+			<HintPath>$(LibsDir)FallGuys\TonicSounds.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TonicSoundsFMOD">
+			<HintPath>$(LibsDir)FallGuys\TonicSoundsFMOD.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TonicTools">
+			<HintPath>$(LibsDir)FallGuys\TonicTools.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TouchInputLayoutsGuard">
+			<HintPath>$(LibsDir)FallGuys\TouchInputLayoutsGuard.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="TweenTool">
+			<HintPath>$(LibsDir)FallGuys\TweenTool.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UniRx">
+			<HintPath>$(LibsDir)FallGuys\UniRx.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Addressables">
+			<HintPath>$(LibsDir)FallGuys\Unity.Addressables.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Burst">
+			<HintPath>$(LibsDir)FallGuys\Unity.Burst.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Burst.Unsafe">
+			<HintPath>$(LibsDir)FallGuys\Unity.Burst.Unsafe.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Collections">
+			<HintPath>$(LibsDir)FallGuys\Unity.Collections.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Collections.LowLevel.ILSupport">
+			<HintPath>$(LibsDir)FallGuys\Unity.Collections.LowLevel.ILSupport.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.InputSystem">
+			<HintPath>$(LibsDir)FallGuys\Unity.InputSystem.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Localization">
+			<HintPath>$(LibsDir)FallGuys\Unity.Localization.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Mathematics">
+			<HintPath>$(LibsDir)FallGuys\Unity.Mathematics.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Postprocessing.Runtime">
+			<HintPath>$(LibsDir)FallGuys\Unity.Postprocessing.Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Profiling.Core">
+			<HintPath>$(LibsDir)FallGuys\Unity.Profiling.Core.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.ResourceManager">
+			<HintPath>$(LibsDir)FallGuys\Unity.ResourceManager.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.TextMeshPro">
+			<HintPath>$(LibsDir)FallGuys\Unity.TextMeshPro.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.Timeline">
+			<HintPath>$(LibsDir)FallGuys\Unity.Timeline.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Unity.ucg.QoS">
+			<HintPath>$(LibsDir)FallGuys\Unity.ucg.QoS.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AccessibilityModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AccessibilityModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AIModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AIModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AndroidJNIModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AndroidJNIModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AnimationModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AnimationModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AssetBundleModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AssetBundleModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AudioModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.AudioModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ClothModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ClothModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ClusterInputModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ClusterInputModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ClusterRendererModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ClusterRendererModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.CoreModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.CrashReportingModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.CrashReportingModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.DirectorModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.DirectorModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.DSPGraphModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.DSPGraphModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.GameCenterModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.GameCenterModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.GIModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.GIModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.GridModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.GridModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.HotReloadModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.HotReloadModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ImageConversionModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ImageConversionModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.IMGUIModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.IMGUIModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.InputLegacyModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.InputLegacyModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.InputModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.InputModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.JSONSerializeModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.JSONSerializeModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.LocalizationModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.LocalizationModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ParticleSystemModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ParticleSystemModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.PerformanceReportingModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.PerformanceReportingModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.Physics2DModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.Physics2DModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.PhysicsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.PhysicsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ProfilerModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ProfilerModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ScreenCaptureModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.ScreenCaptureModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.SharedInternalsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.SharedInternalsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.SpriteMaskModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.SpriteMaskModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.SpriteShapeModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.SpriteShapeModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.StreamingModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.StreamingModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.SubstanceModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.SubstanceModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.SubsystemsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.SubsystemsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TerrainModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TerrainModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TerrainPhysicsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TextCoreFontEngineModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TextCoreTextEngineModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TextRenderingModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TextRenderingModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TilemapModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TilemapModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TLSModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.TLSModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UI.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UIElementsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UIElementsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UIElementsNativeModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UIElementsNativeModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UIModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UIModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UmbraModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UmbraModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UNETModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UNETModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityAnalyticsCommonModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityAnalyticsModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityConnectModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityConnectModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityCurlModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityCurlModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityTestProtocolModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityTestProtocolModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityWebRequestAudioModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityWebRequestModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityWebRequestModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityWebRequestTextureModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UnityWebRequestWWWModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.VehiclesModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.VehiclesModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.VFXModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.VFXModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.VideoModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.VideoModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.VirtualTexturingModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.VirtualTexturingModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.VRModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.VRModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.WindModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.WindModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.XRModule">
+			<HintPath>$(LibsDir)FallGuys\UnityEngine.XRModule.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Wushu.AsyncFileIO.Runtime">
+			<HintPath>$(LibsDir)FallGuys\Wushu.AsyncFileIO.Runtime.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<!--make sure to use wle as extern aliases on Wushu.LevelEditor.Runtime-->
+		<Reference Include="Wushu.LevelEditor.Runtime">
+			<HintPath>$(LibsDir)FallGuys\Wushu.LevelEditor.Runtime.dll</HintPath>
+			<Aliases>wle</Aliases>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+</Project>

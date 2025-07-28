@@ -1,0 +1,146 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using FG.Common;
+using FG.Common.Character;
+using FGClient;
+using FGTools.Internal;
+using FGTools.LocalServer.Implementations;
+using FGTools.Services;
+using FGTools.Services.Logic;
+using FGTools.States.Logic;
+using HarmonyLib;
+using Il2CppInterop.Runtime;
+using Levels.WallGuys;
+using Mediatonic.Networking;
+using MPG.Utility;
+using UnityEngine;
+using static FGTools.Internal.Extensions.FLZ_Extensions;
+namespace FGTools.LocalServer
+{
+    public class ServerCorePatches : FGTBase
+    {
+        //[HarmonyPatch(typeof(ClientPlayerManager), nameof(ClientPlayerManager.RegisterLocalPlayer)), HarmonyPrefix]
+        //static bool RegisterLocalPlayer(ClientPlayerManager __instance, uint playerID, string accountID, string nameKey, bool isParticipant)
+        //{
+        //    if (!LocalServerService.ServerInOperation)
+        //        return true;
+
+            
+        //    return false;
+        //}
+
+        [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
+        static bool OnPlayerSpawned(StateGameLoading __instance, MPGNetObject pNetObject, uint playerID, FG_NetworkID playerNetworkID, string accountId, string platformId, string playerName, string playerGeneratedName, uint squadId, int teamId, string partyId, int vsGroupId, bool tailEnabled, CustomisationSelections customisationSelections)
+        {
+            ServerManager.OnPlayerSpawned?.Invoke(pNetObject, playerID, playerNetworkID, accountId, platformId, playerName, playerGeneratedName, squadId, teamId, partyId, vsGroupId, tailEnabled, customisationSelections);
+            return true;
+        }
+
+        [HarmonyPatch(typeof(FG_UnityInternetNetworkManager), nameof(FG_UnityInternetNetworkManager.ServerHandleMessageReceived)), HarmonyPrefix]
+        static bool ServerHandleMessageReceived(FG_UnityInternetNetworkManager __instance, NetworkMessage msg)
+        {
+            ServerManager.OnServerReceivedMessage?.Invoke(msg);
+            return true;
+        }
+
+        [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.SetupPlayerUpdateManager)), HarmonyPrefix]
+        static bool SetupPlayerUpdateManager(ClientGameManager __instance)
+        {
+            if (LocalServerService.IsServerInOperation && __instance._playerUpdateManager == null)
+            {
+                __instance._playerUpdateManager = new GameObject("_ServerPlayerUpdateManager").AddComponent<ServerPlayerUpdateManager>();
+                return false;
+            }
+            else
+                return true;
+        }
+
+        [HarmonyPatch(typeof(ClientPlayerManager), nameof(ClientPlayerManager.OnPlayerSpawned)), HarmonyPrefix]
+        static bool OnPlayerSpawned(ClientPlayerManager __instance, MPGNetObject pNetObject)
+        {
+            NetworkPlayerDataClient clientPlayerData = __instance.GetClientPlayerDataForNetId(pNetObject.NetID);
+
+            if (clientPlayerData != null && clientPlayerData.isLocalPlayer)
+            {
+                var playerInput = pNetObject.GetComponent<FallGuysCharacterControllerInput>();
+
+                if (playerInput != null)
+                {
+                    playerInput.SetPlayerIndex(0);
+                    clientPlayerData.inputIndex = 0;
+                    playerInput.AcceptInput = false;
+                }
+            }
+            return false;
+        }
+
+        [HarmonyPatch(typeof(MPGNetObjectPossessable), nameof(MPGNetObjectPossessable.PossessObject)), HarmonyPrefix]
+        static bool OnPlayerSpawned(MPGNetObjectPossessable __instance)
+        {
+            return false;
+        }
+
+        [HarmonyPatch(typeof(MPGNetMotorAgentState), nameof(MPGNetMotorAgentState.SendMessage)), HarmonyPrefix]
+        static bool SendMessage(MPGNetMotorAgentState __instance, bool bypassNetworkLOD = false)
+        {
+            FG_NetworkManager.DeliveryType deliveryTypeToOwningClient = FG_NetworkManager.DeliveryType.None;
+            FG_NetworkManager.DeliveryType deliveryTypeToRemoteClient = FG_NetworkManager.DeliveryType.Unreliable;
+
+            if (__instance._messageImportance >= SnapshotChange.Important || __instance._appliedTaskImportance >= SnapshotChange.Important)
+            {
+                deliveryTypeToOwningClient = FG_NetworkManager.DeliveryType.Reliable;
+            }
+            __instance._appliedTaskImportance = SnapshotChange.None;
+            FG_NetworkID[] exclusionArray = null;
+            int amountExcluded = 0;
+
+            __instance._messageSender.Invoke(__instance._nextMotorAgentMessage, __instance._netObject.NetID, deliveryTypeToOwningClient, deliveryTypeToRemoteClient, exclusionArray, amountExcluded);
+            return false;
+        }
+
+        [HarmonyPatch(typeof(LeaveMatchPopupManager), nameof(LeaveMatchPopupManager.LeaveMatch)), HarmonyPrefix]
+        static bool LeaveMatch(LeaveMatchPopupManager __instance)
+        {
+            if (LocalServerService.IsServerInOperation)
+                FGTServiceManager.Instance.GetService<LocalServerService>().ShutdownSerer(null);
+            return true;
+        }
+
+        [HarmonyPatch(typeof(FallGuysCharacterController), nameof(FallGuysCharacterController.OnManagedUpdate_Server)), HarmonyPostfix]
+        static void OnManagedUpdate_Server(FallGuysCharacterController __instance, float simulationTime, float fixedSimulationTime, float deltaTime)
+        {
+            //__instance._fxController.OnManagedUpdate(deltaTime, __instance.Lod_ReadOnly);
+
+            if (!__instance.IsLocalPlayer)
+                __instance.OnManagedUpdate_Remote(deltaTime);
+
+            LocalServerService.ServerManager.ParseTasks(__instance.MotorAgent.MotorTasks.MotorTasks, __instance);
+        }
+
+        [HarmonyPatch(typeof(FallGuysCharacterController), nameof(FallGuysCharacterController.OnManagedFixedUpdate_Server)), HarmonyPostfix]
+        static void OnManagedFixedUpdate_Server(FallGuysCharacterController __instance, bool physicsSimulationDisabled, Vector3 gravityVector)
+        {
+            if (!__instance.IsLocalPlayer)
+                __instance.OnManagedFixedUpdate_Remote(Time.frameCount, Time.renderedFrameCount, false, ServerManager.CGM.CurrentGameSession.SimulationFixedTime, gravityVector);
+        }
+
+        [HarmonyPatch(typeof(FallGuysCharacterController), nameof(FallGuysCharacterController.OnManagedLateFixedUpdate_LocalOrServer)), HarmonyPostfix]
+        static void OnManagedLateUpdate_Server(FallGuysCharacterController __instance)
+        {
+            if (!__instance.IsLocalPlayer)
+                __instance.OnManagedLateFixedUpdate_Remote();
+        }
+
+        [HarmonyPatch(typeof(StateDisconnectingFromServer), nameof(StateDisconnectingFromServer.Initialise)), HarmonyPrefix]
+        static bool GameMessageReceived(StateDisconnectingFromServer __instance)
+        {
+            if (LocalServerService.IsServerInOperation)
+                FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);
+            return true;
+        }
+    }
+}

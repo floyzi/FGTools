@@ -1,0 +1,285 @@
+﻿extern alias wle;
+
+using Events;
+using FG.Common;
+using FG.Common.Character;
+using FG.Common.LODs;
+using FG.Common.Network;
+using FGClient;
+using FGTools.Internal;
+using FGTools.Internal.Behaviours;
+using FGTools.Internal.Extensions;
+using FGTools.Services;
+using HarmonyLib;
+using Levels;
+using Levels.Obstacles;
+using Levels.Progression;
+using Levels.WallGuys;
+using MPG.Utility;
+using Rewired;
+using SRF;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using static Rewired.Platforms.Custom.CustomInputSource;
+
+namespace FGTools.LocalServer.Patches
+{
+    internal class ServerGameplayPatches
+    {
+        public static readonly HashSet<string> IsGameServerList =
+        [
+            "WallGuysSegmentGenerator",
+            "COMMON_Button",
+            "RMIBehaviour",
+            "ScoredButton",
+            "COMMON_Wormhole",
+            "MotorFunctionPortalStateActive",
+            "COMMON_SeeSaw360",
+            "COMMON_PrefabSpawnerBase",
+            "MPGNetObject",
+            "COMMON_PrefabSpawnerTimed",
+            "MPGNetObjectBootstrapper",
+            "OnTriggerLevelEventEmitter",
+            "OnWaterBalloonTriggerLevelEventEmitter",
+            "LevelEventManager",
+            "COMMON_PrefabSpawnerTriggered",
+            "ServerOnlyComponent",
+            "BlastBallManager",
+            "COMMON_BlastBall",
+            "COMMON_SpawnBasket",
+            "SelfRespawnerFX",
+            "COMMON_SelfRespawner",
+            "ExplosionEventHandler",
+            "BlastBallExplosionEventHandler",
+            "ScoreAwarder",
+            "ChickenChaseController",
+            "CircuitManager",
+            "COMMON_SnowMound",
+            "VolleyfallScoreController",
+            "COMMON_TriggerVolume",
+            "BubbleZoneTrigger",
+            "CollectableTrigger",
+            "COMMON_BreakableIceTile",
+            "ChickenAI",
+            "NPCAI",
+            "BullAI",
+            "NPCController",
+            "COMMON_BullRMIController",
+            "MPGNetObjectBase",
+            "ScoreZoneManager",
+            "VolumeZoneTrigger",
+            "KrakenTentacleController",
+            "KrakenAttackManager",
+            "KrakenAttackRaft",
+            "KrakenAttackRetractableTile",
+            "KrakenAttackTile",
+            "JumpShowdown_Platform",
+            "TeamQualificationObjectsScoreTracker",
+            "TerritoryControl_Tile",
+            "BubbleZone",
+            "CollectionZone",
+            "PixelPerfectInputTileTrigger",
+            "PixelPerfectBoard",
+            "SnowyScrapManager",
+            "COMMON_Scaleable",
+            "COMMON_SnowMound",
+            "JumpShowdown_PlatformsController",
+            "COMMON_TimeAttackTrigger",
+            "TimeAttackItemTrigger",
+            "COMMON_SnowballSurvivalBall",
+            "TipToe_Platform",
+            "RMIBehaviourManager",
+            "COMMON_GrabToQualify",
+            "LevelEditorCommonPrefabSpawnerBase",
+            "LevelEditorCommonPrefabSpawnerTimed",
+            "COMMON_ScoringBubbleTrigger",
+            "LevelEditorTriggerZoneActiveBase",
+            "LevelEditorTriggerScoreFeedback",
+            "LevelEditorScoringFrequencyParameter",
+            "COMMON_ScoringBubble",
+            "COMMON_ScoringBubbleLevelEditorZoneService",
+            "LevelEditorBubbleHandler",
+            "LevelEditorObjectCollider",
+            "LevelEditorSimpleDrawable",
+            "LevelEditorPointsScoredParameter",
+            "LevelEditorActiveObjectBase",
+            "COMMON_PowerupPickup",
+            "CheckpointManager",
+            "TimeAttackManager",
+            "COMMON_KillZone",
+            "COMMON_ExplodingRhino",
+            "ExplodingRhinoAI",
+            "LevelEditorCommonButton",
+            "LevelEditorCommonFlipper",
+            "COMMON_BounceBoard",
+            "PressurePlate",
+            "ExplodingRhinoRMIManager",
+            "COMMON_ObjectiveReachEndZone",
+            "COMMON_PlayerEliminationVolume",
+            "TimeAttackPlayerStats"
+        ];
+
+
+        [HarmonyPatch(typeof(ClientGameStateView), nameof(ClientGameStateView.IsGameServer), MethodType.Getter), HarmonyPostfix]
+        static void IsGameServer(ClientGameStateView __instance, ref bool __result)
+        {
+            __result =/* LocalServerService.ServerInOperation && GlobalGameStateClient.Instance.GameStateView.IsGamePlaying*/ false ;
+        }
+
+        [HarmonyPatch(typeof(wle.LevelEditorBubbleHandler), nameof(wle.LevelEditorBubbleHandler.IsInExploreOrPlayState), MethodType.Getter), HarmonyPrefix]
+        static bool IsInExploreOrPlayState(wle.LevelEditorBubbleHandler __instance, ref bool __result)
+        {
+            __result = LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.GameStateView.IsGamePlaying;
+            return false;
+        }
+
+        [HarmonyPatch(typeof(COMMON_TriggerVolume), nameof(COMMON_TriggerVolume.ConsiderEnterSense)), HarmonyPrefix]
+        static bool ConsiderEnterSense(COMMON_TriggerVolume __instance, GameObject other)
+        {
+            if (other == null)
+                return true;
+
+            if (__instance.GetIl2CppType().Name == typeof(COMMON_ScoringBubbleTrigger).Name && __instance.CheckIsValid(other, out var obj) && obj.IsFallGuy)
+                ServerGameStateActions.Instance.AwardPoints(obj, __instance.Cast<COMMON_ScoringBubbleTrigger>()._bubble._pointsAwarded);
+
+            return true;
+        }
+
+        [HarmonyPatch(typeof(wle.LevelEditorTriggerZoneActiveBase), nameof(wle.LevelEditorTriggerZoneActiveBase.Awake)), HarmonyPostfix]
+        static void Awake(wle.LevelEditorTriggerZoneActiveBase __instance)
+        {
+            __instance.StartActiveObject(true);
+        }
+
+        [HarmonyPatch(typeof(wle.LevelEditorTriggerZoneActiveBase), nameof(wle.LevelEditorTriggerZoneActiveBase.DisableTrigger)), HarmonyPostfix]
+        static void DisableTrigger(wle.LevelEditorTriggerZoneActiveBase __instance)
+        {
+            __instance.StartActiveObject(false);
+        }
+
+        [HarmonyPatch(typeof(MPGNetObjectManager), nameof(MPGNetObjectManager.SpawnNetObject)), HarmonyPostfix]
+        static void SpawnNetObject(MPGNetObjectManager __instance, GameMessageServerSpawnObject msg, ref GameObject __result)
+        {
+            msg.NetObjectSpawnData?.PostSpawnAction?.Invoke(msg.NetObjectSpawnData.NetID, __result);
+        }
+
+        [HarmonyPatch(typeof(COMMON_PlayerEliminationVolume), nameof(COMMON_PlayerEliminationVolume.CheckForVFX)), HarmonyPostfix]
+        static void CheckForVFX(COMMON_PlayerEliminationVolume __instance, GameObject other)
+        {
+            if (other != null && other.TryGetComponent<FallGuysCharacterController>(out var fg))
+                ServerGameStateActions.Instance.EliminateParticipant(fg.NetObject, false, LiveOps.Challenges.EliminationReason.Slime);
+        }
+
+        [HarmonyPatch(typeof(MPGNetObjectBootstrapper), nameof(MPGNetObjectBootstrapper.BootstrapObject)), HarmonyPostfix]
+        static void BootstrapObject(MPGNetObjectBootstrapper __instance, Il2CppSystem.Action<MPGNetID, GameObject> postSpawnAction)
+        {
+           ServerGameStateActions.Instance.SetupNetworkObject(__instance, __instance.gameObject.transform.position, __instance.gameObject.transform.rotation, __instance.gameObject.transform.localScale, postSpawnAction);
+        }
+
+        [HarmonyPatch(typeof(FGBehaviour), nameof(FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
+        static void GameState(FGBehaviour __instance, ref IGameStateView __result)
+        {
+            if (IsGameServerList.Contains(__instance.GetIl2CppType().Name) && LocalServerService.GameStateView != null)
+                    __result = LocalServerService.GameStateView;
+        }
+
+        [HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.InstantiateObject))]
+        [HarmonyPrefix]
+        private static bool InstantiateObject(COMMON_PrefabSpawnerBase __instance, COMMON_PrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
+        {
+            entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
+            entry.value.RemoveComponentIfExists<LodController>();
+
+            if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
+                result = entry.value.AddComponent<MPGNetObject>();
+
+            result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
+            result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
+            return false;
+        }
+
+        [HarmonyPatch(typeof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase), nameof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.InstantiateObject))]
+        [HarmonyPrefix]
+        private static bool InstantiateObject(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase __instance, wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
+        {
+            entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
+            entry.value.RemoveComponentIfExists<LodController>();
+
+            if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
+                result = entry.value.AddComponent<MPGNetObject>();
+
+            result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
+            result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
+            return false;
+        }
+
+        [HarmonyPatch(typeof(RMIBehaviourManager), nameof(RMIBehaviourManager.SetActive)), HarmonyPostfix]
+        static void SetActive()
+        {
+            RMIBehaviourManager.AllClientsConnected = true;
+            RMIBehaviourManager.HandleRMIManagerActive?.Invoke();
+        }
+
+        [HarmonyPatch(typeof(MotorFunctionGrabStateGrabCrown), nameof(MotorFunctionGrabStateGrabCrown.OnGrab)), HarmonyPostfix]
+        static void OnGrab(MotorFunctionGrabStateGrabCrown __instance, GrabTarget grabTarget)
+        {
+            var gtq = grabTarget.TargetGameObject.GetComponentInParent<COMMON_GrabToQualify>();
+            gtq?.OnGrabbed(__instance.MotorAgent.Character.NetObject);
+        }
+
+        [HarmonyPatch(typeof(COMMON_TimeAttackTrigger), nameof(COMMON_TimeAttackTrigger.OnTriggerEnter)), HarmonyPrefix]
+        static void OnTriggerEnter(COMMON_TimeAttackTrigger __instance, Collider other)
+        {
+            if (other.gameObject.TryGetComponent<FallGuysCharacterController>(out var controller))
+            {
+                if (__instance.IsEndZone)
+                {
+                    ServerManager.TimeAttackFinish?.Invoke(controller.NetObject);
+                }
+                else
+                {
+                    ServerManager.TimeAttackStart?.Invoke(controller.NetObject);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(WallGuysSegmentGenerator), nameof(WallGuysSegmentGenerator.InstantiateRowGameObjects)), HarmonyPrefix]
+        static bool InstantiateRowGameObjects(WallGuysSegmentGenerator __instance, Il2CppSystem.Collections.Generic.List<GameObject> gameObjects, int rowIndex)
+        {
+            int rowObjectCount = gameObjects.Count;
+            float cellWidth = __instance._areaDimensions.x / (float)rowObjectCount;
+            Vector3 initialCellPosition = __instance._areaBounds.min + new Vector3(cellWidth * 0.5f, 0f, ((float)rowIndex + 0.5f) * __instance._cellHeight);
+            Vector3 cellExtents = new Vector3(cellWidth / 2f, 0f, __instance._cellHeight / 2f);
+            Vector3 currentCellPosition = initialCellPosition;
+            foreach (GameObject go in gameObjects)
+            {
+                var targetObject = go.GetComponent<NetworkAwareGeneric>().SpawnObject;
+                targetObject.transform.position = currentCellPosition;
+                targetObject.transform.rotation = __instance.RandomRotationAroundY();
+
+                if (!targetObject.TryGetComponent<MPGNetObject>(out var netObj))
+                    netObj = targetObject.AddComponent<MPGNetObject>();
+
+                netObj.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
+                netObj.GameObjectHash = netObj.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
+
+                Collider collider = netObj.GetComponent<Collider>();
+                Bounds objectBounds = collider.bounds;
+                Vector3 cellMinWorld = currentCellPosition - cellExtents;
+                Vector3 cellMaxWorld = currentCellPosition + cellExtents;
+                Vector3 deviationMin = cellMinWorld - objectBounds.min;
+                Vector3 deviationMax = cellMaxWorld - objectBounds.max;
+                currentCellPosition += new Vector3(cellWidth, 0f, 0f);
+
+                netObj.SpawnPrefab(netObj.transform.position += new Vector3(UnityEngine.Random.Range(deviationMin.x, deviationMax.x), objectBounds.extents.y + (currentCellPosition.y - objectBounds.center.y), UnityEngine.Random.Range(deviationMin.z, deviationMax.z)), netObj.transform.rotation, netObj.transform.localScale);
+            }
+            return false;
+        }
+    }
+}

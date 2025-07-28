@@ -1,0 +1,317 @@
+﻿using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using FG.Common;
+using FG.Common.Audio;
+using FGClient;
+using FGClient.UI;
+using FGTools.Services;
+using FGTools.Services.Logic;
+using FGTools.States.Logic;
+using FMODUnity;
+using Il2CppInterop.Runtime.Attributes;
+using Sentry.Internal;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UniverseLib;
+using UniverseLib.UI;
+using static FGTools.Config.ConfigManager;
+using static FGTools.Internal.Extensions.FLZ_Extensions;
+using static FGTools.Services.LocalizationService;
+using static FGTools.Services.OnlineCheckService;
+using static FGTools.UI.FGToolsUI;
+
+
+namespace FGTools.UI
+{
+    public class ReadyPopups : FGTBase
+    {
+        public static void img2fgcAlert()
+        {
+            DoModal(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(LaunchIMG2FGC), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            static void LaunchIMG2FGC(bool wasok)
+            {
+                if (wasok)
+                {
+                    //System.Diagnostics.Process process = new System.Diagnostics.Process();
+                    //process.StartInfo.FileName = "cmd.exe";
+                    //process.StartInfo.Arguments = $"/C cd /D \"{Path.GetDirectoryName(Plugin.img2fgcExe)}\" && {Path.GetFileName(Plugin.img2fgcExe)} --path-to-file \"{Plugin.imgDir + ServiceManagerFGT.GetService<MediaService>().imgPath}\" --width \"{FGTGUI.NewGUI.instance.imgWidth}\" --height \"{FGTGUI.NewGUI.instance.imgHeight}\" --isDigital \"{FGTGUI.NewGUI.instance.isDigital}\" --shouldDeleteBlackPixels \"{FGTGUI.NewGUI.instance.shouldDeleteBlackPixels}\" --shouldDeleteWhitePixels \"{FGTGUI.NewGUI.instance.shouldDeleteWhitePixels}\"";
+                    //process.StartInfo.UseShellExecute = true;
+                    //process.StartInfo.CreateNoWindow = false;
+                    //process.Start();
+                    //process.WaitForExit();
+                    //FGTGUI.NewGUI.instance.haveGeneratedLevel = true;
+                    List<string> writeInfo = new List<string>();
+                    string outputfile = Path.Combine(Application.persistentDataPath, "output.txt");
+                    if (File.Exists(outputfile))
+                        File.Delete(outputfile);
+                    File.Create(outputfile).Close();
+                    writeInfo.Add("path_to_file" + " = " + Plugin.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath);
+                    writeInfo.Add("width" + " = " + NewGUI.Instance.imgWidth);
+                    writeInfo.Add("height" + " = " + NewGUI.Instance.imgHeight);
+                    writeInfo.Add("shouldDeleteBlackPixels" + " = " + NewGUI.Instance.shouldDeleteBlackPixels);
+                    writeInfo.Add("shouldDeleteWhitePixels" + " = " + NewGUI.Instance.shouldDeleteWhitePixels);
+                    writeInfo.Add("isDigital" + " = " + NewGUI.Instance.isDigital);
+                    File.WriteAllLines(outputfile, writeInfo);
+                    Application.OpenURL(Plugin.IMG2FGCExe);
+                    NewGUI.Instance.haveGeneratedLevel = true;
+                }
+            }
+        }
+
+
+        public static void SelectUsernamePopup()
+        {
+            /* NewCmsStr("userchange_title", $"{LocalizedStr("userchange_title")}");
+             NewCmsStr("userchange_desc", $"{LocalizedStr("userchange_desc")}");
+             NewCmsStr("userchange_holder", $"{LocalizedStr("userchange_holder")}");
+             UniversalUI.SetUIActive(Plugin.universeGUID, false); FGTGUI.NewGUI.instance.UIRoot.gameObject.SetActive(false); StateManager.InternalState.loaderUIToggle = false;
+             string name = "OfflineGuy";
+             void pop(bool wasOk)
+             {
+                 offlineUsername.Value = name;
+                 UniversalUI.SetUIActive(Plugin.universeGUID, true); FGTGUI.NewGUI.instance.UIRoot.gameObject.SetActive(true); StateManager.InternalState.loaderUIToggle = true;
+             }
+
+
+             Il2CppSystem.Action<bool> popact = new System.Action<bool>(pop);
+
+             var ModalMessageDataDisclaimer = new ModalMessageWithInputFieldData
+             {
+                 Title = "userchange_title",
+                 Message = "userchange_desc",
+                 ModalType = UIModalMessage.ModalType.MT_OK,
+                 OkButtonType = UIModalMessage.OKButtonType.Default,
+                 InputTextPlaceholder = "userchange_holder",
+                 OnCloseButtonPressed = popact
+             };
+
+             void OnInput(string text) => name = text;
+
+             PopupManager.Instance.Show(PopupInteractionType.Error, ModalMessageDataDisclaimer);
+             AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
+             GameObject inputfiledig = GameObject.Find("InputField");
+             //TMP_InputField fieldig = Resources.FindObjectsOfTypeAll<ModalMessageWithInputFieldViewModel>().FirstOrDefault()._inputField;
+             inputfiledig.GetComponent<TMP_InputField>().onValueChanged.AddListener(OnInput);
+             //inputfiledig.GetComponent<TMP_InputField>().characterLimit = 30;
+             StateManager.HaveActivePopup = true;*/
+        }
+
+
+        public static void AreYouSurePopup(string action, Action<bool> popAct = null)
+        {
+            DoModal(LocalizedStr("confirm_title"), $"{LocalizedStr("confirm_desc")} {action}", UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Default, new Action<bool>(popAct), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+        }
+
+        public static void TryTriggerChangelogPopup()
+        {
+            DoModal(string.Format($"V{Plugin.BuildInfo.Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Plugin.BuildInfo.Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+        }
+
+        public static void MenuPopup()
+        {
+            DoModal(LocalizedStr("menuenter_title"), $"{LocalizedStr("menuenter_desc")}\n\n{LocalizedStr("gui_hotkeys", [ToggleCusorHotkey.Value, ToggleUIHotkey.Value, DebugUIHotkey.Value, EnterFFM.Value, RespawnHotkey.Value, CheckpointHotkey.Value, ToggleFreeCamHotkey.Value, ResetCheckpointHotkey.Value])}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, new Action<bool>((wasOk) =>
+            {
+                TryTriggerChangelogPopup();
+                if (!wasOk)
+                    Application.OpenURL(DiscordUrl);
+
+            }), hideGUI: ModalHideGUIType.KeepHidden);
+        }
+
+        public static void ErrorPopup(object err, Action<bool> onClick = null, bool forceLeaveToMenu = false, bool displayOnlyError = true, string title = "failed_title", string desc = "failed_desc_new")
+        {
+            string MessageAsString = string.Empty;
+
+            if (err is Exception fail_ex)
+                MessageAsString = $"Meesage: {fail_ex.Message}\nStackTrace: {fail_ex.StackTrace}";
+            else if (err is string fail_str)
+                MessageAsString = fail_str;
+            else
+            {
+                FGTLog(LogLevel.Error, "FailedPopup()", "Not valid type = " + err.GetType().FullName);
+                return;
+            }
+
+            if (forceLeaveToMenu)
+            {
+                onClick += new Action<bool>(val =>
+                {
+                    FGTRoundLoader.HideLoadingScreens();
+                    if (SceneManager.GetActiveScene().name == "MainMenu")
+                        GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
+                    else
+                        LeaveMatchPopupManager.Instance.OnClose(true);
+                });
+            }
+
+            FGTLog(LogLevel.Error, "FailedPopup()", $"Called popup with reason: {MessageAsString}");
+            StateManager.InternalState.LatestError = MessageAsString;
+
+            //string outSubStr = forceLeaveToMenu ? LocalizedStr("gui_error_0") : LocalizedStr("gui_error_1");
+            string output = $"{LocalizedStr(desc)}\n\n<size=45%>{MessageAsString}</size>\n\n{LocalizedStr("gui_error_msg", [DebugUIHotkey.Value.ToString()])}";
+
+            if (displayOnlyError)
+                output = $"<size=45%>{MessageAsString}</size>";
+
+            DoModal(LocalizedStr(title), output, UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive, onClick, hideGUI: ModalHideGUIType.KeepHidden);
+        }
+
+        public static void ConfigAction(bool quit = false)
+        {
+            if (!StateManager.HaveActivePopup)
+            {
+                string title = LocalizedStr("gui_restart_title");
+                string desc = LocalizedStr("gui_restart_desc");
+
+                if (!quit)
+                {
+                    title = LocalizedStr("gui_reload_title");
+                    desc = LocalizedStr("gui_reload_desc");
+                }
+
+                void OnClickedPopUp(bool wasok)
+                {
+                    if (wasok)
+                    {
+                        if (quit)
+                            Application.Quit();
+                        else
+                        {
+                            if (StateManager.CurrentRound != null)
+                                FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);
+                            else
+                                FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
+                        }
+                    }
+                    StateManager.HaveActivePopup = false;
+                }
+
+                DoModal(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideGUI: ModalHideGUIType.ShowOnCancel);
+            }
+        }
+
+        public static void SpeedrunContinePopup(float bestTime, bool fromWinScreen = false, VictoryScreenViewModel player = null)
+        {
+            var sps = FGTServiceManager.GetService<SpeedrunService>();
+            var noTime = "--:--<size=80%>.--</size>";
+
+            if (bestTime != -1)
+                sps.SetLatestSceneTime(bestTime);
+            else
+                sps.SetLatestSceneTime(0);
+
+            float diff = FGTServiceManager.GetService<SpeedrunService>().ReturnCurrentTime() - bestTime;
+            string latest;
+
+            if (!StateManager.IsFGC)
+            {
+                if (sps.GetRunTime(sps.ReturnLatestScene()) == -1)
+                    latest = noTime;
+                else
+                    latest = sps.ReturnTimeAsString(sps.GetRunTime(sps.ReturnLatestScene()), false, true, true);
+            }
+            else
+            {
+                if (sps.GetRunTime(CGM._round.Id) == -1)
+                    latest = noTime;
+                else
+                    latest = sps.ReturnTimeAsString(sps.GetRunTime(CGM._round.Id), false, true, true);
+            }
+
+            var msg = $"{LocalizedStr("spqual_desc")}\n\n{LocalizedStr("gui_best_time")}: {latest} | {LocalizedStr("gui_run_info")}: {sps.ReturnTimeAsString(FGTServiceManager.GetService<SpeedrunService>().ReturnCurrentTime(), false, true, true)} ({FGTServiceManager.GetService<SpeedrunService>().CreateSplitTimeText(diff, diff > 0)})";
+
+            DoModal(LocalizedStr("spqual_title"), msg, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
+            {
+                if (wasok)
+                    FGTServiceManager.GetService<SpeedrunService>().DoRunSave();
+                bool allowRand;
+
+                if (!fromWinScreen)
+                    allowRand = QualLevel.Value == QualType.LoadRandomRoundAfter;
+                else
+                    allowRand = WinLevel.Value == WinType.LoadRandomRoundAfter;
+
+                if (allowRand)
+                    SpeedrunRestart();
+                else
+                {
+                    player?.StopMusicImmediately();
+                    FGTServiceManager.GetService<SpeedrunService>().HandleState(SpeedrunService.RunState.Inactive);
+                    AudioMixing.Instance.ResetAllSnapshotParams();
+                }
+            }), hideGUI: ModalHideGUIType.KeepHidden);
+            StateManager.HaveActivePopup = true;
+        }
+
+        public static void SpeedrunRestart()
+        {
+            DoModal(LocalizedStr("spqual_title2"), LocalizedStr("spqual_desc3"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(Pop), hideGUI: ModalHideGUIType.KeepHidden);
+
+            static void Pop(bool WasOk)
+            {
+                if (WasOk)
+                {
+                    if (!StateManager.IsFGC && SceneManager.GetActiveScene().name == CGM._round.GetSceneName() && !OldSPContinue.Value)
+                        FGBehaviour.ReturnToStart();
+                    else if (StateManager.IsFGC)
+                        FGBehaviour.ReturnToStart();
+                    else
+                        FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);
+                }
+                else
+                    FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
+
+            }
+        }
+
+        public static void AlertSpeedrunner()
+        {
+            AddCMSString("speedrunneralert_true", $"{LocalizedStr("speedrunneralert_accept")}");
+            AddCMSString("speedrunneralert_false", $"{LocalizedStr("speedrunneralert_cancel")}");
+
+            var ModalMessageDataDisclaimer = new ModalMessageData
+            {
+                Title = LocalizedStr("speedrunneralert_title"),
+                Message = LocalizedStr("speedrunneralert_desc", [CleanStr(StateManager.CurrentRound.DisplayName.Text)]),
+                LocaliseTitle = UIModalMessage.LocaliseOption.NotLocalised,
+                LocaliseMessage = UIModalMessage.LocaliseOption.NotLocalised,
+                ModalType = UIModalMessage.ModalType.MT_OK_CANCEL,
+                OkButtonType = UIModalMessage.OKButtonType.Positive,
+                OnCloseButtonPressed = new Action<bool>(val =>
+                {
+                    if (val)
+                        LeaveMatchPopupManager.Instance.OnClose(true);
+                }),
+                OkTextOverrideId = "speedrunneralert_true",
+                CancelTextOverrideId = "speedrunneralert_false",
+            };
+
+            PopupManager.Instance.Show(PopupInteractionType.Error, ModalMessageDataDisclaimer);
+            AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
+            GameObject btns = GameObject.Find("ButtonContainer");
+            if (btns != null)
+            {
+                btns.SetActive(false);
+
+                [HideFromIl2Cpp]
+                IEnumerator returnBtns()
+                {
+                    yield return new WaitForSeconds(3);
+                    AudioManager.PlayOneShot(AudioManager.EventMasterData.QualificationConfetti);
+                    btns.SetActive(true);
+                }
+                CoroutineRunner.Instance.StartCoroutine(returnBtns().WrapToIl2Cpp());
+            }
+
+
+            StateManager.HaveActivePopup = true;
+        }
+    }
+}
