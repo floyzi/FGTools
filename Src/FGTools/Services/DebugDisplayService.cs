@@ -101,7 +101,7 @@ namespace FGTools.Services
                 var b1 = new StringBuilder();
 
                 b1.AppendLine($"Build: {Plugin.BuildInfo.BuildDate}");
-                b1.AppendLine($"Ver: {Plugin.BuildInfo.Version} | BuildEnv: {Plugin.BuildInfo.Config} | Commit: #{Plugin.BuildInfo.GetCommit()}");
+                b1.AppendLine($"Ver: {Plugin.BuildInfo.UI_Version} | BuildEnv: {Plugin.BuildInfo.Config} | Commit: #{Plugin.BuildInfo.GetCommit()}");
                 b1.AppendLine($"Build ID: {Plugin.BuildInfo.GUID}");
                 b1.AppendLine($"Session Length: {DateTime.UtcNow.Subtract(Plugin.StartupTime):hh\\:mm\\:ss}");
                 b1.AppendLine($"Locale: {ConfigManager.LangFileName.Value}");

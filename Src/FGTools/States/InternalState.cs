@@ -294,7 +294,7 @@ namespace FGTools.States
                
             };
 
-            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Plugin.DisplayName, Plugin.BuildInfo.Config.ToUpper(), Plugin.BuildInfo.Version, Plugin.BuildInfo.BuildDate, Plugin.BuildInfo.GUID, Plugin.BuildInfo.Commit, OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, Plugin.BuildInfo.GetDefines(), DateTime.UtcNow]), def);
+            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Plugin.DisplayName, Plugin.BuildInfo.Config.ToUpper(), Plugin.BuildInfo.UI_Version, Plugin.BuildInfo.BuildDate, Plugin.BuildInfo.GUID, Plugin.BuildInfo.GetCommit(), OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, Plugin.BuildInfo.GetDefines(), DateTime.UtcNow]), def);
         }
 #endif
 
@@ -302,9 +302,9 @@ namespace FGTools.States
         {
             var watermark = ConfigManager.WatermarkLevel.Value switch
             {
-                Watermark.OnlyVersion => $"{Plugin.DisplayName} V{Plugin.BuildInfo.Version}",
+                Watermark.OnlyVersion => $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version}",
                 Watermark.None => string.Empty,
-                Watermark.VersionAndCredits => $"{Plugin.DisplayName} V{Plugin.BuildInfo.Version} {Description[Description.IndexOf("by")..]}",
+                Watermark.VersionAndCredits => $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}",
                 _ => throw new NotImplementedException(),
             };
 

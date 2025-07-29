@@ -4,9 +4,9 @@
 		<title>FGTools</title>
 		<AssemblyName>FGTools</AssemblyName>
 		<Description>Fall Guys level loader by @floyzi102 on Twitter</Description>
-		<Version>1.4.4</Version>
-		<AssemblyVersion>1.4.4</AssemblyVersion>
-		<FileVersion>1.4.4</FileVersion>
+		<Version>1.5.0-pre1</Version>
+		<AssemblyVersion>1.4.4.0</AssemblyVersion>
+		<FileVersion>1.4.4.0</FileVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>latest</LangVersion>
 		<RestoreAdditionalProjectSources>
@@ -16,6 +16,7 @@
 		<Authors>floyzi</Authors>
 		<PackageProjectUrl>https://github.com/floyzi/FGTools</PackageProjectUrl>
 		<Configurations>DEV;ClosedBeta;PROD</Configurations>
+		<Optimize>True</Optimize>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -91,7 +92,7 @@
 		<Reference Include="NAudio.WinMM">
 			<HintPath>$(LibsDir)NAudio\NAudio.WinMM.dll</HintPath>
 		</Reference>
-		<!--i'm using CUE version for testing, you can change this if needed-->
+		<!--i'm using CUE version for testing, you can remove this if needed-->
 		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' == 'Dev'">
 			<HintPath>$(LibsDir)UniverseLib\UniverseLib.BIE.IL2CPP.Interop_CUE.dll</HintPath>
 		</Reference>

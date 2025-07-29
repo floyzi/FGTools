@@ -178,7 +178,7 @@ namespace FGTools.States
                 var evtS = FGTServiceManager.GetService<EventService>();
                 if (/*offlineMode.Value*/ !StateManager.PiratedGame)
                 {
-                    var targetVer = Plugin.BuildInfo.Version;
+                    var targetVer = Plugin.BuildInfo.UI_Version;
                     var eventVer = evtS.ReturnStringEventValue("MenuEntranceVersion");
 
                     if (eventVer != null && targetVer != eventVer)
@@ -238,7 +238,9 @@ namespace FGTools.States
                         Broadcaster.Instance.Broadcast<GlobalDebug.DebugToggleFPSCounter>(new());
 #endif
                         if (FGToolsUI.NewGUI.Instance == null)
-                            StateManager.InternalState.ToolsUI = new (Plugin.UniverseUIBase);
+                            StateManager.InternalState.ToolsUI = new(Plugin.UniverseUIBase);
+
+                        StateManager.InternalState.ToolsUI.SetActive(true);
                     }
                     
                     StateManager.FirstTimeLogin = true;
@@ -247,7 +249,7 @@ namespace FGTools.States
                 MenuEvent();
             });
 
-            var targetVer = Plugin.BuildInfo.Version;
+            var targetVer = Plugin.BuildInfo.UI_Version;
             var evtVer = FGTServiceManager.GetService<EventService>().ReturnStringEventValue("MenuEntranceVersion");
 
             if (evtVer != null && targetVer != evtVer && !introInProgress)

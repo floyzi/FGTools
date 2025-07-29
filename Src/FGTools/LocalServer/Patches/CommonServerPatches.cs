@@ -60,7 +60,7 @@ namespace FGTools.LocalServer.Patches
         {
             foreach (var obj in Enum.GetValues(typeof(FLZ_CustomMessage)))
             {
-                FGTLog(BepInEx.Logging.LogLevel.Info, "CONN - " + __instance.connectionId, $"Reserving handle [{(byte)(FLZ_CustomMessage)obj}] for custom messages");
+                FGTLog(BepInEx.Logging.LogLevel.Debug, "CONN - " + __instance.connectionId, $"Reserving handle [{(byte)(FLZ_CustomMessage)obj}] for custom messages");
                 handlers.RegisterHandler((byte)(FLZ_CustomMessage)obj, DelegateSupport.ConvertDelegate<NetworkMessageDelegate>(LocalServerService.CustomMessageManager.OnCustomMessageReceived));
             }
 
@@ -118,8 +118,7 @@ namespace FGTools.LocalServer.Patches
             if (!ConfigManager.SpeedrunMode.Value || sp.IsSepeedrunsDisabled)
                 return true;
 
-            var transform = ConfigManager.RespawnAtCheckpoint.Value ? FGBehaviour.spawnpoint.transform : CGM.GameRules.PickStartingPosition(1, 0, -1, 0, false).transform;
-            ServerGameStateActions.Instance.TeleportNetObject(CGM.GetNetObjectByID(CGM.GetFocusedNetId()), transform.position, transform.rotation, LiveOps.Challenges.SpawnReason.Respawn);
+            ServerGameStateActions.Instance.RespawnParticipant(CGM.GetNetObjectByID(CGM.GetFocusedNetId()).FGCharacterController);
             sp.HandleState(RunState.Respawned);
             return false;
         }
@@ -140,9 +139,13 @@ namespace FGTools.LocalServer.Patches
             QualifiedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_qual" : "qualified", new Action(() =>
             {
                 FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Qual);
+
+                if (!LocalServerService.IsUserAloneAndHost)
+                    return;
+
                 if (StateManager.ShowState == null)
                 {
-                    if (ConfigManager.SpeedrunMode.Value && FGTServiceManager.GetService<SpeedrunService>().SpeedrunState != RunState.TempDisabled)
+                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
                     {
                         FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
@@ -160,7 +163,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageEliminated)), HarmonyPrefix]
         static bool CreateMessageEliminated(BannersDefault __instance)
         {
-            AudioManager.PlayGameplayEndAudio(true);
+            AudioManager.PlayGameplayEndAudio(false);
             __instance.State = BannersDefault.BannerActive.Eliminated;
             __instance._isEliminateOrQualifiedMessageShowed = true;
 
@@ -170,7 +173,28 @@ namespace FGTools.LocalServer.Patches
                 AddCMSString("sp_elim", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
             }
 
-            EliminatedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_elim" : "eliminated", new Action(__instance.SwitchToSpectator), new Action(__instance.ExitGame), __instance.GetTimeAttackEntry(), 5);
+            EliminatedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_elim" : "eliminated", !LocalServerService.IsUserAloneAndHost ? new Action(__instance.SwitchToSpectator) : null, new Action(() =>
+            {
+                FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Elim);
+
+                if (!LocalServerService.IsUserAloneAndHost)
+                {
+                    __instance.ExitGame();
+                    return;
+                }
+
+                if (StateManager.ShowState == null)
+                {
+                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    {
+                        FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
+                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
+                    }
+                }
+                else
+                    StateManager.ShowState.OnShowProgress();
+
+            }), __instance.GetTimeAttackEntry(), 5);
             
             Commands.OnEliminated?.Invoke();
             
@@ -188,9 +212,24 @@ namespace FGTools.LocalServer.Patches
                 AddCMSString("sp_win", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
             }
 
-            WinnerScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_win" : "eliminated", true, new Action(() => 
+            WinnerScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_win" : "winner", true, new Action(() => 
             {
-                __instance._clientGameManager.GotoResultState();
+                if (!LocalServerService.IsUserAloneAndHost)
+                {
+                    __instance._clientGameManager.GotoResultState();
+                    return;
+                }
+
+                if (StateManager.ShowState == null)
+                {
+                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    {
+                        FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
+                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
+                    }
+                }
+                else
+                    StateManager.ShowState.OnShowProgress();
             }), __instance.GetTimeAttackEntry());
 
             Commands.OnWon?.Invoke();

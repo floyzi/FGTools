@@ -187,7 +187,7 @@ namespace FGTools.Services
                         break;
                 }
                 act.Assets.LargeImage = "fgtools_logo_big";
-                act.Assets.LargeText = $"{Plugin.DisplayName} V{Plugin.BuildInfo.Version}";
+                act.Assets.LargeText = $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version}";
 
                 _Discord.GetActivityManager().UpdateActivity(act, null);
             }

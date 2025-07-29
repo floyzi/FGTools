@@ -111,7 +111,7 @@ namespace FGTools.UI
 
         public static void TryTriggerChangelogPopup()
         {
-            DoModal(string.Format($"V{Plugin.BuildInfo.Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Plugin.BuildInfo.Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            DoModal(string.Format($"V{Plugin.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Plugin.BuildInfo.UI_Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
         }
 
         public static void MenuPopup()

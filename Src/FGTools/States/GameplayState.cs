@@ -114,7 +114,7 @@ namespace FGTools.States
                 }
             }
 
-            string currVer = Plugin.BuildInfo.Version;
+            string currVer = Plugin.BuildInfo.UI_Version;
 
             var oS = FGTServiceManager.GetService<OnlineCheckService>();
 

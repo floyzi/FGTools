@@ -176,6 +176,12 @@ namespace FGTools.Services
                 SpeedrunContinePopup(GetRunTime(LatestRunScene), winScreen, player);
         }
 
+        internal void TriggerSpeedrunRestart()
+        {
+            if (QualLevel.Value == QualType.LoadRandomRoundAfter)
+                SpeedrunRestart();
+        }
+
         public string CreateSplitTimeText(float splitTime, bool isPositive)
         {
             string locText = Resources.FindObjectsOfTypeAll<LocalisedStrings>().FirstOrDefault().GetString(isPositive ? "timeattack_split_result_slower" : "timeattack_split_result_faster");
@@ -201,53 +207,53 @@ namespace FGTools.Services
             if (CGM != null)
             {
                 var UIManager = CGM._inGameUiManager.gameObject;
-                
+
                 _timerObject = GetChild(UIManager, "GameplayTimeAttackViewModel");
-                if (_timerObject != null)
+
+                if (_timerObject == null)
                 {
-                    _timerObject.SetActive(true);
-                    _checkpointPopup = GetChild(UIManager, "SplitTime");
-                    _splitTimeText = GetChild(UIManager, "SplitTimeText");
-                    _splitTimeText.gameObject.SetActive(false);
-                    _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
-                    _lapTimeText = GetChild(UIManager, "LapTimeText");
-                    _restartButton?.gameObject.SetActive(false);
-                    _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
-                    var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
-                    if (lap != null)
+                    ReadyPopups.ErrorPopup("skibidi ohio sigma");
+                    return;
+                }
+                _timerObject.SetActive(true);
+                _checkpointPopup = GetChild(UIManager, "SplitTime");
+                _splitTimeText = GetChild(UIManager, "SplitTimeText");
+                _splitTimeText.gameObject.SetActive(false);
+                _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
+                _lapTimeText = GetChild(UIManager, "LapTimeText");
+                _restartButton?.gameObject.SetActive(false);
+                _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
+                var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
+                if (lap != null)
+                {
+                    _display = lap.GetComponent<TimeAttackLapDisplay>();
+                    _display.Init(CGM);
+                }
+                if (CGM != null && CGM.GameRules.ScoreDisplayMode != ScoreDisplayModes.None)
+                {
+                    if (!FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
                     {
-                        _display = lap.GetComponent<TimeAttackLapDisplay>();
-                        _display.Init(CGM);
+                        _timerObject.transform.localPosition = new Vector3(750, 0, 0);
+                        _checkpointPopup.transform.localPosition = new Vector3(-450, 0, 0);
                     }
-                    if (CGM != null && CGM.GameRules.ScoreDisplayMode != ScoreDisplayModes.None)
+                    else
                     {
-                        if (!FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
+                        //if (useIngameObjective.Value)
+                        //{
+                        _timerObject.transform.localPosition = CGM.GameRules.TeamCount switch
                         {
-                            _timerObject.transform.localPosition = new Vector3(750, 0, 0);
-                            _checkpointPopup.transform.localPosition = new Vector3(-450, 0, 0);
-                        }
-                        else
-                        {
-                            //if (useIngameObjective.Value)
-                            //{
-                                _timerObject.transform.localPosition = CGM.GameRules.TeamCount switch
-                                {
-                                    1 => new Vector3(-250f, 0, 0),
-                                    2 => new Vector3(-400f, 0, 0),
-                                    3 => new Vector3(-450f, 0, 0),
-                                    4 => new Vector3(-490f, 0, 0),
-                                    _ => new Vector3(-470f, 0, 0),
-                                };
-                            //}
-                            //else
-                            //    _timerObject.transform.localPosition = new Vector3(-750, 0, 0);
-                        }
+                            1 => new Vector3(-250f, 0, 0),
+                            2 => new Vector3(-400f, 0, 0),
+                            3 => new Vector3(-450f, 0, 0),
+                            4 => new Vector3(-490f, 0, 0),
+                            _ => new Vector3(-400f, 0, 0),
+                        };
+                        //}
+                        //else
+                        //    _timerObject.transform.localPosition = new Vector3(-750, 0, 0);
                     }
                 }
             }
-            else
-                ReadyPopups.ErrorPopup("skibidi ohio sigma");
-
         }
 
         void OnApplicationFocus(bool hasFocus)
@@ -324,13 +330,12 @@ namespace FGTools.Services
                     }
                     break;
                 case RunState.Finish:
-                    //PlayFmod("BNK_SFX_TimeAttack", "", new());
-                    //AudioManager.PlayOneShot(AudioManager.Instance._eventMasterData.TimeAttackTimeStop);
                     TriggerTimer(false);
                     AudioMixing.Instance.StartTimeAttackSnapshot();
                     _display._currentLocalTimeAttackLapState = TimeAttackLapState.Finished;
-                    //_display.ShouldShowTimeAttackResetInput = false;
                     _restartButton?.gameObject.SetActive(false);
+                    CGM.SetClockPaused(true);
+                    CGM._physicsSimulator.SetRunningPhysicsAutomatically(false);
                     break;
                 case RunState.Running:
                     Attempt++;

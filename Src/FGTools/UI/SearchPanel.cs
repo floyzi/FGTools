@@ -101,7 +101,7 @@ namespace FGTools.UI
         internal void Reset()
         {
             SearchBar.Text = string.Empty;
-            Result.text = string.Empty;
+            Result.text = LocalizedStr("gui_cosmetics_search");
 
             var a = FGTServiceManager.Instance.GetService<CosmeticsService>();
 

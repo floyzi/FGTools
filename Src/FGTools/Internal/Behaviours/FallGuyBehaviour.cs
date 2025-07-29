@@ -5,6 +5,7 @@ using System.Linq;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DG.Tweening;
+using Events;
 using FG.Common;
 using FG.Common.Audio;
 using FG.Common.Character;
@@ -358,7 +359,6 @@ namespace FGTools.Internal.Behaviours
             }
         }
 
-        float FFMRotation = 0;
         public void FreeFlyController()
         {
 
@@ -500,6 +500,7 @@ namespace FGTools.Internal.Behaviours
             CurrentGPState.winComplete = false;
             CurrentGPState.winResultsPending = false;
             CurrentGPState.elimComplete = false;
+            CurrentGPState.qualComplete = false;
 
             if (!FGTServiceManager.Instance.GetService<EventService>().ReturnBoolEventValue("OldSp"))
             {
@@ -509,35 +510,27 @@ namespace FGTools.Internal.Behaviours
 
             try { AudioMixing.Instance.ResetAllSnapshotParams(); } catch { }
             CGM.FinishPreparationPhase();
-            MultiplayerStartingPosition randPos = CGM.GameRules.PickStartingPosition(102, 0, PlayerTeamId, 0, false);
-            FGTServiceManager.Instance.GetService<SpeedrunService>().SetSpawnPos(randPos.transform.position, randPos.transform.rotation);
-            FGCC.TeleportMotorFunction.RequestTeleport(randPos.transform.position, randPos.transform.rotation);
-            CGM._gameSession.SetSessionState(GameSession.SessionState.Precountdown);
+            CGM.GameRules.RemovePlayerFromSuccessfulList(FGCC.NetObject.NetID.m_NetworkID);
+
+            CGM.SetClockPaused(false);
+            CGM._physicsSimulator.SetRunningPhysicsAutomatically(true);
+            ServerGameStateActions.Instance.RespawnParticipant(FGCC);
+
             GameObject.Find(FallGuy.name + "/Character/GEO").SetActive(true);
-            CurrentGPState.qualComplete = false;
-            StateManager.UIM.SwitchToState(InGameUiManager.InGameState.Playing);
-            CGM._gameSession.SetSessionState(GameSession.SessionState.Playing);
-            FGTServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.OnRecenterAndSnapCameraNextFrameRequested();
+
+            Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent());
+            CGM._inGameUiManager.SwitchToState(InGameUiManager.InGameState.Playing);
+
             StateManager.HandleFGState(PlayerState.Active);
+
             if (!StateManager.IsFGC)
                 StateManager.HandleFGTState(FGTStateManager.FGTState.GameActive);
             else
                 StateManager.HandleFGTState(FGTStateManager.FGTState.FGCGameActive);
-            Resources.FindObjectsOfTypeAll<PhysicsSimulator>().FirstOrDefault().RunPhysicsAutomatically = true;
+
             if (SpeedrunMode.Value)
                 StartCoroutine(FGTServiceManager.Instance.GetService<SpeedrunService>().NewRun().WrapToIl2Cpp());
-            if (FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
-            {
-                timeRemaining = FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
-                foreach (GameplayTimerViewModel timer in Resources.FindObjectsOfTypeAll<GameplayTimerViewModel>())
-                {
-                    if (timer.gameObject.scene.name == "DontDestroyOnLoad")
-                        timer.RaisePropertyChanged("ShouldShowBigTimeRemaining", false, false);
-                }
-            }
-            else
-                _instance.timeRemaining = CGM.CurrentGameSession._endRoundTime;
-
+            
             CGM.CountdownEnds();
         }
 

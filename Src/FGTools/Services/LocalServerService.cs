@@ -35,7 +35,7 @@ namespace FGTools.Services
         internal static ServerManager ServerManager;
         internal static CustomMessageManager CustomMessageManager;
         internal static bool IsServerInOperation => ServerManager != null && NetworkServer.instance != null;
-        internal static bool IsUserAloneAndHost => IsServerInOperation && NetworkServer.Connections.Count == 1;
+        internal static bool IsUserAloneAndHost => IsServerInOperation && ServerManager.GetConnections().Length == 1;
         internal static IGameStateView GameStateView;
         public override void RegisterService()
         {
@@ -84,7 +84,7 @@ namespace FGTools.Services
                 var gsm = GlobalGameStateClient.Instance._gameStateMachine;
                 var mmManager = GlobalGameStateClient.Instance._mainMenuManager;
 
-                if (port == 0)
+                if (port >= 0)
                 {
                     var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));

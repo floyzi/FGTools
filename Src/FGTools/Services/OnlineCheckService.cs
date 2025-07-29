@@ -38,7 +38,7 @@ namespace FGTools.Services
             public JsonElement ExploreContent { get; set; }
         }
         public static string Error = "";
-        public static string LastVer = Plugin.BuildInfo.Version;
+        public static string LastVer = Plugin.BuildInfo.UI_Version;
         public Dictionary<string, string> ExploreCodes = [];
 
         LoadingScreenManager LoadingManager;
@@ -211,7 +211,7 @@ namespace FGTools.Services
             if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyClosedBetaTesters && Plugin.BuildInfo.Config != "ClosedBeta")
                 return;
 
-            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(Plugin.BuildInfo.Version))
+            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(Plugin.BuildInfo.UI_Version))
                 return;
 
             Il2CppReferenceArray<DescriptionParameter> EndsAtDescription = new(1);

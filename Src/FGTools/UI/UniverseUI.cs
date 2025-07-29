@@ -1997,7 +1997,7 @@ namespace FGTools.UI
 
                 Text credits = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo", $"{strBuilder}", TextAnchor.LowerCenter, default, true, 14);
                 credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
-                Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Plugin.DisplayName} V{Plugin.BuildInfo.Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
+                Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
                 UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
             }
 
@@ -2072,7 +2072,7 @@ namespace FGTools.UI
             void UpdateTitle(string title)
             {
                 if (!string.IsNullOrEmpty(title))
-                    TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Plugin.DisplayName} V{Plugin.BuildInfo.Version} > {title}";
+                    TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} > {title}";
             }
 
             internal void GoToTab(Tab selectedTab, SubLevel tabLevel, bool shouldChangeTitle = true, bool enableExtraStuff = true, bool silent = false)

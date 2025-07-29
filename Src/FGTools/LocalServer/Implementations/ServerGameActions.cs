@@ -10,6 +10,7 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.Services.Logic;
+using FGTools.States.Logic;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -63,31 +64,31 @@ namespace FGTools.LocalServer.Implementations
                 extraDisplayInfo = default
             });
 
-            if (LocalServerService.IsUserAloneAndHost && ConfigManager.SpeedrunMode.Value)
-            {
-                LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
-                {
-                    isFinal = ServerManager.CGM._round.GameRules.IsFinalRound,
-                    playerId = playerNetObject.NetID.m_NetworkID,
-                    progressCause = GameMessageServerPlayerProgress.ProgressCause.Individual,
-                    succeeded = true,
-                });
-
-                LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerQualificationProgressUpdated()
-                {
-                    NumQualifiedPlayers = (uint)ServerManager.CGM._qualifiedPlayerCount,
-                    NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
-                });
-                return;
-            }
-
             ServerManager.CGM._qualifiedPlayerCount++;
 
-            if (ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount)
-                LocalServerService.ServerManager.EndRound();
+            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
+            {
+                isFinal = ServerManager.CGM._round.GameRules.IsFinalRound,
+                playerId = playerNetObject.NetID.m_NetworkID,
+                progressCause = GameMessageServerPlayerProgress.ProgressCause.Individual,
+                succeeded = true,
+            });
 
-            if (shouldDespawn)
-                RequestDestroy(playerNetObject);
+            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerQualificationProgressUpdated()
+            {
+                NumQualifiedPlayers = (uint)ServerManager.CGM._qualifiedPlayerCount,
+                NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
+            });
+
+            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
+            if (LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled)
+            {
+                if (ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount)
+                    LocalServerService.ServerManager.EndRound();
+
+                if (shouldDespawn)
+                    RequestDestroy(playerNetObject);
+            }
         }
 
         void MarkTeamAsSuccessful(int teamId, bool shouldDespawn)
@@ -135,10 +136,14 @@ namespace FGTools.LocalServer.Implementations
                 NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
             });
 
-            if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount)
-                LocalServerService.ServerManager.EndRound();
+            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
+            if (LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled)
+            {
+                if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount)
+                    LocalServerService.ServerManager.EndRound();
 
-            RequestDestroy(playerNetObject);
+                RequestDestroy(playerNetObject);
+            }
         }
 
         void RequestDestroy(MPGNetObject go)
@@ -277,7 +282,7 @@ namespace FGTools.LocalServer.Implementations
                 }
             });
 
-            if (scoreAfter >= ServerManager.CGM.GameRules.ScoreTarget)
+            if (scoreAfter >= ServerManager.CGM.GameRules.ScoreTarget && !ServerManager.CGM.GetPlayerData(playerNetObj.NetID).completedLevel)
                 MarkPlayerAsSuccessful(playerNetObj, true);
         }
 
@@ -304,7 +309,11 @@ namespace FGTools.LocalServer.Implementations
 
         void RespawnParticipant(FallGuysCharacterController fgcc)
         {
-            throw new NotImplementedException();
+            var cgm = ServerManager.CGM;
+            var playerData = cgm.GetPlayerData(fgcc.NetObject.NetID);
+
+            var pos = ServerManager.CGM.GameRules.PickRespawnPosition(playerData.EntityID, playerData.SquadID, playerData.TeamID, playerData.VsGroupID, cgm.IsSquadShow);
+            TeleportNetObject(fgcc.NetObject, pos.transform.position, pos.transform.rotation, SpawnReason.Respawn);
         }
 
         void IncreasePlayingTime(float amountInSeconds)

@@ -27,18 +27,20 @@ namespace FGTools
     {
         public readonly struct BuildDetails
         {
-            public readonly string Version;
+            public readonly string UI_Version;
             public readonly string Config;
             public readonly string Commit;
             public readonly Guid GUID;
             public readonly DateTime BuildDate;
             public readonly string[] Defines;
+            public readonly string Version;
 
-            public BuildDetails(string config, string version, string commit, string date, string guid, string defines)
+            public BuildDetails(string config, string ui_version, string file_version, string commit, string date, string guid, string defines)
             {
                 Config = config;
                 Commit = commit;
-                Version = version;
+                UI_Version = ui_version;
+                Version = file_version;
 
                 if (long.TryParse(date, out long unixTimestamp))
                     BuildDate = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).UtcDateTime;
@@ -188,7 +190,8 @@ namespace FGTools
             {
                 var assembly = Assembly.GetExecutingAssembly();
 
-                var commit = FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion.Split('+');
+                var version = FileVersionInfo.GetVersionInfo(assembly.Location);
+                var commit = version.ProductVersion.Split('+');
                 var metadata = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToList();
                 var cfg = assembly.GetCustomAttributes<AssemblyConfigurationAttribute>().ToList()[0].Configuration;
 
@@ -198,7 +201,7 @@ namespace FGTools
 #if DEV
                 defines = metadata.FirstOrDefault(x => x.Key == "DefineConstants")?.Value;
 #endif
-                BuildInfo = new BuildDetails(cfg, MyPluginInfo.PLUGIN_VERSION, commit.Length > 1 ? commit[1] : "LOCAL BUILD", buildDate, buildGuid, defines);
+                BuildInfo = new BuildDetails(cfg, MyPluginInfo.PLUGIN_VERSION, version.FileVersion, commit.Length > 1 ? commit[1] : "LOCAL BUILD", buildDate, buildGuid, defines);
 
                 ClassInjector.RegisterTypeInIl2Cpp<FGTBehaviour>();
                 ClassInjector.RegisterTypeInIl2Cpp<ToolsBehaviour>();
@@ -224,7 +227,7 @@ namespace FGTools
                 ClassInjector.RegisterTypeInIl2Cpp<ServerControlledObject>();
 
                 Log.LogMessage($" --- ");
-                Log.LogMessage($"{DisplayName} V{BuildInfo.Version}");
+                Log.LogMessage($"{DisplayName} V{BuildInfo.UI_Version}");
                 Log.LogMessage($"{Description}");
                 Log.LogMessage($"{BuildInfo.ToString()}");
                 Log.LogMessage($" --- ");
@@ -259,14 +262,14 @@ namespace FGTools
         void OnValidateFail()
         {
             Log.LogFatal("[Launcher] Startup failed. Certain files or folders missing!");
-            _ = MessageBox(IntPtr.Zero, $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", MissingData)}", $"FATAL ERROR - {DisplayName} V{BuildInfo.Version} (#{BuildInfo.GetCommit()})", 0);
+            _ = MessageBox(IntPtr.Zero, $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", MissingData)}", $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})", 0);
             Application.Quit();
         }
 
         void OnCrash(Exception e)
         {
             Log.LogFatal($"[Launcher] Startup failed. Exception! {e}");
-            _ = MessageBox(IntPtr.Zero, $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed", $"FATAL ERROR - {DisplayName} V{BuildInfo.Version} (#{BuildInfo.GetCommit()})", 0);
+            _ = MessageBox(IntPtr.Zero, $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed", $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})", 0);
             Application.Quit();
         }
 

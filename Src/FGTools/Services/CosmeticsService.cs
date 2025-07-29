@@ -334,7 +334,7 @@ namespace FGTools.Services
             {
                 searchActive = false;
                 var a = Resources.FindObjectsOfTypeAll<CustomiserScreenViewModel>().FirstOrDefault();
-                a.OnGainFocus();
+                a?.OnGainFocus();
                 foreach (var pair in Screens)
                 {
                     if (pair.Value.gameObject.activeSelf)
@@ -348,13 +348,7 @@ namespace FGTools.Services
                     }
                 }
                 if (resetTerm)
-                {
-                    if (AllCosmetics.Value)
-                        GrantAllCosmetics();
-                    else
-                        RemoveAllCosmetics();
-                    // Search(string.Empty, GetSection(), ConfigManager.useAllCosmetics.Value);
-                }
+                    SearchPanel.Reset();
             }
             catch
             {
