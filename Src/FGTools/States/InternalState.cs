@@ -161,7 +161,6 @@ namespace FGTools.States
                     StateManager.HaveActivePopup = false;
                     StateManager.FGCurrentState = PlayerState.Despawned;
                     StateManager.FGTCurrentState = FGTStateManager.FGTState.SceneLoaded;
-                    AttackOfTheTime.Reset();
 
                     if (CGM != null && CGM._musicInstance != null)
                         FMODTool.EndFmod(CGM._musicInstance._eventInstance, FMOD.Studio.STOP_MODE.ALLOWFADEOUT);

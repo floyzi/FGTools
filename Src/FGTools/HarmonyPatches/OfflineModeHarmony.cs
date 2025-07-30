@@ -12,16 +12,16 @@ using static CatapultAnalytics;
 
 namespace FGTools.HarmonyPatches
 {
-        public class OfflineOnlyPatches
+    public class OfflineOnlyPatches
+    {
+        [HarmonyPatch(typeof(CatapultServicesManager), "HandleLoginFailure")]
+        [HarmonyPatch(typeof(CatapultServicesManager), "HandleGaveUpTryingToReconnect")]
+        [HarmonyPatch(typeof(ChallengesManager), "TryUpdatePlayerChallengeGroups")]
+        [HarmonyPatch(typeof(EpicAccountsHelper), "EOSLogin")]
+        [HarmonyPrefix]
+        static bool thisShouldBeEmptyBecauseIWant()
         {
-            [HarmonyPatch(typeof(CatapultServicesManager), "HandleLoginFailure")]
-            [HarmonyPatch(typeof(CatapultServicesManager), "HandleGaveUpTryingToReconnect")]
-            [HarmonyPatch(typeof(ChallengesManager), "TryUpdatePlayerChallengeGroups")]
-            [HarmonyPatch(typeof(EpicAccountsHelper), "EOSLogin")]
-            [HarmonyPrefix]
-            static bool thisShouldBeEmptyBecauseIWant()
-            {
-                return false;
-            }
+            return false;
         }
+    }
 }

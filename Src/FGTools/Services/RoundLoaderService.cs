@@ -68,12 +68,10 @@ namespace FGTools.Services
         Dropdown roundVariantsDrop;
         Text RoundsStats;
         int deletedRounds = 0;
-
+        List<string> RealRoundList = [];
         public override void RegisterService()
         {
-            Commands.OnOverlayInitialize += OnGUIInit;
             Commands.OnIntroStarts += OnIntroStart;
-            Commands.OnIntroEnds += OnIntroEnd;
         }
 
         void SearchForRound(string request)
@@ -239,11 +237,6 @@ namespace FGTools.Services
             RoundsStats.text = $"{LocalizedStr("gui_total_rounds")}: {roundNamesDrop.options.Count - 1} ({LocalizedStr("gui_deleted_rounds")}: {deletedRounds}) | {LocalizedStr("gui_total_ids")}: {roundVariantsDrop.options.Count}";
         }
 
-        void OnGUIInit(InitialiseClientOverlayEvent evt)
-        {
-            //FGTBehaviour.StartCoroutine(PrepareGame("").WrapToIl2Cpp());
-        }
-
         void OnIntroStart()
         {
             StateManager.ForceSetState(new GameplayState());
@@ -259,38 +252,6 @@ namespace FGTools.Services
             var beh = myGuy.AddComponent<FallGuyBehaviour>();
             beh.Init();
         }
-
-        void OnIntroEnd()
-        {
-            return;
-
-            CGM.FinishPreparationPhase();
-            StateManager.FGTCurrentState = FGTStateManager.FGTState.IntroComplete;
-            if (CGM.GameRules.TeamCount > 0 && CGM.GameRules.IsTeamGameMode == true)
-                Resources.FindObjectsOfTypeAll<GameplayScoringViewModel>().FirstOrDefault().InitialiseScoring();
-            RoundCamera?.SnapCameraNextFrame();
-            RoundCamera.ForceRecenterToHeading();
-            RoundCamera.AddCloseCameraTarget(FGBehaviour.FallGuy, true);
-            FGBehaviour.FGCC.SpeedBoostManager.SetAuthority(true);
-            Resources.FindObjectsOfTypeAll<XRayMeshRendererTracker>().FirstOrDefault().AddXRayControllerForCharacter(FGBehaviour.FGCC);
-            if (CameraDistance.Value > 0)
-            {
-                foreach (FallGuysCameraAvoidence camFov in Resources.FindObjectsOfTypeAll<FallGuysCameraAvoidence>())
-                    camFov._maxDistance = CameraDistance.Value;
-            }
-            if (CGM.GameRules.IsTimeAttackGameMode && !FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
-            {
-                foreach (GameplayTimerViewModel timer in Resources.FindObjectsOfTypeAll<GameplayTimerViewModel>().ToList().FindAll(x => x.gameObject.scene.name == "DontDestroyOnLoad"))
-                {
-                    timer._shouldShowTimeAnim = false;
-                    timer._shouldShowTimeRemaining = false;
-                }
-            }
-
-            StateManager.GameLoading.HandleGameServerStartGame(new(0, CGM.CurrentGameSession.EndRoundTime, 0, 1, CGM.GameRules.NumPerVsGroup, 1, 0));
-            FGTLog(LogLevel.Info, GetType(), "Intro complete");
-        }
-
 
         public override void UpdateService()
         {
@@ -587,7 +548,6 @@ namespace FGTools.Services
                     if (!fgcFound.Archetype.Id.Contains("race"))
                         fgcFound.GameRules.ShowQualificationProgressUI = false;
 
-                    //HideMenus();
                     StateManager.SetNewRound(fgcFound);
                     SetupForRound(fgcFound);
                     if (fgcFound.SceneData.DlcLevel.ShareCode != null)
@@ -596,9 +556,7 @@ namespace FGTools.Services
                         StateManager.RoundLoadingAllowed = true;
                         if (StateManager.IsPlayingExploreFGC)
                             FGTServiceManager.GetService<StatisticsService>().AddFGCHistoryRound(code);
-                        //StateManager.GameLoading = new StateGameLoading(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData(), GamePermission.Player, false, false);
                         FGTServiceManager.GetService<LocalServerService>().SingleplayerGame(StateManager.CurrentRound);
-                        //GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(StateManager.GameLoading.Cast<IGameState>());
                         FGTServiceManager.GetService<StatisticsService>().SetNewRound(fgcFound);
                     }
                     else
@@ -617,7 +575,8 @@ namespace FGTools.Services
 
                 UIManager.Instance.ShowScreen<LoadingSpinnerScreenViewModel>(new() { UseScrim = true });
                 IncreaseRateLimit();
-                FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) => {
+                FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) => 
+                {
                     StateManager.IsFGC = true;
                     FraggleCommonManager.Instance.IsInLevelEditor = false;
                     FraggleCommonManager.Instance.SetModeToBuild(new());
@@ -683,7 +642,6 @@ namespace FGTools.Services
             return PossibleRoundsOverride;
         }
 
-        List<string> RealRoundList = [];
         public void SetupCMSRoundList()
         {
             int stat = 0;
@@ -756,91 +714,6 @@ namespace FGTools.Services
             FGTLog(LogLevel.Info, base.GetType(), $"Round camera is now points to {RoundCamera.gameObject.name}");
         }
 
-        [HideFromIl2Cpp]
-        public IEnumerator PrepareGame(string levelHash)
-        {
-            FGTLog(LogLevel.Info, base.GetType(), $"Starting preparation for round {StateManager.CurrentRound.Id} | Seed {GlobalGameStateClient.Instance.GameStateView.RoundRandomSeed}");
-            lastPrepStart = DateTime.UtcNow;
-
-            StateManager.HandleFGTState(FGTStateManager.FGTState.SceneLoaded);
-
-            yield return new WaitForEndOfFrame();
-
-            if (StateManager.PiratedGame)
-            {
-                yield break;
-            }
-
-            CGM.GameRules.PreparePlayerStartingPositions(1);
-
-            if (CGM._round.Archetype.Id.Contains("attack"))
-                FGTServiceManager.GetService<SpeedrunService>().SpeedrunState = RunState.TimeAttack;
-            else if (StateManager.ExploreState != null /*|| StateManager.ShowState != null*/)
-                FGTServiceManager.GetService<SpeedrunService>().SpeedrunState = RunState.TempDisabled;
-            SetBestCameraDirector();
-
-            yield return new WaitForEndOfFrame();
-
-            SpawnFallGuy();
-
-            if (CGM.GameRules != null)
-            {
-                if (PointsObjective.Value != 0 && CGM.GameRules.ScoreDisplayMode != ScoreDisplayModes.Percentage)
-                    CGM.GameRules.ScoreTarget = PointsObjective.Value;
-
-                else if (CGM.GameRules.ScoreDisplayMode == ScoreDisplayModes.Percentage && CGM._round.Id.Contains("air"))
-                    CGM.GameRules.ScoreTarget = AirTimeObjective.Value;
-
-                if (customObjectiveText.Value)
-                {
-                    AddCMSString("custom_objective", objectiveText.Value);
-                    CGM.GameRules.ObjectiveText = "custom_objective";
-                }
-            }
-
-
-            yield return new WaitForSeconds(2f);
-
-            if (FGBehaviour != null)
-            {
-                FGBehaviour.Init();
-
-                var target = FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
-
-                //if (FGBehaviour.AllowRoundEnd && !FGBehaviour.OverrideRoundEnd)
-                //{
-                //    StateManager.CGM.CurrentGameSession._gameCountdownTimerVisibilityTime = 99999;
-                //    if (target > 0)
-                //    {
-                //        StateManager.CGM.CurrentGameSession._endRoundTime = target;
-                //        StateManager.CGM.CurrentGameSession._defaultRoundLength = target;
-                //    }
-                //}
-                //else if (FGBehaviour.OverrideRoundEnd)
-                //{
-                //    StateManager.CGM.CurrentGameSession._gameCountdownTimerVisibilityTime = 99999;
-                //}
-                //else
-                //{
-                //    StateManager.CGM.CurrentGameSession._gameCountdownTimerVisibilityTime = -1;
-                //}
-
-                yield return new WaitForSeconds(0.05f);
-                HideLoadingScreens();
-                StateManager.GameLoading.OnServerRequestStartIntroCameras();
-            }
-            else
-                FGTLog(LogLevel.Error, base.GetType(), "Unable to finish loading, fall guy failed to spawn.");
-
-
-            //FMODTool.PushBanks(StateManager.CGM._levelSoundBanks);
-
-            StateManager.ForceSetState(new GameplayState());
-
-            FGTLog(LogLevel.Info, base.GetType(), $"Finished preparation for round {StateManager.CurrentRound.Id}. It took  {DateTime.UtcNow.Subtract(lastPrepStart).TotalSeconds:F3}sec");
-            GC.Collect();
-        }
-
         public void HideLoadingScreens()
         {
             if (!StateManager.IsFGC && !StateManager.IsPlayingExploreFGC)
@@ -885,146 +758,6 @@ namespace FGTools.Services
                 }
 
                 FGTLog(LogLevel.Message, base.GetType(), File.ReadAllText(Plugin.CMSRounds));
-            }
-        }
-        private void SpawnFallGuy()
-        {
-            if (StateManager.FGTCurrentState > FGTStateManager.FGTState.RoundIntro)
-            {
-                ErrorPopup($"{LocalizedStr("unable_to_spawn")}\n\nFGTState: {StateManager.FGTCurrentState} FGState: {StateManager.FGCurrentState}\n\n{LocalizedStr("gui_error_msg")} {LocalizedStr("gui_error_1")}", forceLeaveToMenu: true);
-                return;
-            }
-            try
-            {
-                int playerTeam = UnityEngine.Random.Range(0, CGM.GameRules.NumTeamsWanted());
-                MultiplayerStartingPosition randPos;
-
-                StateManager.HandleFGTState(FGTStateManager.FGTState.RoundIntro);
-
-                FallGuysCharacterController fgobj = Resources.FindObjectsOfTypeAll<FallGuysCharacterController>().ToList().Find(x => x.gameObject.name == "FallGuy");
-                if (fgobj == null)
-                {
-                    ErrorPopup($"{LocalizedStr("unable_to_spawn")}\n\nFall Guy object can't be found.\n\n{LocalizedStr("gui_error_msg")} {LocalizedStr("gui_error_1")}", forceLeaveToMenu: true);
-                    return;
-                }
-
-                if (!StateManager.PiratedGame)
-                    randPos = CGM.GameRules.PickStartingPosition(FallGuyBehaviour.PeakId, 0, playerTeam, 0, false);
-                else
-                    randPos = Resources.FindObjectsOfTypeAll<MultiplayerStartingPosition>().FirstOrDefault();
-
-                fgobj.transform.SetPositionAndRotation(randPos.transform.position, randPos.transform.rotation);
-                fgobj.GetComponent<MotorAgent>()._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Offline;
-
-                GameMessageFactory.Initialize(true);
-
-                var msg = GameMessageFactory.AllocateMessage<GameMessageServerSpawnObject>();
-                msg._netObjectSpawnData = new()
-                {
-                    NetID = new(FallGuyBehaviour.PeakId),
-                    _creationMode = NetObjectCreationMode.Spawn,
-                    _lodControllerBehaviour = FG.Common.LODs.LodController.LodControllerBehaviour.Default,
-                    Position = randPos.transform.position,
-                    Rotation = randPos.transform.rotation,
-                    Scale = Vector3.one,
-                    _spawnObjectType = EnumSpawnObjectType.PLAYER,
-                    _prefabHash = -491682846,
-                    AdditionalSpawnData = new PlayerSpawnData()
-                    {
-                        _customisationSelections = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections,
-                        _accessoryEnabled = false,
-                        _accountId = GlobalGameStateClient.Instance.GetLocalClientAccountID(),
-                        _partyId = "",
-                        _platformAccountName = GlobalGameStateClient.Instance.GetLocalPlayerName(),
-                        _platformId = PlatformServices.GetPlatformDevice(),
-                        _playerGeneratedName = "",
-                        _playerId = FallGuyBehaviour.PeakId,
-                        _playerNetworkId = GlobalGameStateClient.Instance.GetLocalClientNetworkID(),
-                        _squadId = 0,
-                        _teamId = -1,
-                        _vsGroupId = 0,
-                    }
-                };
-
-                var fallGuy = GlobalGameStateClient.Instance.NetObjectManager.SpawnNetObject(msg);
-                var fgb = fallGuy.AddComponent<FallGuyBehaviour>();
-
-
-                if (CGM.GameRules.IsTeamGameMode && CGM.GameRules.TeamCount > 0)
-                {
-                    fgb.PlayerTeamId = Random.Range(0, CGM.GameRules.NumTeamsWanted());
-                    CGM.CreateTeams(CGM.GameRules.NumTeamsWanted());
-                }
-
-                if (fgb.PlayerTeamId != -1)
-                    fgb.UpdateTeam(playerTeam, true);
-
-                return;
-
-                var fg = UnityEngine.Object.Instantiate(fgobj.gameObject);
-                var fgcc = fg.GetComponent<FallGuysCharacterController>();
-                var fginput = fg.GetComponent<FallGuysCharacterControllerInput>();
-
-                fg.name = "FallGuy";
-                fg.tag = "Player";
-
-                var mpgfg = fg.AddComponent<MPGNetObject>();
-                mpgfg.NetID = new MPGNetID(FallGuyBehaviour.PeakId);
-                mpgfg.FGCharacterController = fgcc;
-                mpgfg.IsFallGuy = true;
-                mpgfg.pNetTX_ = new MPGNetTransform(mpgfg, null, null, null, false, 0);
-                mpgfg.SpawnObjectType = EnumSpawnObjectType.PLAYER;
-
-                fgcc.IsControlledLocally = true;
-                fgcc.IsLocalPlayer = true;
-                fgcc._pNetObject = mpgfg;
-                fgcc._mpgNetObjectManager = CGM._netObjectManager;
-
-                //var fgb = fg.AddComponent<FallGuyBehaviour>();
-
-                var charData = fgcc.MotorAgent.CharacterData;
-                if (OldPhysics.Value)
-                {
-                    charData.getUpJumpInterruptTime = 0.2f;
-                    charData.getUpRollOverAngleThreshold = 30f;
-                    charData.getUpRollOverMaxDuration = 0.5f;
-                    charData.getUpRollOverRotationSpeed = 0.4f;
-                    charData.getUpStandUprightAngleThreshold = 15f;
-                    charData.getUpStandUprightRotationSpeed = 3f;
-                    charData.impactAlongFloorMultiplier = 0.75f;
-                    charData.impactOwnVelocityContribution = 0.8f;
-                    charData.impactVerticalMultiplier = 0.45f;
-                    charData.ragdollRepinMaxDelay = 0.5f;
-                    charData.ragdollRepinSpeed = 0.66f;
-                    charData.rollingInAirMaxSpeed = 0.2f;
-                    charData.stunnedMovementDelay = 0.2f;
-                    charData.jumpForceUltimateParty = charData.jumpForce;
-                    charData.aerialTurnSpeedUltimateParty = charData.aerialTurnSpeed;
-                    charData.forwardAccCurveUltimateParty = charData.forwardAccCurveUltimateParty;
-                }
-                charData.divePlayerSensitivity = DiveSens.Value;
-                fginput.SetPlayerIndex(0);
-
-                CGM.SetupPlayerUpdateManagerAndRegister(fgcc, true);
-                RewiredManager.Instance.SetActiveMap(0, 0, false, false);
-
-                CGM._clientPlayerManager.ClearAllPlayers();
-
-                if (CGM.GameRules.IsTeamGameMode && CGM.GameRules.TeamCount > 0)
-                {
-                    fgb.PlayerTeamId = Random.Range(0, CGM.GameRules.NumTeamsWanted());
-                    CGM.CreateTeams(CGM.GameRules.NumTeamsWanted());
-                }
-                CGM.HandlePlayerBeingSpawned(fgcc.NetObject, FallGuyBehaviour.PeakId, GlobalGameStateClient.Instance.GetLocalClientNetworkID(), GlobalGameStateClient.Instance.GetLocalClientAccountID(), ClientBuildDetails.Platform, GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName, GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName, 0, fgb.PlayerTeamId, "0", 0, true, GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections);
-
-                if (fgb.PlayerTeamId != -1)
-                    fgb.UpdateTeam(playerTeam, true);
-
-                FGTLog(LogLevel.Info, base.GetType(), "Succeed spawn");
-            }
-            catch (Exception e)
-            {
-                ErrorPopup(e, forceLeaveToMenu: true, displayOnlyError: false);
             }
         }
 

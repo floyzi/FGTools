@@ -686,9 +686,7 @@ namespace FGTools.UI
                     ButtonRef leave = UIFactory.CreateButton(btnRow1, "leaveToMenu", $"{LocalizedStr("gui_menu")}", null);
                     leave.OnClick += () => { LeaveMatchPopupManager.Instance.OnClose(true); };
                     UIFactory.SetLayoutElement(leave.GameObject, 30, 20, null, 0, null, null, null);
-                    ButtonRef fixo = UIFactory.CreateButton(btnRow1, "fixObstacles", $"{LocalizedStr("gui_fix_obstacles")}", null);
-                    fixo.OnClick += () => { StateManager.GetState<GameplayState>().Controller.FixObstacles(); };
-                    UIFactory.SetLayoutElement(fixo.GameObject, 30, 20, null, 0, null, null, null);
+                
                     randt = UIFactory.CreateButton(btnRow1, "guiRandTeam", $"{LocalizedStr("gui_move_team")}", null);
                     randt.OnClick += () => { FallGuyBehaviour._instance.UpdateTeam(); };
                     UIFactory.SetLayoutElement(randt.GameObject, 30, 20, null, 0, null, null, null);

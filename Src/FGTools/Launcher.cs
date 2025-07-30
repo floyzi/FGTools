@@ -5,7 +5,6 @@ using FGTools.HarmonyPatches;
 using FGTools.Internal.Behaviours;
 using FGTools.LocalServer;
 using FGTools.Services;
-using FGTools.States.Logic;
 using HarmonyLib;
 using Il2CppInterop.Runtime.Injection;
 using System;
@@ -18,7 +17,6 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UniverseLib.UI;
 using static FGTools.Config.ConfigManager;
-using static FGTools.HarmonyPatches.SnowyScrapPatch;
 
 namespace FGTools
 {
@@ -156,33 +154,6 @@ namespace FGTools
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         static extern int MessageBox(IntPtr ptr, string msg, string title, uint type);
-
-        public static void DoHarmonyPatch()
-        {
-            if (HarmonyPatched)
-                return;
-
-            GlobalHarmony.PatchAll(typeof(LogicHarmony));
-            GlobalHarmony.PatchAll(typeof(GlobalGameplayPatch));
-            GlobalHarmony.PatchAll(typeof(MotorPatches));
-            GlobalHarmony.PatchAll(typeof(BlastBallFix));
-            GlobalHarmony.PatchAll(typeof(GlobalScoreGamesPatch));
-            GlobalHarmony.PatchAll(typeof(TQOSTPatch));
-            GlobalHarmony.PatchAll(typeof(TCTPatch));
-            GlobalHarmony.PatchAll(typeof(ScoringPatch));
-            GlobalHarmony.PatchAll(typeof(PrefabSpawnerPatch));
-            GlobalHarmony.PatchAll(typeof(AIPatch));
-            GlobalHarmony.PatchAll(typeof(TriggerVolumePatch));
-            GlobalHarmony.PatchAll(typeof(PixelPerfectPatch));
-            GlobalHarmony.PatchAll(typeof(SnowyScrapPatch));
-            GlobalHarmony.PatchAll(typeof(JumpShowdownPlatformsPatch));
-            GlobalHarmony.PatchAll(typeof(AttackOfTheTime));
-            GlobalHarmony.PatchAll(typeof(FranticExplorer));
-            GlobalHarmony.PatchAll(typeof(SelfRespawerFix));
-
-            HarmonyPatched = true;
-
-        }
 
         public override void Load()
         {

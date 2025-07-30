@@ -1,32 +1,19 @@
 ﻿extern alias wle;
-
-using Events;
 using FG.Common;
 using FG.Common.Character;
 using FG.Common.LODs;
 using FG.Common.Network;
 using FGClient;
-using FGTools.Internal;
-using FGTools.Internal.Behaviours;
-using FGTools.Internal.Extensions;
 using FGTools.Services;
 using HarmonyLib;
 using Levels;
 using Levels.Obstacles;
 using Levels.Progression;
 using Levels.WallGuys;
-using MPG.Utility;
-using Rewired;
 using SRF;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using static Rewired.Platforms.Custom.CustomInputSource;
 
 namespace FGTools.LocalServer.Patches
 {
@@ -122,7 +109,9 @@ namespace FGTools.LocalServer.Patches
             "ExplodingRhinoRMIManager",
             "COMMON_ObjectiveReachEndZone",
             "COMMON_PlayerEliminationVolume",
-            "TimeAttackPlayerStats"
+            "TimeAttackPlayerStats",
+            "COMMON_InfiniteSegmentSpawner",
+            "VolumeZone"
         ];
 
 

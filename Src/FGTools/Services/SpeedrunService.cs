@@ -433,8 +433,6 @@ namespace FGTools.Services
                     if (_timerObject != null)
                         _timerObject?.SetActive(false);
 
-                    AttackOfTheTime.Display._currentLocalTimeAttackLapState = TimeAttackLapState.NotStarted;
-
                     _restartButton?.gameObject.SetActive(false);
                     _restartButton = null;
                     break;

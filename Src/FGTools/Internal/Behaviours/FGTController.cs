@@ -80,13 +80,10 @@ namespace FGTools.Internal.Behaviours
                 if (Random.value < ToRandom(0.3f) && !FGTServiceManager.GetService<EventService>().ReturnBoolEventValue("MeetPingasAgain"))
                     PingasShouldAppear = true;
             }
-
-            FixObstacles();
         }
 
         void Update()
         {
-            CheckRoundEnd();
             CheckFunnyStuff();
 
             if (GlobalGameStateClient.Instance.GameStateView.GameplayTimeElapsed > Random.Range(25, 40) && HerobrineShouldAppear)
@@ -106,159 +103,6 @@ namespace FGTools.Internal.Behaviours
                     StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(Plugin.AssetsDir + "pingas.jpg", true).WrapToIl2Cpp());
                     FGTServiceManager.GetService<EventService>().SetEventValue("MeetPingasAgain", true);
                 }
-            }
-        }
-
-        public void FixObstacles()
-        {
-            return;
-            try
-            {
-                FGTLog(LogLevel.Info, GetType(), "Fixing obstacles");
-
-                var ttpc = Resources.FindObjectsOfTypeAll<TipToe_PlatformController>().FirstOrDefault();
-                if (ttpc != null)
-                    gameObject.AddComponent<LocalPLatformShake>().ttpc = ttpc;
-
-                var bbam = Resources.FindObjectsOfTypeAll<ButtonBasherArenaManager>().FirstOrDefault();
-                if (bbam != null)
-                    gameObject.AddComponent<FFAButtonManager>();
-
-                foreach (COMMON_FakeDoorRandomiser cfdr in FindObjectsOfType<COMMON_FakeDoorRandomiser>())
-                {
-                    cfdr.InitializeServerSideData();
-                    cfdr.CreateBreakableDoors();
-                }
-
-                foreach (COMMON_RespawningTile respawningTile in FindObjectsOfType<COMMON_RespawningTile>())
-                {
-                    respawningTile.gameObject.transform.Find("Trigger").gameObject.AddComponent<RespawnTileController>();
-                    RespawnTileController fix = respawningTile.gameObject.transform.Find("Trigger").gameObject.GetComponent<RespawnTileController>();
-                    fix.enabled = true;
-                    fix.allowDespawnAtStep = respawningTile._despawningStrategy == DespawnPlatformStrategy.DespawnUponContactOrExplosion;
-                    fix.tile = respawningTile;
-                }
-
-                foreach (COMMON_KillZone killzone in Resources.FindObjectsOfTypeAll<COMMON_KillZone>())
-                {
-                    if (killzone.gameObject != null)
-                    {
-                        //bool validZone = killzone.gameObject.transform.GetChild(0).GetChildCount() > 0;
-                        //if (validZone)
-                        //    killzone.gameObject.transform.GetChild(0).transform.GetChild(0).gameObject.AddComponent<KillZone>();
-                        killzone.gameObject.AddComponent<KillZone>();
-                    }
-                }
-
-                GameObject[] possibleTargets;
-                var mpgNetObjects = Resources.FindObjectsOfTypeAll<MPGNetObjectBase>().Select(obj => obj.gameObject);
-                var movableObjects = Resources.FindObjectsOfTypeAll<wle.LevelEditorMovableObject>().Select(obj => obj.gameObject);
-                possibleTargets = mpgNetObjects.Concat(movableObjects).ToArray();
-
-                foreach (GameObject obj in possibleTargets)
-                {
-                    if (obj.GetComponent<OfflineGrabTargetID>() == null)
-                    {
-                        OfflineGrabTargetID offlineGrabTargetID = obj.gameObject.AddComponent<OfflineGrabTargetID>();
-                        offlineGrabTargetID._hashID = (uint)Random.Range(10000, 99999);
-                        offlineGrabTargetID.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
-                    }
-                }
-
-
-                foreach (PlayerRatioedBulkItemSpawner shit in Resources.FindObjectsOfTypeAll<PlayerRatioedBulkItemSpawner>())
-                {
-                    if (shit.ItemParents.Count > 0)
-                    {
-                        foreach (Transform trans in shit.ItemParents)
-                        {
-                            int childCount = trans.childCount;
-                            for (int i = 0; i < childCount; i++)
-                            {
-                                Vector3 newPos = trans.GetChild(i).transform.position;
-                                GameObject newSpawn = Instantiate(shit.ItemPrefab);
-                                newSpawn.gameObject.transform.position = newPos;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        int childCount = shit.ItemParent.transform.childCount;
-                        for (int i = 0; i < childCount; i++)
-                        {
-                            Vector3 newPos = shit.ItemParent.transform.GetChild(i).transform.position;
-                            GameObject newSpawn = Instantiate(shit.ItemPrefab);
-                            newSpawn.gameObject.transform.position = newPos;
-                        }
-                    }
-                }
-
-                if (CGM.GameRules.IsTimeAttackGameMode)
-                {
-                    foreach (TimeAttackManager tam in Resources.FindObjectsOfTypeAll<TimeAttackManager>())
-                        tam.Init(CGM._netObjectManager, CGM.EntityVsGroupManager, CGM.GameRules);
-
-                    AttackOfTheTime.SetupTimeBubbles();
-                }
-                else
-                {
-                    foreach (TimeAttackManager tam in Resources.FindObjectsOfTypeAll<TimeAttackManager>())
-                        tam.enabled = false;
-                }
-
-                if (StateManager.IsFGC)
-                {
-                    foreach (wle.LevelEditorTriggerZoneActiveBase zone in Resources.FindObjectsOfTypeAll<wle.LevelEditorTriggerZoneActiveBase>())
-                    {
-                        // zone._isActive = zone.startsActive;
-                        zone.Awake();
-                    }
-                }
-                FGTLog(LogLevel.Info, GetType(), "Complete");
-            }
-            catch (Exception E)
-            {
-                FGTLog(LogLevel.Error, GetType(), E.Message);
-                CreateNotification(LocalizedStr("failed_title"), $"{LocalizedStr("gui_fix_obstacles_error")}\n\n\"{E.Message} | {E.StackTrace}\"\n\n{LocalizedStr("gui_error_msg")} {LocalizedStr("gui_error_0")}", FGT_Info_Color);
-            }
-        }
-
-        void CheckRoundEnd()
-        {
-            return;
-
-            if (CGM != null && CGM.IsTimerEnded() && !roundEnded && (OverrideRoundEnd || AllowRoundEnd))
-            {
-                CurrentGPState.EndGameplay();
-                if (!CGM.GameRules.IsTimeAttackGameMode)
-                {
-                    RoundEndedScreenViewModel screen = UIManager.Instance.ShowScreen<RoundEndedScreenViewModel>(new ScreenMetaData { OnClosedAction = new Action(() =>
-                    {
-                        if (CGM.GameRules.IsSurvivalRound)
-                        {
-                            if (!CGM.GameRules.IsFinalRound)
-                                CurrentGPState.DoQual(true, true, true);
-                            else
-                                CurrentGPState.DoWin(skipRoundEndedAnim: true);
-                        }
-                        else
-                            CurrentGPState.DoElim(true, true, true);
-                    })});
-
-                    screen.SetText("round_over");
-                    AudioManager.PlayOneShot(AudioManager.EventMasterData.RoundOver);
-                }
-                else
-                {
-                    if (AttackOfTheTime.PlayerStats.GetSortedLapTimes != null)
-                        CurrentGPState.DoWin(UIUtils.CreateTimeText(AttackOfTheTime.PlayerStats.GetSortedLapTimes[0]), "timeattack_time_up");
-                    else
-                    {
-                        RoundEndedScreenViewModel.Show(new Action(() => CurrentGPState.DoElim(true, true)), "timeattack_time_up");
-                        AudioManager.PlayOneShot(AudioManager.EventMasterData.RoundOver);
-                    }
-                }
-                roundEnded = true;
             }
         }
 

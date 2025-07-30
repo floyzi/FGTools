@@ -96,123 +96,11 @@ namespace FGTools.Internal.Behaviours
             gamemodeType = CGM._round.Archetype.Id.Split('_')[1];
             var vfxplayer = gameObject.GetComponent<FallGuyVFXController>();
 
-            //if (StateManager.IsFGC)
-            //{
-            //    FraggleCommonManager.Instance.IsInLevelEditor = true;
-            //    FraggleCommonManager.Instance.SetModeToExplore(new());
-            //}
-
-            PreFixObstacles();
-
             vfxplayer.InjectCameraScreenController(Resources.FindObjectsOfTypeAll<CameraScreenVFXController>().Last());
 
             PreloadPowAudio(Powerup.Value);
 
-            if (SpeedrunMode.Value)
-            {
-                FMODTool.LoadBank("BNK_SFX_TimeAttack");
-                float val = SPRespawnCD.Value;
-                if (val > 0)
-                    AttackOfTheTime.Display._timeAttackResetTime = val;
-                else
-                    AttackOfTheTime.Display._timeAttackResetTime = 0.1f;
-            }
-
             FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {gamemodeType}");
-        }
-
-        void PreFixObstacles()
-        {
-            return;
-            foreach (COMMON_PowerupPickup pow in Resources.FindObjectsOfTypeAll<COMMON_PowerupPickup>())
-            {
-                pow.SelectNextPowerup();
-                pow.GeneratePowerup(true);
-            }
-
-            var rolloutManager = Resources.FindObjectsOfTypeAll<RolloutManager>().FirstOrDefault();
-
-            if (rolloutManager != null && rolloutManager.gameObject.activeSelf)
-            {
-                int ringSchemas = rolloutManager._ringSegmentSchemas.Count;
-                int ringLimit = Random.Range(2, ringSchemas);
-                int addedRings = 0;
-                //FGTLog(LogLevel.Info, base.GetType(), $"[ROLLOUTMANAGER] today our ring limit is {ringLimit}");
-
-                for (int i = 0; i < ringSchemas; i++)
-                {
-                    if (addedRings < (RandomizeRings.Value ? ringLimit : ringSchemas))
-                    //if (addedRings < ringSchemas)
-                    {
-                        int ringMax = Random.Range(0, rolloutManager._ringSegmentSchemas[i].PrefabPool.Count);
-                        //FGTLog(LogLevel.Info, base.GetType(), $"[ROLLOUTMANAGER] today we instantiating ring with schema index {i} and prefab index {ringMax}");
-                        rolloutManager.InstantiateRing(i, ringMax);
-                        addedRings++;
-                    }
-                }
-            }
-
-
-
-            var flzone = Resources.FindObjectsOfTypeAll<FollowTheLeaderZone>().FirstOrDefault();
-            if (flzone != null)
-            {
-                flzone.enabled = true;
-                flzone.UpdateRadiusWithPlayerCount(FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().PlayerCount);
-                var flzone_trigger = Resources.FindObjectsOfTypeAll<VolumeZoneTrigger>().FirstOrDefault();
-                if (flzone_trigger != null)
-                {
-                    flzone_trigger._volumeZone = flzone;
-                }
-                var flzone_manager = Resources.FindObjectsOfTypeAll<FollowTheLeaderManager>().FirstOrDefault();
-                if (flzone_manager != null)
-                {
-                    flzone_manager.InitZones();
-                }
-            }
-
-            var hexaringm = Resources.FindObjectsOfTypeAll<HexARingManager>().FirstOrDefault();
-            if (hexaringm != null)
-                hexaringm.ManagePlayingParticipantCount(FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().PlayerCount);
-
-            var hexshakem = Resources.FindObjectsOfTypeAll<HexSnakeManager>().FirstOrDefault();
-            if (hexshakem != null)
-                hexshakem.ManagePlayingParticipantCount(FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().PlayerCount);
-
-            var baskets = Resources.FindObjectsOfTypeAll<COMMON_SpawnBasket>();
-            foreach (COMMON_SpawnBasket basket in baskets)
-            {
-                if (basket._spawnedItemGOs.Count > 0)
-                {
-                    int idx = 0;
-                    foreach (GameObject target in basket._spawnedItemGOs)
-                    {
-                        //target.AddComponent<SpawnedObjectController>().Load(basket, idx, false);
-                        idx++;
-                    }
-          
-                }
-                basket.enabled = true;
-            }
-
-            if (StateManager.IsFGC)
-            {
-                foreach (COMMON_SpawnBasket p in baskets)
-                    p.SpawnItems_LevelEditor();
-
-                //foreach (COMMON_ScoringBubble bubble in Resources.FindObjectsOfTypeAll<COMMON_ScoringBubble>())
-                //{
-                //    var target = bubble.gameObject.transform.GetChild(0).gameObject.GetComponent<COMMON_ScoringBubbleTrigger>();
-                //    if (target != null)
-                //    {
-                //        target.gameObject.AddComponent<UGCBubble>();
-                //        bubble._bubbleTrigger = target;
-                //    }
-                //}
-            }
-
-            foreach (COMMON_RoundProgressValueScaler a in Resources.FindObjectsOfTypeAll<COMMON_RoundProgressValueScaler>())
-                a.enabled = true;
         }
 
         void PreloadPowAudio(SelectedPowerup power)
@@ -388,51 +276,9 @@ namespace FGTools.Internal.Behaviours
 
         }
 
-        public void TryToElimPlayer()
-        {
-            if (StateManager.IsInGameplay)
-            {
-                if (CGM.GameRules.RoundEndCondition == RoundEndCondition.SuccessQuota || CGM.GameRules.RoundEndCondition == RoundEndCondition.TimeElapsed)
-                    RespawnPlayer();
-
-                else if (CGM.GameRules.RoundEndCondition == RoundEndCondition.EliminatedQuota)
-                {
-                    if (ElimLevel.Value != ElimType.None)
-                        CurrentGPState.DoElim();
-                    else
-                        RespawnPlayer();
-                }
-            }
-        }
-
-     
-
-        void CheckPlayerState()
-        {
-            return;
-
-            //if (StateManager.CGM != null && StateManager.CGM.GameRules.HasScoreTarget == true)
-            //{
-            //    if (StateManager.CGM._soloScoreManager.GetSoloScore(FGMPG.NetID) >= StateManager.CGM.GameRules.ScoreTarget)
-            //        CurrentGPState.DoQual();
-            //}
-
-            //if (FGCC != null && FGCC.CachedTransform.position.y < respawnPos)
-            //{
-            //    if (!FGTServiceManager.Instance.GetService<RoundLoaderService>().isXtremeRound)
-            //        TryToElimPlayer();
-            //    else
-            //        CurrentGPState.DoElim();
-            //}
-        }
-
-      
-        
-
         private void Update()
         {
             FreeFlyController();
-            CheckPlayerState();
 
             if (CGM != null && CGM.CurrentGameSession.CurrentSessionState == GameSession.SessionState.Playing)
             {
@@ -479,20 +325,6 @@ namespace FGTools.Internal.Behaviours
                     FGTServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.OnRecenterAndSnapCameraNextFrameRequested();
                 }
             }
-
-            //if (StateManager.CGM != null && StateManager.CGM.CurrentGameSession.CurrentSessionState == GameSession.SessionState.Countdown || StateManager.CGM.CurrentGameSession.CurrentSessionState == GameSession.SessionState.Playing)
-            //    ServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.HandlePlayerCameraControls();
-        }
-
-        void OnTriggerEnter(Collider collision)
-        {
-            return;
-
-            if (collision.gameObject.GetComponent<EndZoneVFXTrigger>() != null || collision.gameObject.GetComponent<COMMON_ObjectiveReachEndZone>() != null && QualLevel.Value != QualType.None)
-                CurrentGPState.DoQual();
-            
-            if (collision.gameObject.GetComponent<COMMON_PlayerEliminationVolume>() != null && ElimLevel.Value != ElimType.None)
-                CurrentGPState.DoElim();
         }
 
         public void ReturnToStart()
