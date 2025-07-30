@@ -75,33 +75,35 @@ namespace FGTools.States
                 StateManager.HandleFGTState(FGTStateManager.FGTState.FGCGameActive);
 
             StateManager.HandleFGState(PlayerState.Active);
-            if (SpeedrunMode.Value && FGTServiceManager.GetService<SpeedrunService>().SpeedrunState != SpeedrunService.RunState.TempDisabled && FGTServiceManager.GetService<SpeedrunService>().SpeedrunState != SpeedrunService.RunState.TimeAttack)
-            {
-                FGTServiceManager.GetService<SpeedrunService>().LoadUI();
-                FGTServiceManager.GetService<SpeedrunService>().HandleState(SpeedrunService.RunState.Respawned);
-            }
+
             FGBehaviour.FallGuy.GetComponent<Rigidbody>().isKinematic = false;
 
-            if (StateManager.CheckpointModel != null)
-                FGBehaviour.spawnpoint = GameObject.Instantiate(StateManager.CheckpointModel);
-            else
-                FGBehaviour.spawnpoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            if (FGBehaviour.spawnpoint == null)
+            {
+                if (StateManager.CheckpointModel != null)
+                    FGBehaviour.spawnpoint = GameObject.Instantiate(StateManager.CheckpointModel);
+                else
+                    FGBehaviour.spawnpoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-            FGBehaviour.spawnpoint.DestroyComponentImmediateIfExists<BoxCollider>();
-            FGBehaviour.spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
-            FGBehaviour.spawnpoint.name = "Checkpoint";
-            FGBehaviour.spawnpoint.transform.SetPositionAndRotation(FGBehaviour.FallGuy.transform.position, FGBehaviour.FallGuy.transform.rotation);
-            FGBehaviour.spawnpoint.SetActive(true);
+                FGBehaviour.spawnpoint.DestroyComponentImmediateIfExists<BoxCollider>();
+                FGBehaviour.spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
+                FGBehaviour.spawnpoint.name = "Checkpoint";
+                FGBehaviour.spawnpoint.transform.SetPositionAndRotation(FGBehaviour.FallGuy.transform.position, FGBehaviour.FallGuy.transform.rotation);
+                FGBehaviour.spawnpoint.SetActive(true);
+
+                if (SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    FGTServiceManager.GetService<SpeedrunService>().PrepareForGameplay();
+            }
 
             if (StateManager.FGTCurrentState != FGTStateManager.FGTState.FGCGameActive)
             {
-                foreach (ScoreZoneManager zoneManager in Resources.FindObjectsOfTypeAll<ScoreZoneManager>())
-                    zoneManager.ActivateInitialZones();
-                foreach (PixelPerfectManager pixelManager in Resources.FindObjectsOfTypeAll<PixelPerfectManager>())
-                {
-                    pixelManager.Init();
-                    pixelManager.BeginGame();
-                }
+                //foreach (ScoreZoneManager zoneManager in Resources.FindObjectsOfTypeAll<ScoreZoneManager>())
+                //    zoneManager.ActivateInitialZones();
+                //foreach (PixelPerfectManager pixelManager in Resources.FindObjectsOfTypeAll<PixelPerfectManager>())
+                //{
+                //    pixelManager.Init();
+                //    pixelManager.BeginGame();
+                //}
             }
 
             if (SpeedrunMode.Value && QualLevel.Value == QualType.None)
@@ -131,7 +133,7 @@ namespace FGTools.States
             if (!winComplete && WinLevel.Value != WinType.None)
             {
                 FGTServiceManager.GetService<StatisticsService>().currentStats.WinTotal++;
-                FGTServiceManager.GetService<SpeedrunService>().SaveRunTimer(SpeedrunSaveType.Win);
+                FGTServiceManager.GetService<SpeedrunService>().SaveRunTimer(SpeedrunProgressionType.Win);
                 winComplete = true;
                 if (WinLevel.Value == WinType.LoadRandomRoundAfter)
                    StateManager.HandleFGState(PlayerState.Finish);
@@ -247,7 +249,7 @@ namespace FGTools.States
                 }
                 AudioManager.PlayOneShot(AudioManager.EventMasterData.EliminationMusic);
                 if (SpeedrunMode.Value)
-                    FGTServiceManager.GetService<SpeedrunService>().SaveRunTimer(SpeedrunSaveType.Elim);
+                    FGTServiceManager.GetService<SpeedrunService>().SaveRunTimer(SpeedrunProgressionType.Elim);
                 if (ElimLevel.Value == ElimType.LoadRandomRoundAfter)
                 {
                     StateManager.HandleFGState(PlayerState.Finish);
@@ -276,12 +278,12 @@ namespace FGTools.States
 
      
 
-        internal void EndGameplay(SpeedrunSaveType saveType = SpeedrunSaveType.None, bool endMusic = false, FallFeedManager.FallFeedAudio fallFeedAudio = FallFeedManager.FallFeedAudio.None, string fallFeedSpr = null, bool skipFallFeed = false)
+        internal void EndGameplay(SpeedrunProgressionType saveType = SpeedrunProgressionType.None, bool endMusic = false, FallFeedManager.FallFeedAudio fallFeedAudio = FallFeedManager.FallFeedAudio.None, string fallFeedSpr = null, bool skipFallFeed = false)
         {
             if (StateManager.ExploreState != null)
                 StateManager.ExploreState.OnRoundComplete(StateManager.CurrentRound.Id, qualComplete);
             if (!SpeedrunMode.Value)
-            FMODTool.UnloadAllLoadedBanks(FMODTool.UnloadParam.Default);
+            FMODTool.UnloadAllLoadedBanks();
             RewiredManager.Instance.DisableMap(0, 0);
             StateManager.UIM.LocalPlayerProgressed();
             StateManager.HandleFGState(PlayerState.Finish);
@@ -345,7 +347,7 @@ namespace FGTools.States
                 {
                     FGTServiceManager.GetService<SpeedrunService>().TriggerTimer(false);
                     if (allowRand)
-                        EndGameplay(SpeedrunSaveType.Qual, fallFeedAudio: aud, fallFeedSpr: qualSpr, skipFallFeed: skipFallFeed);
+                        EndGameplay(SpeedrunProgressionType.Qual, fallFeedAudio: aud, fallFeedSpr: qualSpr, skipFallFeed: skipFallFeed);
                 }
                 else if (allowRand)
                     EndGameplay(fallFeedAudio: aud, fallFeedSpr: qualSpr, skipFallFeed: skipFallFeed);

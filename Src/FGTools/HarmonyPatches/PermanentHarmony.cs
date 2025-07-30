@@ -240,7 +240,7 @@ namespace FGTools.HarmonyPatches
                         fmodevt?.Stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
                     }
 
-                    FMODTool.UnloadAllLoadedBanks(FMODTool.UnloadParam.Default);
+                    FMODTool.UnloadAllLoadedBanks();
                     CGM.Shutdown();
                 }
 

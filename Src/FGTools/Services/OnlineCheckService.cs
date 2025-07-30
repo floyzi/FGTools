@@ -7,6 +7,7 @@ using FG.Common.CMS;
 using FGClient;
 using FGClient.CatapultServices;
 using FGClient.UI;
+using FGClient.UI.Core;
 using FGTools.Content;
 using FGTools.Content.ContentImpl;
 using FGTools.Internal.Extensions;
@@ -53,6 +54,7 @@ namespace FGTools.Services
         bool CheckInProgress;
         Action<Newsfeed.UpdatedEvent> _newsfeedUpdate;
         public string ChecksDisplay = string.Empty;
+        internal FGTContentData FGTContent;
         public override void RegisterService()
         {
             _newsfeedUpdate = new Action<Newsfeed.UpdatedEvent>(PushNewsfeeds);
@@ -407,8 +409,6 @@ namespace FGTools.Services
             }
 
         }
-
-        public FGTContentData FGTContent;
 
         IEnumerator StartDownloading(string ver, bool trackChecksInfo)
         {

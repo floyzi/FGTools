@@ -67,7 +67,8 @@ namespace FGTools.Services
             if (_needSecondPress)
             {
                 var label = $"<b>{LocalizedStr("gui_debug_press_again", [$"[{ DebugUIHotkey.Value}]"]).ToUpper()}</b>";
-                GUI.Box(new Rect(Screen.width - GUI.skin.label.CalcSize(new(label)).x - 20, 0, GUI.skin.label.CalcSize(new(label)).x + 20, GUI.skin.label.CalcSize(new(label)).y + 5), label);
+                var labSize = GUI.skin.label.CalcSize(new(label));
+                GUI.Box(new Rect(Screen.width - labSize.x - 20, 0, labSize.x + 20, labSize.y + 5), label);
             }
 
             if (!UIToggle)

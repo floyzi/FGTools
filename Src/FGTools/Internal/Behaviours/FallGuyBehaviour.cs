@@ -1,7 +1,4 @@
 ﻿extern alias wle;
-using System;
-using System.Collections;
-using System.Linq;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DG.Tweening;
@@ -12,6 +9,7 @@ using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
 using FG.Common.Fraggle;
 using FGClient;
+using FGClient.Rendering.XRay;
 using FGClient.UI;
 using FGClient.UI.Core;
 using FGTools.Config;
@@ -33,6 +31,9 @@ using Levels.ScoreZone.FollowTheLeader;
 using Levels.TimeAttack;
 using Levels.TipToe;
 using Mediatonic.Tools.Utils;
+using System;
+using System.Collections;
+using System.Linq;
 using UnityEngine;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
@@ -344,7 +345,6 @@ namespace FGTools.Internal.Behaviours
                 if (forceTeam == -2)
                     PlayerTeamId = Random.Range(0, CGM.GameRules.NumTeamsWanted());
                 MultiplayerStartingPosition randPos = CGM.GameRules.PickStartingPosition(PeakId, 0, PlayerTeamId, 0, false);
-                FGTServiceManager.Instance.GetService<SpeedrunService>().SetSpawnPos(randPos.transform.position, randPos.transform.rotation);
                 FGCC.SetTeamID(PlayerTeamId);
 
                 if (!avoidtp)
@@ -514,9 +514,12 @@ namespace FGTools.Internal.Behaviours
 
             CGM.SetClockPaused(false);
             CGM._physicsSimulator.SetRunningPhysicsAutomatically(true);
-            ServerGameStateActions.Instance.RespawnParticipant(FGCC);
+            FGBehaviour.FGCC.RigidBody.isKinematic = false;
+            FGBehaviour.FGCC.CustomisationHandler.HandleCostumeVisibility(true);
+            FGBehaviour.FGCC.CustomisationHandler.HandleFallGuyVisibility(true);
+            XRayUtils.AddXRayControllerForCharacter(FGBehaviour.FGCC);
 
-            GameObject.Find(FallGuy.name + "/Character/GEO").SetActive(true);
+            ServerGameStateActions.Instance.RespawnParticipant(FGCC);
 
             Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent());
             CGM._inGameUiManager.SwitchToState(InGameUiManager.InGameState.Playing);
@@ -529,7 +532,7 @@ namespace FGTools.Internal.Behaviours
                 StateManager.HandleFGTState(FGTStateManager.FGTState.FGCGameActive);
 
             if (SpeedrunMode.Value)
-                StartCoroutine(FGTServiceManager.Instance.GetService<SpeedrunService>().NewRun().WrapToIl2Cpp());
+                FGTServiceManager.Instance.GetService<SpeedrunService>().NewRun();
             
             CGM.CountdownEnds();
         }

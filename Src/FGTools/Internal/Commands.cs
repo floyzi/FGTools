@@ -1,5 +1,6 @@
 ﻿using FG.Common;
 using FGClient.UI;
+using Levels.Progression;
 using System;
 using static FGTools.States.Logic.FGTStateManager;
 
@@ -20,7 +21,7 @@ namespace FGTools.Internal
         internal static Action<InitialiseClientOverlayEvent> OnOverlayInitialize;
         internal static Action OnRoundLoaded;
         internal static Action OnLapComplete;
-        internal static Action<MPGNetObject> OnCheckpointReached;
+        internal static Action<MPGNetObject, CheckpointZone> OnCheckpointReached;
         internal static Action OnQualified;
         internal static Action OnEliminated;
         internal static Action OnWon;

@@ -419,7 +419,7 @@ namespace FGTools.Services
 
                 InternalState.ResetRandomCosmetics();
                 FGTLog(LogLevel.Message, base.GetType(), "[LOAD ACTION] Trying to load: " + StateManager.CurrentRound.Id);
-                FMODTool.UnloadAllLoadedBanks(FMODTool.UnloadParam.Default);
+                FMODTool.UnloadAllLoadedBanks();
                 StateManager.IsFGC = StateManager.CurrentRound.IsUGC();
 
 
@@ -913,7 +913,6 @@ namespace FGTools.Services
                 else
                     randPos = Resources.FindObjectsOfTypeAll<MultiplayerStartingPosition>().FirstOrDefault();
 
-                FGTServiceManager.GetService<SpeedrunService>().SetSpawnPos(randPos.transform.position, randPos.transform.rotation);
                 fgobj.transform.SetPositionAndRotation(randPos.transform.position, randPos.transform.rotation);
                 fgobj.GetComponent<MotorAgent>()._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Offline;
 

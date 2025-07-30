@@ -127,7 +127,7 @@ namespace FGTools.States
         public override void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             string activeScene = SceneManager.GetActiveScene().name;
-            FMODTool.UnloadAllLoadedBanks(FMODTool.UnloadParam.UnloadOnNewScene);
+            FMODTool.UnloadAllLoadedBanks();
             if (activeScene != "Transition")
             {
                 if (!Plugin.HarmonyPatched)

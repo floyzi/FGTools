@@ -94,7 +94,7 @@ namespace FGTools.LocalServer.Patches
         static void HandleCheckpointReached(CheckpointManager __instance, CheckpointZone cpz, MPGNetObject mpgno, ref bool __result)
         {
             if (__result)
-                Commands.OnCheckpointReached?.Invoke(mpgno);
+                Commands.OnCheckpointReached?.Invoke(mpgno, cpz);
         }
 
         [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.HandleLocalPlayerLapComplete)), HarmonyPostfix]
@@ -119,7 +119,7 @@ namespace FGTools.LocalServer.Patches
                 return true;
 
             ServerGameStateActions.Instance.RespawnParticipant(CGM.GetNetObjectByID(CGM.GetFocusedNetId()).FGCharacterController);
-            sp.HandleState(RunState.Respawned);
+            sp.NewRun();
             return false;
         }
 
@@ -134,6 +134,7 @@ namespace FGTools.LocalServer.Patches
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["qualified"];
                 AddCMSString("sp_qual", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
+                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
             QualifiedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_qual" : "qualified", new Action(() =>
@@ -146,10 +147,7 @@ namespace FGTools.LocalServer.Patches
                 if (StateManager.ShowState == null)
                 {
                     if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
-                    {
-                        FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
-                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
@@ -171,6 +169,7 @@ namespace FGTools.LocalServer.Patches
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["eliminated"];
                 AddCMSString("sp_elim", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
+                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
             EliminatedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_elim" : "eliminated", !LocalServerService.IsUserAloneAndHost ? new Action(__instance.SwitchToSpectator) : null, new Action(() =>
@@ -186,10 +185,7 @@ namespace FGTools.LocalServer.Patches
                 if (StateManager.ShowState == null)
                 {
                     if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
-                    {
-                        FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
-                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
@@ -210,6 +206,7 @@ namespace FGTools.LocalServer.Patches
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["winner"];
                 AddCMSString("sp_win", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
+                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
             WinnerScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_win" : "winner", true, new Action(() => 
@@ -223,10 +220,7 @@ namespace FGTools.LocalServer.Patches
                 if (StateManager.ShowState == null)
                 {
                     if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
-                    {
-                        FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
-                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();

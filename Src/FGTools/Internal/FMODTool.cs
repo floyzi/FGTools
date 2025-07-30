@@ -7,24 +7,19 @@ using UnityEngine.AddressableAssets;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.Internal
 {
-    public static class FMODTool
+    internal static class FMODTool
     {
-        public enum UnloadParam
-        {
-            Default,
-            UnloadOnNewScene
-        }
-        public struct FMODEventParams
+        public struct FMODEvent
         {
             public string EventName;
+            public FMOD.GUID EventGuid;
             public EventInstance Event;
-            public UnloadParam UnloadType;
         }
 
         static readonly Dictionary<string, AssetReference> LoadedBanks = [];
-        static readonly List<FMODEventParams> ValidEvents = [];
+        static readonly Dictionary<string, FMODEvent> ValidEvents = [];
 
-        public static void UnloadBank(string bankName)
+        internal static void UnloadBank(string bankName)
         {
             foreach (var bank in LoadedBanks)
             {
@@ -36,7 +31,7 @@ namespace FGTools.Internal
             }
         }
 
-        public static void LoadBank(string bankName, Action onceLoaded = null) 
+        internal static void LoadBank(string bankName, Action onceLoaded = null) 
         {
             foreach (var bank in AudioManager.Instance._fmodData.SoundBanksArray.ToList().FindAll(x => x.Name == bankName || x.Name == bankName + ".assets"))
             {
@@ -48,70 +43,101 @@ namespace FGTools.Internal
             }
         }
 
-        public static void UnloadAllLoadedBanks(UnloadParam param)
+        internal static void UnloadAllLoadedBanks()
         {
-            var targetedEvents = ValidEvents.FindAll(x => x.UnloadType == param);
-
-            for (int i = targetedEvents.Count - 1; i >= 0; i--)
+            for (int i = ValidEvents.Count - 1; i >= 0; i--)
             {
-                var evt = targetedEvents[i];
-                evt.Event.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                evt.Event.release();
-                targetedEvents.RemoveAt(i);
+                var evt = ValidEvents.ElementAt(i);
+                evt.Value.Event.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                evt.Value.Event.release();
             }
-
-            //Broadcaster.Instance.Broadcast(new UnloadSoundBanksEvent(LoadedBanks.Keys.ToArray()));
 
             ValidEvents.Clear();
             LoadedBanks.Clear();
         }
 
+        internal static bool CreateFMODEvent(string eventName, out EventInstance res)
+        {
+            if (ValidEvents.TryGetValue(eventName, out var cachedEvt))
+                ValidEvents.Remove(eventName);
+
+            FGTLog(BepInEx.Logging.LogLevel.Info, "CreateFMODEvent", $"Creating {eventName}...");
+
+            var evtGuid = AudioManager.GetGuidForKey(eventName);
+            if (evtGuid == default)
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"Event {eventName} doesn't have a valid GUID");
+                res = default;
+                return false;
+            }
+
+            res = RuntimeManager.CreateInstance(evtGuid);
+
+            if (!res.hasHandle() || !res.isValid())
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"Event {eventName} created with invalid handle");
+                res = default;
+                return false;
+            }
+
+            ValidEvents.Add(eventName, new()
+            {
+                Event = res,
+                EventName = eventName,
+                EventGuid = evtGuid,
+            });
+
+            return true;
+        }
+
         //this code is ass, session terminated
-        public static void PlayFMODEvent(string eventName, UnloadParam unloadParam, Action<EventInstance> onCreation = null)
-        {  
+        public static void PlayFMODEvent(string eventName)
+        {
+            if (ValidEvents.TryGetValue(eventName, out var cachedEvt))
+            {
+                if (cachedEvt.Event.hasHandle())
+                {
+                    cachedEvt.Event.start();
+                    return;
+                }
+
+                ValidEvents.Remove(eventName);
+            }
+
             var banks = AudioManager.Instance._fmodData.GetEventBanks(eventName);
             int loadedBanks = 0;
-            int neededBanks = banks._bankNames.Length + banks._bankNames.Length;
+            int neededBanks = banks == null || banks.BankNames == null ? 0 : banks.BankNames.Length;
 
-            Action OnLoadedBank = () =>
+            Action _banksReady = () =>
             {
                 loadedBanks++;
 
-                if (loadedBanks == neededBanks)
+                if (loadedBanks >= neededBanks)
                 {
-                    FGTLog(BepInEx.Logging.LogLevel.Info, "CreateFMODEvent", $"Creating {eventName}...");
-                    var e = RuntimeManager.CreateInstance(AudioManager.GetGuidForKey(eventName));
-                    onCreation?.Invoke(e);
-                    if (!e.hasHandle() || !e.isValid())
-                    {
-                        FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"Event {eventName} created with invalid handle");
-                        return; 
-                    }
-                    e.start();
-                    ValidEvents.Add(new()
-                    {
-                        Event = e,
-                        EventName = eventName,
-                        UnloadType = unloadParam
-                    });
+                    if (CreateFMODEvent(eventName, out var evt))
+                        evt.start();
                 }
             };
 
-            foreach (var bank in banks._bankNames)
+            if (neededBanks > 0)
             {
-                if (!RuntimeManager.HasBankLoaded(bank))
-                    LoadBank(bank, new(() =>
+                foreach (var bank in banks.BankNames)
+                {
+                    if (!RuntimeManager.HasBankLoaded(bank))
                     {
-                        OnLoadedBank();
-                    }));
-                else
-                    OnLoadedBank();
+                        LoadBank(bank, new(() =>
+                        {
+                            _banksReady();
+                        }));
+                    }
+                    else
+                        _banksReady();
+                }
             }
+            else
+                _banksReady();
         }
 
-        public static void EndFmod(EventInstance evt, FMOD.Studio.STOP_MODE mode)
-        {
-            evt.stop(mode);
-        }
+        public static void EndFmod(EventInstance evt, FMOD.Studio.STOP_MODE mode) => evt.stop(mode);
     }
 }

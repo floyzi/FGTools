@@ -222,7 +222,7 @@ namespace FGTools.States
             FGTLog(LogLevel.Info, base.GetType(), "OnMenuEnter()");
 
             FGTServiceManager.GetService<MenuThemeService>().OnMenuEnterEvent();
-            FMODTool.UnloadAllLoadedBanks(FMODTool.UnloadParam.Default);
+            FMODTool.UnloadAllLoadedBanks();
 
             if (LocalServerService.IsServerInOperation)
                 FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);

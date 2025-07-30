@@ -194,7 +194,7 @@ namespace FGTools.LocalServer
                 StartLoadingRound();
         }
 
-        void OnCheckpointReached(MPGNetObject evt)
+        void OnCheckpointReached(MPGNetObject evt, CheckpointZone zone)
         {
             if (!CGM.GameRules.IsTimeAttackGameMode) return;
 
@@ -1040,15 +1040,31 @@ namespace FGTools.LocalServer
 
             if (SpawnedPlayers >= NetworkManager.ConnectedClients)
             {
-                ServerLog("OnPlayerSpawnedServer", "We can start the intro now...");
-
                 var msg = new GameMessageServerEventGeneric()
                 {
-                    Type = GameMessageServerEventGeneric.EventType.StartIntroCameras,
+                    Type = GameMessageServerEventGeneric.EventType.QueuedObjectsSpawned,
                 };
 
                 BroadcastMessage(msg, [ServerNetID]);
                 CGMDespatcher.process(msg);
+
+                var msg2 = new GameMessageServerEventGeneric()
+                {
+                    Type = GameMessageServerEventGeneric.EventType.AllPlayersSpawned,
+                };
+
+                BroadcastMessage(msg2, [ServerNetID]);
+                CGMDespatcher.process(msg2);
+
+                ServerLog("OnPlayerSpawnedServer", "We can start the intro now...");
+
+                var msg3 = new GameMessageServerEventGeneric()
+                {
+                    Type = GameMessageServerEventGeneric.EventType.StartIntroCameras,
+                };
+
+                BroadcastMessage(msg3, [ServerNetID]);
+                CGMDespatcher.process(msg3);
             }
         }
 

@@ -2,12 +2,14 @@
 using FG.Common;
 using FG.Common.Audio;
 using FGClient;
+using FGClient.Rendering.XRay;
 using FGClient.UI;
 using FGTools.Config;
 using FGTools.HarmonyPatches;
 using FGTools.Internal;
 using FGTools.Services.Logic;
 using FGTools.UI;
+using FMOD.Studio;
 using Levels.Progression;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using TMPro;
 using UnityEngine;
@@ -25,6 +28,7 @@ using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.States.Logic.FGTStateManager;
 using static FGTools.UI.ReadyPopups;
+
 namespace FGTools.Services
 {
     internal class SpeedrunService : FGTService
@@ -33,14 +37,93 @@ namespace FGTools.Services
         {
             public Dictionary<string, float> saveData { get; set; }
         }
+
+        internal class Speedrun(int attempt)
+        {
+            public struct Progression(SpeedrunProgressionType type, float value)
+            {
+                public SpeedrunProgressionType Type = type;
+                public float Value = value;
+            }
+
+            public int Attempt = attempt;
+            public float RunningTime;
+            public Dictionary<int, Progression> CheckpointProgression = [];
+
+            public void AddProgression(SpeedrunProgressionType type, int num, float reachTime)
+            {
+                CheckpointProgression[num] = new(type, reachTime);
+            }
+
+            public override string ToString()
+            {
+                return $"{Attempt} - {RunningTime} [{CheckpointProgression.Count}]";
+            }
+        }
+
+        internal bool IsSepeedrunsDisabled => SpeedrunState == RunState.TimeAttack || SpeedrunState == RunState.TempDisabled;
+
+        string _timerText;
+        int _checkpointNum = 0;
+        int _lapNum = 0;
+        StringBuilder _stat = new();
+        float _previousSaveTime;
+        GameObject _timerObject;
+        GameObject _checkpointPopup;
+        SkipRoundButton _restartButton;
+        GameObject _splitTimeText;
+        GameObject _lapTimeText;
+        float _lastSceneTime = 0;
+        bool _allowTimerBeActive;
+        TimeAttackLapDisplay _display;
+        string _infoStat;
+        string LatestRunScene;
+        SpeedrunSaveJson latestSave;
+        EventInstance SnapshotEvent;
+
+        Speedrun CurrentRun;
+        List<Speedrun> RunsHistory = [];
+
+        int AmountOfSpawns = 0;
+
         public override void RegisterService()
         {
             LoadData();
-            Commands.OnLapComplete += new System.Action(() => { SaveRunTimer(SpeedrunSaveType.Lap); });
-            Commands.OnCheckpointReached += new System.Action<MPGNetObject>(netObj => { SaveRunTimer(SpeedrunSaveType.Checkpt); });
-            Commands.OnQualified += new System.Action(() => { SaveRunTimer(SpeedrunSaveType.Qual); });
-            Commands.OnEliminated += new System.Action(() => { SaveRunTimer(SpeedrunSaveType.Elim); });
-            Commands.OnWon += new System.Action(() => { SaveRunTimer(SpeedrunSaveType.Win); });
+            Commands.OnLapComplete += new System.Action(() => { SaveRunTimer(SpeedrunProgressionType.Lap); });
+            Commands.OnCheckpointReached += new System.Action<MPGNetObject, CheckpointZone>((MPGNetObject obj, CheckpointZone zone) => 
+            {
+                if (SpeedrunState != RunState.Running)
+                    return;
+
+                SaveRunTimer(SpeedrunProgressionType.Checkpt, zone);
+            });
+            Commands.OnQualified += new System.Action(() => 
+            { 
+                SaveRunTimer(SpeedrunProgressionType.Qual); 
+            });
+            Commands.OnEliminated += new System.Action(() => 
+            { 
+                SaveRunTimer(SpeedrunProgressionType.Elim); 
+            });
+            Commands.OnWon += new System.Action(() => 
+            { 
+                SaveRunTimer(SpeedrunProgressionType.Win); 
+            });
+        }
+
+        float FindFastestProgression(int checkpoint)
+        {
+            var time = RunsHistory.Where(run => run.CheckpointProgression.TryGetValue(checkpoint, out var prog) && prog.Type == SpeedrunProgressionType.Checkpt).Select(run => run.CheckpointProgression[checkpoint].Value).DefaultIfEmpty().Min();
+            return time == 0 ? CurrentRun.RunningTime : time;
+        }
+
+        void EndCurrentRun()
+        {
+            if (CurrentRun == null)
+                return;
+
+            RunsHistory.Add(CurrentRun);
+            CurrentRun = null;
         }
 
         void TryToConvertOldData()
@@ -73,7 +156,7 @@ namespace FGTools.Services
                 {
                     latestSave = new()
                     {
-                        saveData = new Dictionary<string, float>()
+                        saveData = []
                     };
                     TryToConvertOldData();
                 }
@@ -85,37 +168,7 @@ namespace FGTools.Services
             }
         }
 
-        //float speedrunTime = 0f;
-        string _timerText;
-        //string _minText;
-        //string _secText;
-        //string _milText;
-        float _currentTime;
-        //private int _minutes, _seconds, _milliseconds;
-        int _checkpointNum = 0;
-        int _lapNum = 0;
-        string _stat = string.Empty;
-        float _previousSaveTime;
-        GameObject _timerObject;
-        GameObject _checkpointPopup;
-        SkipRoundButton _restartButton;
-        GameObject _splitTimeText;
-        GameObject _lapTimeText;
-        float _lastSceneTime = 0;
-        float baseBoxPos = 10f;
-        Vector3 _spawnPos;
-        Quaternion _spawnRot;
-        bool _allowTimerBeActive;
-        TimeAttackLapDisplay _display;
-        //int _attNum = -1;
-        string _infoStat;
-        string LatestRunScene;
-        SpeedrunSaveJson latestSave;
-        internal bool IsSepeedrunsDisabled => SpeedrunState == RunState.TimeAttack || SpeedrunState == RunState.TempDisabled;
-
-        int Attempt = 1;
-        int AmountOfSpawns = 0;
-        public enum SpeedrunSaveType
+        public enum SpeedrunProgressionType
         {
             Checkpt,
             Qual,
@@ -137,11 +190,6 @@ namespace FGTools.Services
 
         public RunState SpeedrunState;
 
-        public void SetSpawnPos(Vector3 pos, Quaternion rot)
-        {
-            _spawnPos = pos;
-            _spawnRot = rot;
-        }
 
         public string ReturnTimerText()
         {
@@ -150,7 +198,7 @@ namespace FGTools.Services
 
         public float ReturnCurrentTime()
         {
-            return _currentTime;
+            return CurrentRun.RunningTime;
         }
 
         public string ReturnLatestScene()
@@ -192,68 +240,86 @@ namespace FGTools.Services
         public void UpdateTimer(bool debug)
         {
             if (!debug)
-                _currentTime += GameStateView.Instance.SimulationDeltaTime;
+                CurrentRun.RunningTime += GameStateView.Instance.SimulationDeltaTime;
             else
-                _currentTime += Time.deltaTime;
+                CurrentRun.RunningTime += Time.deltaTime;
 
             if (SpeedrunState != RunState.Respawned)
-                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(_currentTime, true)}"); } catch { }
+                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(CurrentRun.RunningTime, true)}"); } catch { }
             else
                 try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(0, true)}"); } catch { }
 
         }
+
+        internal void PrepareForGameplay()
+        {
+            LoadUI();
+            HandleState(RunState.Respawned);
+            if (!FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out SnapshotEvent))
+                FGTLog(LogLevel.Warning, GetType(), "Unable to create snapshot event");
+            else
+                SnapshotEvent.start();
+
+            RunsHistory.Clear();
+        }
+
         public void LoadUI()
         {
-            if (CGM != null)
+            if (CGM == null)
+                return;
+
+            var UIManager = CGM._inGameUiManager.gameObject;
+
+            _timerObject = GetChild(UIManager, "GameplayTimeAttackViewModel");
+
+            if (_timerObject == null)
             {
-                var UIManager = CGM._inGameUiManager.gameObject;
+                ReadyPopups.ErrorPopup("skibidi ohio sigma");
+                return;
+            }
 
-                _timerObject = GetChild(UIManager, "GameplayTimeAttackViewModel");
-
-                if (_timerObject == null)
+            _timerObject.SetActive(true);
+            _checkpointPopup = GetChild(UIManager, "SplitTime");
+            _splitTimeText = GetChild(UIManager, "SplitTimeText");
+            _splitTimeText.gameObject.SetActive(false);
+            _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
+            _lapTimeText = GetChild(UIManager, "LapTimeText");
+            _restartButton?.gameObject.SetActive(false);
+            _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
+            var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
+            if (lap != null)
+            {
+                _display = lap.GetComponent<TimeAttackLapDisplay>();
+                _display.Init(CGM);
+            }
+            if (CGM.GameRules.ScoreDisplayMode != ScoreDisplayModes.None)
+            {
+                if (!FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
                 {
-                    ReadyPopups.ErrorPopup("skibidi ohio sigma");
-                    return;
+                    _timerObject.transform.localPosition = new Vector3(750, 0, 0);
+                    _checkpointPopup.transform.localPosition = new Vector3(-450, 0, 0);
                 }
-                _timerObject.SetActive(true);
-                _checkpointPopup = GetChild(UIManager, "SplitTime");
-                _splitTimeText = GetChild(UIManager, "SplitTimeText");
-                _splitTimeText.gameObject.SetActive(false);
-                _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
-                _lapTimeText = GetChild(UIManager, "LapTimeText");
-                _restartButton?.gameObject.SetActive(false);
-                _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
-                var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
-                if (lap != null)
+                else
                 {
-                    _display = lap.GetComponent<TimeAttackLapDisplay>();
-                    _display.Init(CGM);
-                }
-                if (CGM != null && CGM.GameRules.ScoreDisplayMode != ScoreDisplayModes.None)
-                {
-                    if (!FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimit)
+                    //if (useIngameObjective.Value)
+                    //{
+                    _timerObject.transform.localPosition = CGM.GameRules.TeamCount switch
                     {
-                        _timerObject.transform.localPosition = new Vector3(750, 0, 0);
-                        _checkpointPopup.transform.localPosition = new Vector3(-450, 0, 0);
-                    }
-                    else
-                    {
-                        //if (useIngameObjective.Value)
-                        //{
-                        _timerObject.transform.localPosition = CGM.GameRules.TeamCount switch
-                        {
-                            1 => new Vector3(-250f, 0, 0),
-                            2 => new Vector3(-400f, 0, 0),
-                            3 => new Vector3(-450f, 0, 0),
-                            4 => new Vector3(-490f, 0, 0),
-                            _ => new Vector3(-400f, 0, 0),
-                        };
-                        //}
-                        //else
-                        //    _timerObject.transform.localPosition = new Vector3(-750, 0, 0);
-                    }
+                        1 => new Vector3(-250f, 0, 0),
+                        2 => new Vector3(-400f, 0, 0),
+                        3 => new Vector3(-450f, 0, 0),
+                        4 => new Vector3(-490f, 0, 0),
+                        _ => new Vector3(-400f, 0, 0),
+                    };
+                    //}
+                    //else
+                    //    _timerObject.transform.localPosition = new Vector3(-750, 0, 0);
                 }
             }
+
+            _display._timeAttackIsTimerPaused = false;
+            _display._timeAttackLapTimeAnimation.Play("UI_HUD_TimeAttack_LapTime_Base");
+            _display.TryTimeAttackPulseTimer(new(102, null));
         }
 
         void OnApplicationFocus(bool hasFocus)
@@ -269,21 +335,20 @@ namespace FGTools.Services
 
         public override void UpdateService()
         {
-            if (StateManager.FGTCurrentState == FGTState.GameActive || StateManager.FGTCurrentState == FGTState.FGCGameActive && SpeedrunMode.Value && _allowTimerBeActive)
+            if (StateManager.IsInGameplay && SpeedrunMode.Value && _allowTimerBeActive)
             {
 
                 if (SpeedrunState == RunState.Running)
-                {
                     UpdateTimer(false);
-                }
 
                 if (SpeedrunState == RunState.Respawned && FGBehaviour != null && FGBehaviour.FallGuy)
                 {
                     if (!SPInstaStart.Value)
                     {
-                        var chair = FGBehaviour.FallGuy.GetComponent<FallGuysCharacterController>().MoveMotorTask;
-                        var wheel = FGBehaviour.FallGuy.GetComponent<FallGuysCharacterController>().DiveMotorTask;
-                        if (chair != null && wheel != null && chair.isRequested || wheel.isRequested)
+                        var wheel = FGBehaviour.FGCC.DiveMotorTask;
+                        var chair = FGBehaviour.FGCC.MoveMotorTask;
+
+                        if (FGBehaviour.FGCC.CanMove && chair != null && wheel != null && chair.isRequested || wheel.isRequested)
                             HandleState(RunState.Running);
                     }
                     else
@@ -302,53 +367,58 @@ namespace FGTools.Services
             switch (newState)
             {
                 case RunState.Respawned:
+                    EndCurrentRun();
                     AmountOfSpawns++;
                     TriggerTimer(true);
-                    AudioMixing.Instance.StartTimeAttackSnapshot();
+                    if (SnapshotEvent.hasHandle())
+                        SnapshotEvent.start();
                     _lapTimeText.GetComponent<TextMeshProUGUI>().SetText(ReturnTimeAsString(0, true, true, false));
-                    //if (prevState == RunState.Running || prevState == RunState.Finish)
                     ResetStats();
                     if (_display != null)
                     {
                         _display._currentLocalTimeAttackLapState = TimeAttackLapState.NotStarted;
-                        //_display.ShouldShowTimeAttackResetInput = false;
                         _restartButton?.gameObject.SetActive(false);
                         _display._timeAttackIsTimerPaused = false;
                         _display._timeAttackLapTimeAnimation.Play("UI_HUD_TimeAttack_LapTime_Base");
                         _display.TryTimeAttackPulseTimer(new(102, null));
                     }
-                    _infoStat = $"{LocalizedStr("gui_attempt")}: <b>{Attempt}</b>";
-                    if (!StateManager.IsFGC)
-                    {
-                        if (IsThereBestTime(SceneManager.GetActiveScene().name))
-                            _infoStat += $" | {LocalizedStr("gui_best_time")}: <b>{ReturnTimeAsString(GetRunTime(SceneManager.GetActiveScene().name), false, true)}</b>";
-                    }
-                    else
-                    {
-                        if (IsThereBestTime(CGM._round.Id))
-                            _infoStat += $" | {LocalizedStr("gui_best_time")}: <b>{ReturnTimeAsString(GetRunTime(CGM._round.Id), false, true)}</b>";
-                    }
+                    _infoStat = $"{LocalizedStr("gui_attempt")}: <b>{RunsHistory.Count + 1}</b>";
+
+                    var name = !StateManager.IsFGC ? SceneManager.GetActiveScene().name : CGM._round.Id;
+
+                    if (IsThereBestTime(name))
+                        _infoStat += $" | {LocalizedStr("gui_best_time")}: <b>{ReturnTimeAsString(GetRunTime(name), false, true)}</b>";
                     break;
                 case RunState.Finish:
                     TriggerTimer(false);
-                    AudioMixing.Instance.StartTimeAttackSnapshot();
+                    if (SnapshotEvent.hasHandle())
+                        SnapshotEvent.start();
                     _display._currentLocalTimeAttackLapState = TimeAttackLapState.Finished;
                     _restartButton?.gameObject.SetActive(false);
                     CGM.SetClockPaused(true);
                     CGM._physicsSimulator.SetRunningPhysicsAutomatically(false);
+                    XRayUtils.RemoveXRayControllerForCharacter(FGBehaviour.FGCC);
+                    FGBehaviour.FGCC.RigidBody.isKinematic = true;
+                    FGBehaviour.FGCC.CustomisationHandler.HandleCostumeVisibility(false);
+                    FGBehaviour.FGCC.CustomisationHandler.HandleFallGuyVisibility(false);
                     break;
                 case RunState.Running:
-                    Attempt++;
+                    CurrentRun = new(RunsHistory.Count + 1);
                     LatestRunScene = SceneManager.GetActiveScene().name;
                     TriggerTimer(true);
+
+                    if (SnapshotEvent.hasHandle())
+                        SnapshotEvent.stop(STOP_MODE.IMMEDIATE);
+
                     if (SPRespawnCD.Value >= 0.3f)
                         AudioManager.PlayOneShot(AudioManager.Instance._eventMasterData.TimeAttackTimeStart);
+
                     if (StateManager.FGCurrentState != PlayerState.FreeCam)
                         AudioMixing.Instance.ResetTimeAttackParams();
+
                     if (_display != null)
                     {
                         _display._currentLocalTimeAttackLapState = TimeAttackLapState.InProgress;
-                        //_display.ShouldShowTimeAttackResetInput = true;
                         _restartButton?.gameObject.SetActive(true);
                         _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
                         _display._timeAttackIsTimerPaused = false;
@@ -359,14 +429,14 @@ namespace FGTools.Services
                     break;
                 case RunState.Inactive:
                     TriggerTimer(false);
+
                     if (_timerObject != null)
                         _timerObject?.SetActive(false);
+
                     AttackOfTheTime.Display._currentLocalTimeAttackLapState = TimeAttackLapState.NotStarted;
-                    //AttackOfTheTime.Display.ShouldShowTimeAttackResetInput = false;
-                    if (_restartButton != null)
-                        _restartButton.gameObject.SetActive(false);
+
+                    _restartButton?.gameObject.SetActive(false);
                     _restartButton = null;
-                    Attempt = 1;
                     break;
                 case RunState.TimeAttack:
                     TriggerTimer(false);
@@ -383,62 +453,74 @@ namespace FGTools.Services
         {
             if (SpeedrunMode.Value && SpeedrunUI.Value && (SpeedrunState != RunState.TimeAttack || SpeedrunState != RunState.TempDisabled))
             {
-                float labelX = Screen.width - 240;
-                float labelY = Screen.height - 40 - baseBoxPos;
                 if (SpeedrunState == RunState.Running || SpeedrunState == RunState.Finish)
                 {
-                    GUI.Box(new Rect(labelX - 70, labelY, 2000, 2000), "");
-                    GUI.Label(new Rect(labelX - 65, labelY + 5f, 2000, 2000), $"<b>{LocalizedStr("gui_run_info").ToUpper()}</b>");
-                    GUI.Label(new Rect(labelX - 65, labelY + 25f, 2000, 2000), $"{_stat}");
-                    GUI.Label(new Rect(labelX - 65, Screen.height - 20, 2000, 2000), _infoStat);
+                    var builder = new StringBuilder();
+                    builder.AppendLine($"<b>{LocalizedStr("gui_run_info").ToUpper()}</b>");
+                    builder.AppendLine(_stat.ToString());
+                    builder.AppendLine(_infoStat);
+
+                    string text = builder.ToString();
+                    var labSize = GUI.skin.label.CalcSize(new GUIContent(text));
+
+                    var labelX = Screen.width - 300 + 5 * 2;
+                    var labelY = Screen.height - labSize.y + 5 * 2;
+
+                    GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
+                    GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
+
+                    GUI.Label(new Rect(labelX + 5, labelY + 5, 300, labSize.y), text);
                 }
             }
+
+        }
+
+        string CalculateTimeDifference(float param1, float param2)
+        {
+            var dif = param1 - param2;
+            var sign = dif == 0 ? string.Empty : (dif > 0 ? "+" : "-");
+
+            return $"{sign}{(int)(Mathf.Abs(dif) / 60):00}:{(int)(Mathf.Abs(dif) % 60):00}.{(int)(Mathf.Abs(dif) * 1000) % 1000:000}";
         }
 
 
 
-        public void SaveRunTimer(SpeedrunSaveType type)
+        public void SaveRunTimer(SpeedrunProgressionType type, CheckpointZone zone = null)
         {
             if (!SpeedrunMode.Value || IsSepeedrunsDisabled)
                 return;
 
-            float timeDif = _currentTime - _previousSaveTime;
-            string timeDifTxt = ReturnTimeAsString(timeDif, false, true);
             switch (type)
             {
-                case SpeedrunSaveType.Checkpt:
+                case SpeedrunProgressionType.Checkpt:
                     _checkpointNum += 1;
-                    _stat = $"{LocalizedStr("gui_checkpoint")} №{_checkpointNum} ({timeDifTxt})\n{_stat}";
-                    baseBoxPos += 15f;
+                    _stat.AppendLine($"{LocalizedStr("gui_checkpoint")} №{_checkpointNum} ({_timerText}) [{CalculateTimeDifference(CurrentRun.RunningTime, FindFastestProgression((int)zone.uniqueId))}]");
                     _checkpointPopup?.SetActive(true);
                     _splitTimeText?.SetActive(true);
                     _splitTimeText?.GetComponent<TextMeshProUGUI>().SetText(_timerText);
+                    CurrentRun.AddProgression(type, (int)zone.uniqueId, CurrentRun.RunningTime);
                     break;
-                case SpeedrunSaveType.Lap:
+                case SpeedrunProgressionType.Lap:
                     _lapNum += 1;
-                    _stat = $"{LocalizedStr("gui_pizzatowerreference")} №{_lapNum} ({timeDifTxt})\n{_stat}";
-                    baseBoxPos += 15f;
+                    _stat.AppendLine($"{LocalizedStr("gui_pizzatowerreference")} №{_lapNum}");
                     _checkpointPopup?.SetActive(true);
                     _splitTimeText?.SetActive(true);
                     _splitTimeText?.GetComponent<TextMeshProUGUI>().SetText(_timerText);
                     break;
-                case SpeedrunSaveType.Qual:
-                    _stat = $"{LocalizedStr("gui_run_qual")} {_timerText} ({timeDifTxt})\n{_stat}";
-                    baseBoxPos += 15f;
+                case SpeedrunProgressionType.Qual:
+                    _stat.AppendLine($"{LocalizedStr("gui_run_qual")} {_timerText}");
                     break;
-                case SpeedrunSaveType.Elim:
-                    _stat = $"{LocalizedStr("gui_run_elim")} {_timerText} ({timeDifTxt})\n{_stat}";
-                    baseBoxPos += 15f;
+                case SpeedrunProgressionType.Elim:
+                    _stat.AppendLine($"{LocalizedStr("gui_run_elim")} {_timerText}");
                     break;
-                case SpeedrunSaveType.Win:
-                    _stat = $"{LocalizedStr("gui_run_win")} {_timerText} ({timeDifTxt})\n{_stat}";
-                    baseBoxPos += 15f;
+                case SpeedrunProgressionType.Win:
+                    _stat.AppendLine($"{LocalizedStr("gui_run_win")} {_timerText}");
                     break;
-                case SpeedrunSaveType.None:
+                case SpeedrunProgressionType.None:
                     break;
             }
 
-            _previousSaveTime = _currentTime;
+            _previousSaveTime = CurrentRun.RunningTime;
         }
 
         public string ReturnTimeAsString(float time, bool format = false, bool doNotSetTimerText = false, bool useScaleFactor = false, float scale = 80f)
@@ -468,38 +550,32 @@ namespace FGTools.Services
 
         public void ResetStats()
         {
-            baseBoxPos = 10f;
-            _currentTime = 0;
             _previousSaveTime = 0;
             _checkpointNum = 0;
             _lapNum = 0;
-            _stat = string.Empty;
+            _stat.Clear();
         }
 
-        public IEnumerator NewRun()
+        public void NewRun()
         {
             HandleState(RunState.Respawned);
-            FGBehaviour.FGCC.ResetToDefaultState();
-            if (!RespawnAtCheckpoint.Value)
-                FGBehaviour.transform.SetPositionAndRotation(_spawnPos, _spawnRot);
-            else
-                FGBehaviour.transform.SetPositionAndRotation(FGBehaviour.spawnpoint.transform.position, FGBehaviour.spawnpoint.transform.rotation);
-            yield return new WaitForEndOfFrame();
-            FGTServiceManager.GetService<RoundLoaderService>().RoundCamera.ForceRecenterToHeading();
-            CheckpointManager cm = Resources.FindObjectsOfTypeAll<CheckpointManager>().FirstOrDefault();
+            
+            var cm = Resources.FindObjectsOfTypeAll<CheckpointManager>().FirstOrDefault();
             cm?._netIDToCheckpointMap.Clear();
-            if (SPResetPoints.Value)
-                CGM._soloScoreManager.SetSoloScore(FGBehaviour.FGMPG.NetID, 0);
 
-            //FGToolsBehaviourOLD.FGBehaviour.gameObject.GetComponent<Rigidbody>().velocity = new Vector3(0, 5, 0);
+            var ez = Resources.FindObjectsOfTypeAll<COMMON_ObjectiveReachEndZone>().FirstOrDefault();
+            ez?._charactersAchievingObjective.Clear();
+
+            if (SPResetPoints.Value && CGM.GameRules.IsScoringGame)
+                ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGMPG, 0);
         }
 
         public void DoRunSave()
         {
             if (!StateManager.IsFGC)
-                SaveRun(LatestRunScene, _currentTime);
+                SaveRun(LatestRunScene, CurrentRun.RunningTime);
             else
-                SaveRun(CGM._round.Id, _currentTime);
+                SaveRun(CGM._round.Id, CurrentRun.RunningTime);
         }
 
         bool IsThereBestTime(string forScene)

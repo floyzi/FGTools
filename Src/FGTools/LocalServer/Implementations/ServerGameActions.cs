@@ -48,6 +48,9 @@ namespace FGTools.LocalServer.Implementations
                 return;
 
             var playerInQuestion = LocalServerService.ServerManager.GetNetPlayer(playerNetObject);
+            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
+            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
+            var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
 
             ServerManager.CGM._roundResults.Add(new RoundResult()
             {
@@ -64,7 +67,8 @@ namespace FGTools.LocalServer.Implementations
                 extraDisplayInfo = default
             });
 
-            ServerManager.CGM._qualifiedPlayerCount++;
+            if (isNotInSpeedrun)
+                ServerManager.CGM._qualifiedPlayerCount++;
 
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
             {
@@ -80,8 +84,7 @@ namespace FGTools.LocalServer.Implementations
                 NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
             });
 
-            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
-            if (LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled)
+            if (isNotInSpeedrun)
             {
                 if (ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount)
                     LocalServerService.ServerManager.EndRound();
@@ -103,7 +106,10 @@ namespace FGTools.LocalServer.Implementations
             if (LocalServerService.IsUserAloneAndHost && ConfigManager.ElimLevel.Value == ConfigManager.ElimType.None)
                 return;
 
+            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
+            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
             var playerInQuestion = LocalServerService.ServerManager.GetNetPlayer(playerNetObject);
+            var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
 
             ServerManager.CGM._roundResults.Add(new RoundResult()
             {
@@ -113,14 +119,15 @@ namespace FGTools.LocalServer.Implementations
                 platformID = playerInQuestion.Platform,
                 possessionScore = 0,
                 playerID = playerNetObject.NetID.m_NetworkID,
-                teamId = -1,
+                teamId = playerData.TeamID,
                 comparisonScore = 0,
                 teamPosition = 0,
                 teamScore = 0,
                 extraDisplayInfo = default
             });
 
-            ServerManager.CGM._eliminatedPlayerCount++;
+            if (isNotInSpeedrun)
+                ServerManager.CGM._eliminatedPlayerCount++;
 
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
             {
@@ -136,8 +143,7 @@ namespace FGTools.LocalServer.Implementations
                 NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
             });
 
-            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
-            if (LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled)
+            if (isNotInSpeedrun)
             {
                 if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount)
                     LocalServerService.ServerManager.EndRound();
@@ -263,6 +269,9 @@ namespace FGTools.LocalServer.Implementations
 
         void AwardPoints(MPGNetObject playerNetObj, int amount)
         {
+            if (!ServerManager.CGM.GameRules.IsScoringGame)
+                return;
+
             var currentScore = ServerManager.CGM._soloScoreManager.GetSoloScore(playerNetObj.NetID);
             var scoreAfter = Mathf.Max(0, currentScore + amount);
 
