@@ -31,19 +31,15 @@ namespace FGTools.States
 
         public void OnRoundComplete(string roundId, bool qual)
         {
-            string medal = "gold";
-            if (!qual)
-                medal = "pink";
+            var medal = qual ? "gold" : "pink";
 
-            CompletedRoundDto NewRound = new CompletedRoundDto()
+            CompletedRounds.Add(new CompletedRoundDto()
             {
                 BadgeId = medal,
                 RoundIndex = CompletedRounds.Count + 1,
                 LevelId = roundId,
                 Qualified = qual,
-            };
-
-            CompletedRounds.Add(NewRound);
+            });
 
             if (qual)
                 CompletedRoundsСount++;

@@ -151,7 +151,7 @@ namespace FGTools.Internal.Behaviours
                 {
                     if (FreeCamAudioEffect.Value)
                         AudioMixing.Instance.ResetTimeAttackParams();
-                    _stateManager.UIM.SwitchToState(InGameUiManager.InGameState.Playing);
+                    UIM.SwitchToState(InGameUiManager.InGameState.Playing);
                     RewiredManager.Instance.EnableMap(0, 0);
                     FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(true);
                 }
@@ -181,7 +181,7 @@ namespace FGTools.Internal.Behaviours
                 CAM.transform.position = lastCamPos;
             if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
             {
-                _stateManager.UIM.SwitchToState(InGameUiManager.InGameState.Banners);
+                UIM.SwitchToState(InGameUiManager.InGameState.Banners);
                 RewiredManager.Instance.DisableMap(0, 0);
                 if (FreeCamAudioEffect.Value)
                     AudioMixing.Instance.StartTimeAttackSnapshot();

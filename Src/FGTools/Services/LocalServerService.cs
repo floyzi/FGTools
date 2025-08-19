@@ -1,4 +1,5 @@
-﻿using Events;
+﻿using BepInEx.Logging;
+using Events;
 using FG.Common;
 using FG.Common.CMS;
 using FGClient;
@@ -117,7 +118,7 @@ namespace FGTools.Services
                 var actions = new ServerGameActions();
                 ServerGameStateActions.Instance = new IGameStateServerActions(actions.Pointer);
                 GameStateView = new ServerGameStateView().Cast<IGameStateView>();
-                ServerManager = new(_networkRequest, _networkRequest.NetworkManager, TEMP_round, usedFor);
+                ServerManager = new(FGTServiceManager.Instance.GetService<LocalServerService>(), _networkRequest, _networkRequest.NetworkManager, TEMP_round, usedFor);
 
                 if (!gsm.IsInState<StateConnectToGame>())
                 {
@@ -125,7 +126,7 @@ namespace FGTools.Services
                     GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(state.Cast<GameStateMachine.IGameState>());
                 }
 
-                FGTLog(BepInEx.Logging.LogLevel.Info, typeof(LocalServerService), $"Hosting server on {ip}:{port}");
+                FGTLog(LogLevel.Info, typeof(LocalServerService), $"Hosting server on {ip}:{port}");
             }
             catch (Exception ex)
             {
@@ -136,16 +137,30 @@ namespace FGTools.Services
             }
         }
 
+        internal void KillServer(Exception ex)
+        {
+            if (!IsServerInOperation)
+            {
+                FGTLog(LogLevel.Error, GetType(), $"Attempt to kill non existing server?\n{ex}");
+                return;
+            }
 
+            FGTLog(LogLevel.Error, GetType(), $"TERMINATING SERVER BECAUSE OF AN EXCEPTION\n\n{ex}");
+            FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);
+            DoModal(LocalizationService.LocalizedStr("server_fatal_error_title"), LocalizationService.LocalizedStr("server_fatal_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
+            {
+               
+            }));
+        }
         internal void ShutdownSerer(Action onShutdown)
         {
             if (!IsServerInOperation)
             {
-                FGTLog(BepInEx.Logging.LogLevel.Warning, GetType(), $"Attempt to shutdown inactive server!");
+                FGTLog(LogLevel.Warning, GetType(), $"Attempt to shutdown inactive server!");
                 return;
             }
 
-            FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Server commencing shutdown...");
+            FGTLog(LogLevel.Info, GetType(), $"Server commencing shutdown...");
 
             foreach (var obj in Enum.GetValues(typeof(FLZ_CustomMessage)))
             {
@@ -216,8 +231,8 @@ namespace FGTools.Services
         {
             DoModal("server_host_update_title", "server_host_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, act: new Action<bool>(wasok =>
             {
-
-            })); GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
+                GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
+            })); 
         }
 
         static void ClientVersionOutdated()

@@ -14,6 +14,8 @@ namespace FGTools.LocalServer
         public static event Action<GameMessageClientSetReady, GameConnection> OnSetReady;
         public static event Action<GameMessageClientRequestSpawnPlayer, GameConnection> OnSpawnPlayer;
         public static event Action<GameMessageClientTimeAttackReset, GameConnection> OnTimeAttackReset;
+        public static event Action<GameMessageClientResetToCheckpoint, GameConnection> OnResetToCheckpoint;
+        public static event Action<GameMessageClientSkipRound, GameConnection> OnSkipRound;
 
         public static void Process(GameMessageClientRequestSpawnPlayer msg, GameConnection playerConn)
         {
@@ -50,6 +52,14 @@ namespace FGTools.LocalServer
         public static void Process(GameMessageClientTimeAttackReset msg, GameConnection playerConn)
         {
             OnTimeAttackReset?.Invoke(msg, playerConn);
+        }
+        public static void Process(GameMessageClientResetToCheckpoint msg, GameConnection playerConn)
+        {
+            OnResetToCheckpoint?.Invoke(msg, playerConn);
+        }
+        public static void Process(GameMessageClientSkipRound msg, GameConnection playerConn)
+        {
+            OnSkipRound?.Invoke(msg, playerConn);
         }
     }
 }

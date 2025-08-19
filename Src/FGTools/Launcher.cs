@@ -191,8 +191,7 @@ namespace FGTools
                 ClassInjector.RegisterTypeInIl2Cpp<MenuAudioProvider>();
                 ClassInjector.RegisterTypeInIl2Cpp<FreeCameraController>();
                 ClassInjector.RegisterTypeInIl2Cpp<FFAButtonManager>();
-                ClassInjector.RegisterTypeInIl2Cpp<KillZone>();
-                ClassInjector.RegisterTypeInIl2Cpp<UGCBubble>();
+                ClassInjector.RegisterTypeInIl2Cpp<SimpleTrigger>();
                 ClassInjector.RegisterTypeInIl2Cpp<SelfDestcructObject>();
                 ClassInjector.RegisterTypeInIl2Cpp<ServerBehaviour>();
                 ClassInjector.RegisterTypeInIl2Cpp<ServerControlledObject>();

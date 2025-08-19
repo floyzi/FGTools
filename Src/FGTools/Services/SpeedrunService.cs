@@ -253,14 +253,15 @@ namespace FGTools.Services
 
         internal void PrepareForGameplay()
         {
+            RunsHistory.Clear();
+
             LoadUI();
             HandleState(RunState.Respawned);
+
             if (!FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out SnapshotEvent))
                 FGTLog(LogLevel.Warning, GetType(), "Unable to create snapshot event");
             else
                 SnapshotEvent.start();
-
-            RunsHistory.Clear();
         }
 
         public void LoadUI()
@@ -359,11 +360,10 @@ namespace FGTools.Services
 
         public void HandleState(RunState newState)
         {
-            RunState prevState = SpeedrunState;
+            if (IsSepeedrunsDisabled && (newState == RunState.TempDisabled || newState == RunState.TimeAttack || newState == RunState.Inactive))
+                return;
 
-            if (prevState != RunState.TimeAttack || prevState != RunState.TempDisabled)
-                SpeedrunState = newState;
-
+            SpeedrunState = newState;
             switch (newState)
             {
                 case RunState.Respawned:
@@ -565,7 +565,7 @@ namespace FGTools.Services
             ez?._charactersAchievingObjective.Clear();
 
             if (SPResetPoints.Value && CGM.GameRules.IsScoringGame)
-                ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGMPG, 0);
+                ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGMPG, CGM._soloScoreManager.GetSoloScore(FGBehaviour.FGMPG.NetID) * -1);
         }
 
         public void DoRunSave()

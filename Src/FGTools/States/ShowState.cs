@@ -146,11 +146,8 @@ namespace FGTools.States
 
         void TryToEndGameplay()
         {
-            var gp = StateManager.GetState<GameplayState>();
-            if (!gp.elimComplete)
-                gp.DoWin(skipRoundEndedAnim: true);
-            else
-                Quit();
+            //TODO: winning
+            Quit();
         }
 
         public override void DisplayGUI()

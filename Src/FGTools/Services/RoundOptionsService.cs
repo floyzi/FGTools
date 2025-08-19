@@ -61,15 +61,11 @@ namespace FGTools.Services
             }
         }
 
-        public RoundOptionsJson ReturnLatestOptions()
-        {
-            return latestOptions;
-        }
-
+        public RoundOptionsJson ReturnLatestOptions() => latestOptions;
         internal int GetSeedForGame() => latestOptions.RoundSeed == 0 ? UnityEngine.Random.Range(0, int.MaxValue) : latestOptions.RoundSeed;
-        internal float GetRoundLength(GameRulesSchema round) => (latestOptions.TimeLimit && latestOptions.TimeLimitLength > 1 ? latestOptions.TimeLimitLength : round.Duration) + 5;
-
-        public void WriteData() => File.WriteAllText(Plugin.RoundOptionsData, JsonSerializer.Serialize<RoundOptionsJson>(latestOptions));
+        internal float GetRoundLength(GameRulesSchema round) => latestOptions.TimeLimit ? (latestOptions.TimeLimitLength > 1 ? latestOptions.TimeLimitLength : round.Duration) + 5 : float.MaxValue;
+        internal int GetPlayers() => !LocalServerService.IsUserAloneAndHost ? LocalServerService.ServerManager.GetConnections().Length : latestOptions.PlayerCount;
+        public void WriteData() => File.WriteAllText(Plugin.RoundOptionsData, JsonSerializer.Serialize(latestOptions));
 
         public override void DrawGUI()
         {

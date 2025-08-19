@@ -1,43 +1,42 @@
-﻿using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using DG.Tweening.Plugins.Options;
-using Events;
+﻿extern alias wle;
+
+using BepInEx.Logging;
 using FG.Common;
 using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
 using FG.Common.CMS;
 using FG.Common.Fraggle;
-using FG.Common.LODs;
 using FG.Common.Messages;
 using FG.Common.Network;
 using FGClient;
+using FGClient.UI;
 using FGTools.Internal;
 using FGTools.Internal.Behaviours;
+using FGTools.Internal.Extensions;
 using FGTools.LocalServer.CustomMessages;
 using FGTools.LocalServer.CustomMessages.Logic;
 using FGTools.Services;
 using FGTools.States.Logic;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSystem.Collections.Specialized;
-using Levels.Obstacles;
+using Levels.HexARing;
+using Levels.HexSnake;
+using Levels.PixelPerfect;
 using Levels.Progression;
 using Levels.Rollout;
+using Levels.ScoreZone;
 using Levels.TimeAttack;
 using Mediatonic.Networking;
 using SRF;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Nodes;
 using UnityEngine;
 using UniverseLib;
 using static FG.Common.COMMON_ObjectiveBase;
 using static FG.Common.FG_NetworkManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static RootMotion.FinalIK.IKSolverVR;
 
 namespace FGTools.LocalServer
 {
@@ -70,6 +69,7 @@ namespace FGTools.LocalServer
 
 
         readonly NetworkRequest Server;
+        readonly LocalServerService ServerService;
         internal readonly FG_NetworkManager NetworkManager;
         readonly int LobbySize;
         readonly object GameInfo;
@@ -92,8 +92,9 @@ namespace FGTools.LocalServer
         internal static Action<MPGNetObject, uint, FG_NetworkID, string, string, string, string, uint, int, string, int, bool, CustomisationSelections> OnPlayerSpawned;
         internal static Action<NetworkMessage> OnServerReceivedMessage;
 
-        public ServerManager(NetworkRequest startTicket, FG_NetworkManager netManager, object gameInfo, int lobbySize = 1)
+        public ServerManager(LocalServerService service, NetworkRequest startTicket, FG_NetworkManager netManager, object gameInfo, int lobbySize = 1)
         {
+            ServerService = service;
             Server = startTicket;
             NetworkManager = netManager;
             LobbySize = lobbySize;
@@ -116,11 +117,15 @@ namespace FGTools.LocalServer
             ServerDespatcher.OnMotorTasks += OnMotorTasks;
             ServerDespatcher.OnDisconnectPlayer += OnDisconnect;
             ServerDespatcher.OnTimeAttackReset += OnTimeAttackReset;
+            ServerDespatcher.OnResetToCheckpoint += OnRequestRespawn;
+            ServerDespatcher.OnSkipRound += OnRequestNewRound;
 
             CustomMessageDespatcher.OnServerConnectRequest += CustomMessageDespatcher_ClientConnectRequest;
             CustomMessageDespatcher.OnServerUserInfo += CustomMessageDespatcher_OnClientUserInfo;
 
             Commands.OnCheckpointReached += OnCheckpointReached;
+            Commands.OnIntroEnds += OnIntroEnd;
+            Commands.OnRoundStarts += OnRoundStart;
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = DelegateSupport.ConvertDelegate<HandleObjectiveSatisfied>(ObjectiveAchived);
 
@@ -129,12 +134,33 @@ namespace FGTools.LocalServer
 
             GameInfo = gameInfo;
 
+            //TEMP
             foreach (var fgcc in Resources.FindObjectsOfTypeAll<FallGuysCharacterController>())
                 fgcc.MotorAgent._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Offline;
 
             Commands.OnRoundLoaded += OnRoundLoaded;
 
             HandleServerState(ServerState.Open);
+        }
+
+        void OnIntroEnd()
+        {
+        }
+
+        void OnRoundStart()
+        {
+            var ppm = Resources.FindObjectsOfTypeAll<PixelPerfectManager>().FirstOrDefault();
+            ppm?.Init();
+            ppm?.BeginGame();
+
+            var score = Resources.FindObjectsOfTypeAll<ScoreZoneManager>().FirstOrDefault();
+            if (score != null && !score._gameStarted)
+            {
+                ScoreZoneManager.NumPlayers = FGTServiceManager.GetService<RoundOptionsService>().GetPlayers();
+                score?.InitZones();
+                score?.ActivateInitialZones();
+                score?.OnGameStart();
+            }
         }
 
         private void CustomMessageDespatcher_OnClientUserInfo(GMC_ClientUserInfo msg)
@@ -175,14 +201,15 @@ namespace FGTools.LocalServer
             {
                 ServerSessionId = "flz_local_session",
                 ClientRemoteAddress = "127.0.0.1",
-                EpisodeGuid = new Il2CppSystem.Guid(Guid.NewGuid().ToString()),
+                EpisodeGuid = Il2CppSystem.Guid.NewGuid(),
                 IsCrossPlatform = new Il2CppSystem.Nullable<bool>(true),
                 PlayerIds = new Il2CppStructArray<uint>([1]),
                 ResponseCode = GameMessageServerConnectedClient.EnumConnectionResponse.ECT_SUCCESSFUL_PARTICIPANT,
                 ServerBuildInfo = "local_fgt_server",
                 ServerId = 102,
                 ServerTime = Il2CppSystem.DateTime.UtcNow,
-                ShowId = "classic_solo_main_show",
+                //i need to be better than this
+                ShowId = StateManager.IsPlayingExplore ? "casual_show" : "classic_solo_main_show",
             }, DeliveryType.Reliable);
 
             PendingConnections.Remove(pendingConn.RemoteNetworkID);
@@ -271,17 +298,10 @@ namespace FGTools.LocalServer
 
         void PrepareForNetworkedGame()
         {
-            var rolloutManager = Resources.FindObjectsOfTypeAll<RolloutManager>().FirstOrDefault();
-
-            if (rolloutManager != null && rolloutManager.gameObject.activeSelf)
+            foreach (var rl in Resources.FindObjectsOfTypeAll<RolloutManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
             {
-                var net = rolloutManager.gameObject.AddComponent<MPGNetObject>();
-                net.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
-                net.UniqueId = rolloutManager.GetComponent<MPGNetObjectPossessable>().UniqueId;
-                net._gameObjectHash = net.GenerateGameObjectHash(NetObjectCreationMode.Possess);
-
-                var RES = new Il2CppSystem.Collections.Generic.List<int>();
-                int ringSchemas = rolloutManager._ringSegmentSchemas.Count;
+                var res = new Il2CppSystem.Collections.Generic.List<int>();
+                int ringSchemas = rl._ringSegmentSchemas.Count;
                 int ringLimit = UnityEngine.Random.Range(2, ringSchemas);
                 int addedRings = 0;
 
@@ -289,36 +309,34 @@ namespace FGTools.LocalServer
                 {
                     if (addedRings < ringSchemas)
                     {
-                        int ringMax = UnityEngine.Random.Range(0, rolloutManager._ringSegmentSchemas[i].PrefabPool.Count);
-                        RES.Add(ringMax);
+                        int ringMax = UnityEngine.Random.Range(0, rl._ringSegmentSchemas[i].PrefabPool.Count);
+                        res.Add(ringMax);
                         addedRings++;
                     }
                 }
 
-                rolloutManager.SetSelectedPrefabIndexes(RES);
+                rl.SetSelectedPrefabIndexes(res);
+            }
 
-                var spawnData = new GameObjectSpawnData();
-                spawnData.FromGameObject(rolloutManager.gameObject, false);
-                BroadcastMessage(new GameMessageServerSpawnObject()
-                {
-                    _netObjectSpawnData = new()
-                    {
-                        Position = rolloutManager.transform.position,
-                        Rotation = rolloutManager.transform.rotation,
-                        _additionalSpawnData = spawnData,
-                        _spawnObjectType = EnumSpawnObjectType.OBJECT,
-                        _creationMode = NetObjectCreationMode.Possess,
-                        _prefabHash = net.GameObjectHash,
-                        _useUnifiedSetup = false,
+            foreach (var hm in Resources.FindObjectsOfTypeAll<HexARingManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
+            {
+                hm.SetPlayerCount(FGTServiceManager.GetService<RoundOptionsService>().GetPlayers());
 
-                    },
+                if (hm.TryGetComponent<MPGNetObjectPossessable>(out var poss))
+                    poss.PossessObject();
+            }
 
-                });
+            foreach (var hm in Resources.FindObjectsOfTypeAll<HexSnakeManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
+            {
+                hm.UpdatePlayerCount(FGTServiceManager.GetService<RoundOptionsService>().GetPlayers());
+
+                if (hm.TryGetComponent<MPGNetObjectPossessable>(out var poss))
+                    poss.PossessObject();
             }
 
             foreach (PlayerRatioedBulkItemSpawner spawner in Resources.FindObjectsOfTypeAll<PlayerRatioedBulkItemSpawner>())
             {
-                int itemCount = Mathf.Clamp(Mathf.RoundToInt(LobbySize * spawner._numberOfItemsPerPlayer), spawner._minItems, spawner._maxItems);
+                var itmCount = Mathf.Clamp(Mathf.RoundToInt(LobbySize * spawner._numberOfItemsPerPlayer), spawner._minItems, spawner._maxItems);
 
                 Dictionary<GameObject, List<Transform>> spawns = [];
 
@@ -347,12 +365,12 @@ namespace FGTools.LocalServer
                     }
                 }
 
-                itemCount = Mathf.Min(itemCount, spawns.Sum(pair => pair.Value.Count));
-                itemCount = itemCount / spawns.Count * spawns.Count;
+                itmCount = Mathf.Min(itmCount, spawns.Sum(pair => pair.Value.Count));
+                itmCount = itmCount / spawns.Count * spawns.Count;
 
                 foreach (var pair in spawns)
                 {
-                    for (int j = 0; j < itemCount / spawns.Count && j < pair.Value.Count; j++)
+                    for (int j = 0; j < itmCount / spawns.Count && j < pair.Value.Count; j++)
                     {
                         var targetObject = spawner.ItemPrefab.GetComponent<NetworkAwareGeneric>().SpawnObject;
 
@@ -366,6 +384,17 @@ namespace FGTools.LocalServer
                         var spawn = pair.Value[j];
                         netObj.SpawnPrefab(spawn.position, spawn.rotation, spawn.localScale);
                     }
+                }
+            }
+
+            if (StateManager.IsFGC)
+            {
+                foreach (var kz in Resources.FindObjectsOfTypeAll<COMMON_PlayerEliminationVolume>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
+                {
+                    var st = kz._collisionVolume.gameObject.AddComponent<SimpleTrigger>();
+
+                    st.TriggerEnter += new Action<Collider>(other => kz.OnTriggerEnter(other));
+                    st.CollisionEnter += new Action<Collision>(other => kz.OnCollisionEnter(other));
                 }
             }
 
@@ -388,6 +417,22 @@ namespace FGTools.LocalServer
         void ObjectiveAchived(MPGNetID playerObjectNetID, COMMON_ObjectiveBase pObjective)
         {
             ServerGameStateActions.Instance.MarkPlayerAsSuccessful(CGM.GetNetObjectByID(playerObjectNetID), true);
+        }
+
+        readonly static List<Il2CppSystem.Type> NotForUnifiedSetup = 
+        [
+            Il2CppType.Of<RolloutManager>(),
+            Il2CppType.Of<HexARingManager>()
+        ];
+        internal static bool ShouldUseUnifiedSetup(MPGNetObjectBase based)
+        {
+            foreach (var p in NotForUnifiedSetup)
+            {
+                if (based.GetComponent(p) != null)
+                    return false;
+            }    
+
+            return true;
         }
 
         void OnPing(GameMessagePing msg, GameConnection playerConn)
@@ -426,66 +471,6 @@ namespace FGTools.LocalServer
             }, DeliveryType.Reliable);
         }
 
-        //void OnUserInfoReceived(GMC_UserInfo userInfo)
-        //{
-        //    if (State == ServerState.Closing)
-        //        return;
-
-        //    try
-        //    {
-        //        var netId = new FG_NetworkID(userInfo.NetworkID);
-        //        if (!WaitingForAuth.ContainsKey(netId))
-        //            WaitingForAuth.Add(netId, userInfo);
-        //        else
-        //            WaitingForAuth[netId] = userInfo;
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        FGTLog(LogLevel.Error, GetType(), $"We received bad user info, {e}");
-        //    }
-        //}
-
-        //IEnumerator AuthPlayerForGame(GameConnection conn, Action authSuccess, Action authFailure)
-        //{
-        //    int authAttempt = 0;
-
-        //    while (authAttempt < MaxAuthAttempts)
-        //    {
-        //        FGTLog(LogLevel.Info, GetType(), $"Trying to auth player {conn.RemoteNetworkID}... attempt {++authAttempt}/{MaxAuthAttempts}");
-
-        //        if (WaitingForAuth.TryGetValue(conn.RemoteNetworkID, out var authData))
-        //        {
-        //            ConnectedPlayers.Add(conn.RemoteNetworkID, new()
-        //            {
-        //                Connection = conn,
-        //                NetId = null,
-        //                Name = authData.Username,
-        //                Cosmetics = authData.CreateSelections(),
-        //                AccountId = authData.AccountID,
-        //                Platform = authData.Platform,
-        //                CrownRank = authData.CrownRank,
-        //                TeamID = -1
-        //            });
-
-        //            WaitingForAuth.Remove(conn.RemoteNetworkID);
-
-        //            conn.AdvanceToLoggedInState();
-
-        //            FGTLog(LogLevel.Info, GetType(), $"Player {authData.Username} completed authentication!");
-        //            authSuccess();
-        //            yield break;
-        //        }
-        //        else
-        //        {
-        //            yield return new WaitForSeconds(1.5f);
-        //        }
-        //    }
-
-        //    FGTLog(LogLevel.Warning, GetType(), $"Player {conn.RemoteNetworkID} failed authentication, we didn't received common info.");
-
-        //    authFailure();
-
-        //}
 
         void FG_ClientConnectRequest(GameMessageBasePublicICopyable1ObfInUIInObFGInStBoInByUnique msg, GameConnection playerConn)
         {
@@ -661,14 +646,15 @@ namespace FGTools.LocalServer
 
             if (LoadedPlayers == LobbySize && PlayerSpawnQueue.Count == NetworkManager.ConnectedClients)
             {
-                CGM.GameRules.PreparePlayerStartingPositions(1);
+                CGM.GameRules.PreparePlayerStartingPositions(LobbySize);
 
                 while (PlayerSpawnQueue.Count > 0)
                 {
+                    var spawnAct = PlayerSpawnQueue.Dequeue();
                     try
                     {
-                        var spawnAct = PlayerSpawnQueue.Dequeue();
-                        var pos = CGM.GameRules.PickStartingPosition(1, 0, -1, 0, false);
+                        var allPositions = Resources.FindObjectsOfTypeAll<MultiplayerStartingPosition>();
+                        var pos = CGM.GameRules._playerStartingPositions.Count > 0 ? CGM.GameRules.PickStartingPosition((int)spawnAct.NetId.m_NetworkID, 0, -1, 0, false) : allPositions[UnityEngine.Random.Range(0, allPositions.Count)];
 
                         spawnAct._netObjectSpawnData._position = pos.transform.position;
                         spawnAct._netObjectSpawnData._rotation = pos.transform.rotation;
@@ -680,6 +666,8 @@ namespace FGTools.LocalServer
                     }
                     catch (Exception e)
                     {
+                        FGTLog(LogLevel.Error, GetType(), $"Spawn of player failed!!");
+                        ServerService.KillServer(e);
                     }
                 }
             }
@@ -721,7 +709,7 @@ namespace FGTools.LocalServer
                 {
                     for (int i = 0; i < ReadyPlayers; i++)
                     {
-
+                       
                     }
                 }
 
@@ -731,6 +719,8 @@ namespace FGTools.LocalServer
                 {
                     if (player.NetObject != null && player.NetObject.IsValidNetObject())
                         player.gameObject.AddComponent<ServerControlledObject>();
+
+                    player.SpeedBoostManager._isAuthoritative = true;
                 }
 
                 RMIBehaviourManager.SetActive();
@@ -784,6 +774,27 @@ namespace FGTools.LocalServer
             PlayerSpawnQueue.Enqueue(CreatePlayerSpawnRequest(conn, pid, ref meta));
 
             TryToPerfomSpawns();
+        }
+
+        void OnRequestRespawn(GameMessageClientResetToCheckpoint msg, GameConnection conn)
+        {
+            var player = CGM.GetNetObjectByID(ConnectedPlayers[conn.RemoteNetworkID].NetId).FGCharacterController;
+            ServerGameStateActions.Instance.RespawnParticipant(player);
+        }
+
+        void OnRequestNewRound(GameMessageClientSkipRound msg, GameConnection conn)
+        {
+            var player = CGM.GetNetObjectByID(ConnectedPlayers[conn.RemoteNetworkID].NetId);
+            ServerGameStateActions.Instance.RequestDestroy(player);
+            AudioManager.PlayGameplayEndAudio(true);
+
+            QualifiedScreenViewModel.Show("skipped", new Action(() =>
+            {
+                if (StateManager.IsPlayingExplore)
+                    StateManager.ExploreState.RequestNewRound();
+                else
+                    FLZ_Extensions.ForceExit();
+            }));
         }
 
         void OnTimeAttackReset(GameMessageClientTimeAttackReset msg, GameConnection conn)
@@ -1228,12 +1239,15 @@ namespace FGTools.LocalServer
             ServerDespatcher.OnMotorTasks -= OnMotorTasks;
             ServerDespatcher.OnDisconnectPlayer -= OnDisconnect;
             ServerDespatcher.OnTimeAttackReset -= OnTimeAttackReset;
+            ServerDespatcher.OnResetToCheckpoint -= OnRequestRespawn;
+            ServerDespatcher.OnSkipRound -= OnRequestNewRound;
 
             CustomMessageDespatcher.OnServerConnectRequest -= CustomMessageDespatcher_ClientConnectRequest;
             CustomMessageDespatcher.OnServerUserInfo -= CustomMessageDespatcher_OnClientUserInfo;
 
             Commands.OnRoundLoaded -= OnRoundLoaded;
             Commands.OnCheckpointReached -= OnCheckpointReached;
+            Commands.OnIntroEnds -= OnIntroEnd;
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = null;
 

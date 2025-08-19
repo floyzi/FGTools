@@ -14,8 +14,11 @@ using FGTools.States.Logic;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSystem.Linq;
+using Levels.Rollout;
 using LiveOps.Challenges;
 using SRF;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +27,8 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
+using static FGClient.UI.MultiRowMenuInputHandler;
 using static LiveOps.Collections.CollectableZone;
 using Debug = UnityEngine.Debug;
 
@@ -167,51 +172,47 @@ namespace FGTools.LocalServer.Implementations
             GlobalGameStateClient.Instance.NetObjectManager.UnspawnNetObject(go.NetID, MPGNetObjectManager.UnspawnGameObjectPolicy.Destroy);
         }
 
-        public void SetupNetworkObject(MPGNetObjectBase netObjectBase, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 spawnScale, Il2CppSystem.Action<GameObject> PostSpawnAction)
+        void SetupNetworkObject(MPGNetObjectBase netObjectBase, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 spawnScale, Il2CppSystem.Action<GameObject> PostSpawnAction)
         {
+            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object {netObjectBase.name}");
+
             if (!netObjectBase.gameObject.TryGetComponent<MPGNetObject>(out var result))
                 result = netObjectBase.gameObject.AddComponent<MPGNetObject>();
 
-            result.SpawnPrefab(spawnPosition, spawnRotation, spawnScale, null);
-            //int potentialId = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
+            var hash = (uint)netObjectBase.IdentifyingHash();
 
-            //foreach (var netObject in GlobalGameStateClient.Instance.NetObjectManager._networkedObjectPrefabsDict)
-            //{
-            //    Debug.LogWarning($"{netObject.value.name} VS {netObjectBase.name} {netObjectBase.name.StartsWith(netObject.value.name)}");
-            //    if (netObjectBase.name.StartsWith(netObject.value.name))
-            //    {
-            //        potentialId = netObject.key;
-            //        break;
-            //    }
-            //}
+            result.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
+            result.UniqueId = hash;
+            result.SpawnObjectType = netObjectBase.SpawnObjectType();
+            result.CreationMode = netObjectBase.CreationMode();
+            result.SyncScale = netObjectBase.SyncScale;
+            result.SyncTransform = netObjectBase.SyncTransform;
+            result.LodControllerBehaviour = netObjectBase.LodControllerBehaviour;
+            result.AreAnimationsNetworkControlled = netObjectBase.AreAnimationsNetworkControlled;
+            result._postSpawnAction = new Action<MPGNetID, GameObject>((NetId, obj) => { PostSpawnAction?.Invoke(obj); });
+            result.UseUnifiedSetup = ServerManager.ShouldUseUnifiedSetup(netObjectBase);
 
-            //var spawnData = new GameObjectSpawnData();
-            //spawnData.FromGameObject(netObjectBase.gameObject, result._areAnimationsNetworkControlled);
+            if (!result.UseUnifiedSetup)
+            {
+                GameObjectSpawnData gameObjectSpawnData = new();
+                gameObjectSpawnData.FromGameObject(result.CachedGameObject, result._areAnimationsNetworkControlled);
 
-            //LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerSpawnObject()
-            //{
-            //    _netObjectSpawnData = new()
-            //    {
-            //        _prefabHash = potentialId,
-            //        _additionalSpawnData = spawnData,
-            //        _lodControllerBehaviour = result.LodControllerBehaviour,
-            //        _syncScale = result.SyncScale,
-            //        _syncTransform = result.SyncTransform,
-            //        _scale = result.gameObject.transform.localScale,
-            //        _creationMode = NetObjectCreationMode.Spawn,
-            //        _netID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID(),
-            //        _position = result.gameObject.transform.localPosition,
-            //        _rotation = result.gameObject.transform.localRotation,
-            //        _postSpawnAction = result._postSpawnAction,
-            //        _rmiIdentifier = default,
-            //        _selfDestructionTime = result.SelfDestructionTime,
-            //        _selfDestructionTimerStart = result._selfDestructionTimerStart,
-            //        _spawnObjectType = result._spawnObjectType,
-            //        _useUnifiedSetup = result.UseUnifiedSetup,
-            //    },
-            //    _isAuth = true,
-            //});
+                NetObjectSpawnData spawnData = new()
+                {
+                    Position = spawnPosition,
+                    Rotation = spawnRotation,
+                    _additionalSpawnData = gameObjectSpawnData,
+                    _spawnObjectType = EnumSpawnObjectType.OBJECT,
+                    _creationMode = NetObjectCreationMode.Possess,
+                    _prefabHash = result.GenerateGameObjectHash(NetObjectCreationMode.Possess),
+                    _useUnifiedSetup = false,
+                };
+
+                SetupNetworkedObject((result._creationMode == NetObjectCreationMode.Possess) ? result.CachedGameObject : null, spawnData);
+            }
         }
+
+        List<NetObjectSpawnData> test = [];
 
         void SetupNetworkedObject(GameObject gameObject, NetObjectSpawnData spawnData)
         {
@@ -221,6 +222,7 @@ namespace FGTools.LocalServer.Implementations
             if (spawnData.RmiIdentifier == default)
                 spawnData._rmiIdentifier = RMIBehaviourManager.GetNextID();
 
+            test.Add(spawnData);
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerSpawnObject()
             {
                 _netObjectSpawnData = spawnData,
@@ -254,17 +256,45 @@ namespace FGTools.LocalServer.Implementations
 
         void AwardTeamPoints(int teamId, int amount)
         {
-            throw new NotImplementedException();
+            if (!ServerManager.CGM.GameRules.IsTeamGameMode)
+                return;
+
+            var currentScore = ServerManager.CGM._playerTeamManager.GetTeamScore(teamId);
+            SetTeamScore(teamId, Mathf.Max(0, currentScore + amount));
         }
 
         void AwardAllTeamsPoints(int amount)
         {
-            throw new NotImplementedException();
+            if (!ServerManager.CGM.GameRules.IsTeamGameMode)
+                return;
+
+            for (int i = 0; i < ServerManager.CGM._playerTeamManager._teamScores.Count; i++)
+            {
+                var currentScore = ServerManager.CGM._playerTeamManager.GetTeamScore(i);
+                SetTeamScore(i, Mathf.Max(0, currentScore + amount));
+            }
         }
 
         void SetTeamScore(int teamId, int newScore)
         {
-            throw new NotImplementedException();
+            if (!ServerManager.CGM.GameRules.IsTeamGameMode)
+                return;
+
+            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerEventGeneric()
+            {
+                Type = GameMessageServerEventGeneric.EventType.TeamScoreUpdate,
+                Data = new()
+                {
+                    MpgNetId = default,
+                    IntParam2 = newScore,
+                    FloatParam1 = default,
+                    FloatParam2 = default,
+                    IntParam1 = teamId,
+                    ObjectArray = new(0),
+                    StrParam1 = default,
+                    StrParam2 = default,
+                }
+            });
         }
 
         void AwardPoints(MPGNetObject playerNetObj, int amount)
@@ -297,7 +327,24 @@ namespace FGTools.LocalServer.Implementations
 
         void SetScore(MPGNetObject playerNetObj, int newScore)
         {
-            throw new NotImplementedException();
+            if (!ServerManager.CGM.GameRules.IsScoringGame)
+                return;
+
+            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerEventGeneric()
+            {
+                Type = GameMessageServerEventGeneric.EventType.SoloScoreUpdate,
+                Data = new()
+                {
+                    MpgNetId = playerNetObj.NetID,
+                    IntParam2 = newScore,
+                    FloatParam1 = default,
+                    FloatParam2 = default,
+                    IntParam1 = default,
+                    ObjectArray = new(0),
+                    StrParam1 = default,
+                    StrParam2 = default,
+                }
+            });
         }
 
         void TeleportNetObject(MPGNetObject netObject, Vector3 targetPosition, Quaternion targetRotation, SpawnReason spawnReason = SpawnReason.None)
@@ -342,7 +389,21 @@ namespace FGTools.LocalServer.Implementations
 
         void SetJumbotronDisplay(JumbotronDisplayNetworkData displaydata)
         {
-            throw new NotImplementedException();
+            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerEventGeneric()
+            {
+                Type = GameMessageServerEventGeneric.EventType.JumbotronDisplay,
+                Data = new()
+                {
+                    MpgNetId = default,
+                    IntParam2 = (int)displaydata.DisplayMode,
+                    FloatParam1 = displaydata.CountdownSimulationTimeEnd,
+                    FloatParam2 = displaydata.ExpectedCountdownDuration,
+                    IntParam1 = displaydata.HashId,
+                    ObjectArray = new(0),
+                    StrParam1 = displaydata.DisplayText,
+                    StrParam2 = default,
+                }
+            });
         }
     }
 }

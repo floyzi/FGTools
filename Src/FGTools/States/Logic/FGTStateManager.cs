@@ -20,6 +20,7 @@ using Mediatonic.Tools.MVVM;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -43,30 +44,29 @@ namespace FGTools.States.Logic
         public static FGTStateManager _stateManager;
 
         internal static string AssemblyHash;
-        public InternalState InternalState = new();
-        public Logic.FGTState ActiveState;
-        public Logic.FGTState PreviousState;
-        public UltimatePartyState ExploreState;
-        public ShowState ShowState;
-        public PlayerTeamManager PTM => CGM._playerTeamManager;
-        public InGameUiManager UIM => CGM._inGameUiManager;
-        public StateGameLoading GameLoading;
+        internal InternalState InternalState = new();
+        internal Logic.FGTState ActiveState;
+        internal Logic.FGTState PreviousState;
+        internal UltimatePartyState ExploreState;
+        internal ShowState ShowState;
+        internal static PlayerTeamManager PTM => CGM._playerTeamManager;
+        internal static InGameUiManager UIM => CGM._inGameUiManager;
+        internal StateGameLoading GameLoading;
 
-        public Round CurrentRound;
-        public Round PreviousRound;
+        internal Round CurrentRound;
+        internal Round PreviousRound;
 
-        public bool PiratedGame = false;
-        public bool IsFGC = false;
-        public bool IsPlayingExploreFGC = false;
-        public bool FirstTimeLogin = false;
-        public bool CanUseHotkeys = false;
-        public bool HaveActivePopup = false;
+        internal bool PiratedGame = false;
+        internal bool IsFGC => CurrentRound != null && CurrentRound.IsUGC();
+        internal bool IsPlayingExplore => ExploreState != null;
+        internal bool IsInGameplay => FGTCurrentState == FGTState.GameActive || FGTCurrentState == FGTState.FGCGameActive;
+        internal bool IsInEditor => FGTCurrentState == FGTState.InCreative;
 
-        public bool IsInGameplay { get { return FGTCurrentState == FGTState.GameActive || FGTCurrentState == FGTState.FGCGameActive; } }
-        public bool IsInEditor { get { return FGTCurrentState == FGTState.InCreative; } }
-        public bool IsInExplore { get { return ExploreState != null; } }
+        internal bool FirstTimeLogin = false;
+        internal bool CanUseHotkeys = false;
+        internal bool HaveActivePopup = false;
 
-        public static string TargetFontName
+        internal static string TargetFontName
         {
             get
             {
@@ -84,7 +84,7 @@ namespace FGTools.States.Logic
             }
         }
 
-        public bool RoundLoadingAllowed = false;
+        internal bool RoundLoadingAllowed = false;
 
         public enum FGTState
         {
@@ -195,14 +195,26 @@ namespace FGTools.States.Logic
 
         void CheckupScenes()
         {
-            if (File.Exists(Plugin.BuildScenesList))
-                BuildScenes = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(File.ReadAllText(Plugin.BuildScenesList));
+            try
+            {
+                if (File.Exists(Plugin.BuildScenesList))
+                    BuildScenes = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(File.ReadAllText(Plugin.BuildScenesList));
+            }
+            catch
+            {
+
+            };
 
             if (BuildScenes.ContainsKey(AssemblyHash))
                 return;
 
+            FGTLog(LogLevel.Info, GetType(), "Starting scenes checkup...");
+            var sw = new Stopwatch();
+            sw.Start();
+
             BuildScenes.Clear();
             var list = new HashSet<string>();
+
             foreach (var path in Directory.GetFiles(Application.streamingAssetsPath + "/aa/StandaloneWindows64/", "*.bundle", SearchOption.AllDirectories))
             {
                 try
@@ -210,7 +222,6 @@ namespace FGTools.States.Logic
                     var bundle = AssetBundle.LoadFromFile(path);
                     if (bundle != null)
                     {
-                        var scenePath = bundle.GetAllScenePaths().FirstOrDefault();
                         foreach (var scene in bundle.GetAllScenePaths())
                             list.Add(scene);
 
@@ -226,8 +237,9 @@ namespace FGTools.States.Logic
             BuildScenes.Add(AssemblyHash, list);
 
             File.WriteAllText(Plugin.BuildScenesList, JsonSerializer.Serialize(BuildScenes));
+            sw.Stop();
 
-            FGTLog(LogLevel.Info, this.GetType(), $"Total scenes in this build ({Application.version} | {ClientBuildDetails.PlatformServiceProvider}): {BuildScenes.Count}");
+            FGTLog(LogLevel.Info, this.GetType(), $"Total scenes in this build ({Application.version} | {ClientBuildDetails.PlatformServiceProvider}): {BuildScenes[AssemblyHash].Count}. Checkup took: {sw.Elapsed.TotalSeconds:F3}s");
         }
 
         void OnEnterMenu(OnMainMenuDisplayed evt) => Commands.OnMenuEnter?.Invoke();
@@ -388,8 +400,6 @@ namespace FGTools.States.Logic
 
                     break;
                 case FGTState.Menu:
-                    IsPlayingExploreFGC = false;
-                    IsFGC = false;
                     FraggleCommonManager.Instance.IsInLevelEditor = false;
                     FraggleCommonManager.Instance.SetModeToBuild(new());
                     FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad = false;
@@ -403,7 +413,6 @@ namespace FGTools.States.Logic
                     CGM?.CurrentGameSession.SetSessionState(GameSession.SessionState.Precountdown);
                     break;
                 case FGTState.GameActive:
-                    IsFGC = false;
                     if (CGM != null && CGM.CurrentGameSession.CurrentSessionState != GameSession.SessionState.Playing)
                         CGM.CurrentGameSession.SetSessionState(GameSession.SessionState.Playing);
                     break;

@@ -381,7 +381,6 @@ namespace FGTools.Services
                 InternalState.ResetRandomCosmetics();
                 FGTLog(LogLevel.Message, base.GetType(), "[LOAD ACTION] Trying to load: " + StateManager.CurrentRound.Id);
                 FMODTool.UnloadAllLoadedBanks();
-                StateManager.IsFGC = StateManager.CurrentRound.IsUGC();
 
 
                 StateManager.HandleFGState(PlayerState.Despawned);
@@ -554,7 +553,7 @@ namespace FGTools.Services
                     {
                         UIManager.Instance.HideScreen<LoadingSpinnerScreenViewModel>();
                         StateManager.RoundLoadingAllowed = true;
-                        if (StateManager.IsPlayingExploreFGC)
+                        if (StateManager.IsPlayingExplore)
                             FGTServiceManager.GetService<StatisticsService>().AddFGCHistoryRound(code);
                         FGTServiceManager.GetService<LocalServerService>().SingleplayerGame(StateManager.CurrentRound);
                         FGTServiceManager.GetService<StatisticsService>().SetNewRound(fgcFound);
@@ -577,7 +576,6 @@ namespace FGTools.Services
                 IncreaseRateLimit();
                 FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) => 
                 {
-                    StateManager.IsFGC = true;
                     FraggleCommonManager.Instance.IsInLevelEditor = false;
                     FraggleCommonManager.Instance.SetModeToBuild(new());
                     lvl = data != null ? data.LevelInfoDto : LevelInfoDto.CreatePlaceholderData();
@@ -646,12 +644,11 @@ namespace FGTools.Services
         {
             int stat = 0;
             RealRoundList.Clear();
+
             foreach (var round in CMSLoader.Instance._roundsSO.Rounds.Values)
             {
                 if (StateManager.BuildScenes[FGTStateManager.AssemblyHash].Contains(round.GetSceneName()) && !round.IsUGC())
-                {
                     RealRoundList.Add(round.Id);
-                }
                 else
                     stat++;
             }
@@ -661,7 +658,7 @@ namespace FGTools.Services
 
         public void LoadRandomCms(HashSet<string> customList = null)
         {
-            if (StateManager.IsPlayingExploreFGC)
+            if (StateManager.IsPlayingExplore && StateManager.ExploreState.CurrentJoinPolicy != UltimatePartyState.JoinPolicy.Random)
             {
                 StateManager.ExploreState.RequestNewRound();
                 return;
@@ -716,10 +713,10 @@ namespace FGTools.Services
 
         public void HideLoadingScreens()
         {
-            if (!StateManager.IsFGC && !StateManager.IsPlayingExploreFGC)
+            if (!StateManager.IsFGC && !StateManager.IsPlayingExplore)
                 UIManager.Instance.HideScreen<LoadingGameScreenViewModel>(ScreenStackType.LoadingScreen);
 
-            if (StateManager.IsPlayingExploreFGC)
+            if (StateManager.IsPlayingExplore)
                 UIManager.Instance.HideScreen<LoadingUPGameScreenViewModel>(ScreenStackType.LoadingScreen);
             else
                 UIManager.Instance.HideScreen<LoadingUGCGameScreenViewModel>(ScreenStackType.LoadingScreen);

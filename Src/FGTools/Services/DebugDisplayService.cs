@@ -137,7 +137,7 @@ namespace FGTools.Services
                 b2.AppendLine($"RPCState: {FGTServiceManager.GetService<DiscordRPCService>().State}");
                 b2.AppendLine($"IsFGC: {StateManager.IsFGC}");
                 b2.AppendLine($"IsGameplay: {StateManager.IsInGameplay}");
-                b2.AppendLine($"IsExploreFGC: {StateManager.IsPlayingExploreFGC}");
+                b2.AppendLine($"IsExploreFGC: {StateManager.IsPlayingExplore}");
 
                 DebugContent[1] = b2.ToString();
             }

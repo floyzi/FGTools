@@ -113,12 +113,12 @@ namespace FGTools.LocalServer
         [HarmonyPatch(typeof(FallGuysCharacterController), nameof(FallGuysCharacterController.OnManagedUpdate_Server)), HarmonyPostfix]
         static void OnManagedUpdate_Server(FallGuysCharacterController __instance, float simulationTime, float fixedSimulationTime, float deltaTime)
         {
-            //__instance._fxController.OnManagedUpdate(deltaTime, __instance.Lod_ReadOnly);
+            __instance._fxController.OnManagedUpdate(deltaTime, __instance.Lod_ReadOnly);
 
             if (!__instance.IsLocalPlayer)
                 __instance.OnManagedUpdate_Remote(deltaTime);
 
-            LocalServerService.ServerManager.ParseTasks(__instance.MotorAgent.MotorTasks.MotorTasks, __instance);
+            LocalServerService.ServerManager?.ParseTasks(__instance.MotorAgent.MotorTasks.MotorTasks, __instance);
         }
 
         [HarmonyPatch(typeof(FallGuysCharacterController), nameof(FallGuysCharacterController.OnManagedFixedUpdate_Server)), HarmonyPostfix]

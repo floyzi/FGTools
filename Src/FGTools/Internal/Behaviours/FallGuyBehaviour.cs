@@ -56,7 +56,7 @@ namespace FGTools.Internal.Behaviours
         public GameObject FallGuy;
         public FallGuysCharacterController FGCC;
         public MPGNetObject FGMPG;
-        public GameplayState CurrentGPState;
+        public GameplayState CurrentGPState => StateManager.GetState<GameplayState>();
         public int PlayerTeamId = -1;
         public bool IsInPseudoZone = false;
 
@@ -64,16 +64,6 @@ namespace FGTools.Internal.Behaviours
         float timeRemaining = FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
         string gamemodeType;
         public static int Rand = -1;
-
-
-        public static FGRandom ThisRoundRandom()
-        {
-            if (Rand == -1)
-                Rand = Random.Range(10, 102);
-
-           MPGNetID id = new((uint)Rand);
-           return FGRandom.Create(id, GlobalGameStateClient.Instance.GameStateView.RoundRandomSeed);
-        }
 
         public void Awake()
         {
@@ -182,7 +172,6 @@ namespace FGTools.Internal.Behaviours
         public void OnGameplayBegin()
         {
             gameObject.GetComponent<Rigidbody>().isKinematic = false;
-            CurrentGPState = StateManager.GetState<GameplayState>();
             ReDisplaySkipBtns(false);
         }
         
@@ -191,9 +180,6 @@ namespace FGTools.Internal.Behaviours
         {
             foreach (var skipBtn in Resources.FindObjectsOfTypeAll<SkipRoundButton>().ToList().FindAll(x => x.gameObject.scene.name == "DontDestroyOnLoad"))
             {
-                if (StateManager.IsInExplore && skipBtn.name.Contains("Skip"))
-                    skipBtn.gameObject.SetActive(true);
-
                 if (ta)
                 {
                     if (CGM.GameRules.IsTimeAttackGameMode && skipBtn.name.Contains("Reset"))

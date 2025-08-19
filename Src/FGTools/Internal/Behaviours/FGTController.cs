@@ -92,7 +92,7 @@ namespace FGTools.Internal.Behaviours
 
                 CGM._qualifiedPlayerCount += 1;
                 CGM._requiredQualifiedPlayerCount += 1;
-                StateManager.UIM.GetComponentInChildren<GameplayScoringViewModel>().UpdateQualificationProgress();
+                FGTStateManager.UIM.GetComponentInChildren<GameplayScoringViewModel>().UpdateQualificationProgress();
                 HerobrineShouldAppear = false;
             }
 
@@ -112,7 +112,7 @@ namespace FGTools.Internal.Behaviours
             {
                 if (GlobalGameStateClient.Instance.GameStateView.GameplayTimeElapsed > 1800 && !FGTServiceManager.Instance.GetService<EventService>().ReturnBoolEventValue("SpeedrunnerAlert"))
                 {
-                    timerViewModel = StateManager.UIM.GetComponentInChildren<InGamePlayingState>().gameObject.GetComponentInChildren<GameplayTimerViewModel>();
+                    timerViewModel = FGTStateManager.UIM.GetComponentInChildren<InGamePlayingState>().gameObject.GetComponentInChildren<GameplayTimerViewModel>();
                     CreateNotification(LocalizedStr("gui_speedrunner_popup_alert"), LocalizedStr("gui_speedrunner_popup_alert_1"), FGT_Info_Color);
                     timerViewModel.RaisePropertyChanged("ShouldShowSmallTimeRemaining", true, false);
                     FGTServiceManager.Instance.GetService<EventService>().SetEventValue("SpeedrunnerAlert", true);

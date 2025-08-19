@@ -71,23 +71,33 @@ namespace FGTools.Internal
                 return false;
             }
 
-            res = RuntimeManager.CreateInstance(evtGuid);
-
-            if (!res.hasHandle() || !res.isValid())
+            try
             {
-                FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"Event {eventName} created with invalid handle");
+                res = RuntimeManager.CreateInstance(evtGuid);
+
+                if (!res.hasHandle() || !res.isValid())
+                {
+                    FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"Event {eventName} created with invalid handle");
+                    res = default;
+                    return false;
+                }
+
+                ValidEvents.Add(eventName, new()
+                {
+                    Event = res,
+                    EventName = eventName,
+                    EventGuid = evtGuid,
+                });
+
+
+                return true;
+            }
+            catch (Exception ex) 
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, "CreateFMODEvent", $"FAILED FOR {eventName}\n\n{ex}");
                 res = default;
                 return false;
             }
-
-            ValidEvents.Add(eventName, new()
-            {
-                Event = res,
-                EventName = eventName,
-                EventGuid = evtGuid,
-            });
-
-            return true;
         }
 
         //this code is ass, session terminated

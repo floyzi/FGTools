@@ -837,10 +837,7 @@ namespace FGTools.UI
                             void OnClick(bool wasok)
                             {
                                 if (wasok)
-                                {
-                                    StateManager.IsPlayingExploreFGC = true;
                                     _stateManager.TryJoinExplore(UltimatePartyState.JoinPolicy.FGC);
-                                }
                             }
                         }
                         else

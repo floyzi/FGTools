@@ -127,7 +127,7 @@ namespace FGTools.Services
                         };
                         break;
                     case RpcState.LevelPlaying:
-                        string defRound = StateManager.IsPlayingExploreFGC == true ? "Playing explore" : $"Playing";
+                        string defRound = StateManager.IsPlayingExplore == true ? "Playing explore" : $"Playing";
                         act = new Discord.Activity
                         {
                             Details = $"{defRound} {Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(CleanStr(CGM._round.DisplayName.Text, true)))}",

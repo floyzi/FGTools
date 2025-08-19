@@ -57,6 +57,12 @@ namespace FGTools.LocalServer
                 case EnumGameMessageType.GMT_CLIENT_TIMEATTACK_RESPAWN:
                     ServerDespatcher.Process(msg.Cast<GameMessageClientTimeAttackReset>(), pFrom);
                     break;
+                case EnumGameMessageType.GMT_CLIENT_RESET_TO_CHECKPOINT:
+                    ServerDespatcher.Process(msg.Cast<GameMessageClientResetToCheckpoint>(), pFrom);
+                    break;
+                case EnumGameMessageType.GMT_CLIENT_SKIP_ROUND:
+                    ServerDespatcher.Process(msg.Cast<GameMessageClientSkipRound>(), pFrom);
+                    break;
                 default:
                     FGTLog(BepInEx.Logging.LogLevel.Error, base.GetType(), $"Unhandled message of type {msg._gmt}");
                     break;

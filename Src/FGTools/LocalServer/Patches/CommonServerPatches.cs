@@ -1,9 +1,11 @@
 ﻿using FG.Common;
 using FG.Common.CMS;
+using FG.Common.Messages;
 using FGClient;
 using FGClient.UI;
 using FGTools.Config;
 using FGTools.Internal;
+using FGTools.Internal.Extensions;
 using FGTools.LocalServer.CustomMessages.Logic;
 using FGTools.LocalServer.Implementations;
 using FGTools.Services;
@@ -11,6 +13,9 @@ using FGTools.States.Logic;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Levels.HexARing;
+using Levels.HexSnake;
+using Levels.Obstacles;
 using Levels.Progression;
 using Mediatonic.Networking;
 using Rewired;
@@ -123,21 +128,77 @@ namespace FGTools.LocalServer.Patches
             return false;
         }
 
+        [HarmonyPatch(typeof(GameplaySpectatorUltimatePartyFlowViewModel), nameof(GameplaySpectatorUltimatePartyFlowViewModel.BeginMatchmakingAfterCountdown)), HarmonyPrefix]
+        static bool BeginMatchmakingAfterCountdown(BannersDefault __instance, int seconds)
+        {
+            FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Qual);
+
+            if (StateManager.IsPlayingExplore)
+            {
+                StateManager.ExploreState.RequestNewRound();
+            }
+            else
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, "BeginMatchmakingAfterCountdown", "Complete message was seen without an explore state.");
+                FLZ_Extensions.ForceExit();
+            }
+            return false;
+        }
+
+        [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageComplete)), HarmonyPrefix]
+        static bool CreateMessageComplete(BannersDefault __instance)
+        {
+            AudioManager.PlayGameplayEndAudio(true);
+            __instance.State = BannersDefault.BannerActive.Complete;
+            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
+
+            if (speedrun)
+            {
+                string txt = CMSLoader.Instance._localisedStrings._localisedStrings["complete"];
+                AddCMSString("sp_qual_comp", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
+                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
+            }
+
+            WinnerScreenViewModel.Show(speedrun ? "sp_qual_comp" : "complete", true, new Action(() =>
+            {
+                FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Qual);
+
+                if (StateManager.IsPlayingExplore)
+                {
+                    StateManager.ExploreState.RequestNewRound();
+                }
+                else
+                {
+                    FGTLog(BepInEx.Logging.LogLevel.Error, "CreateMessageComplete", "Complete message was seen without an explore state.");
+                    FLZ_Extensions.ForceExit();
+                }
+            }));
+
+            return false;
+        }
+
         [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageQualified)), HarmonyPrefix]
         static bool CreateMessageQualified(BannersDefault __instance, Il2CppSystem.Action callback)
         {
+            if (StateManager.IsPlayingExplore)
+            {
+                __instance.CreateMessageComplete();
+                return false;
+            }
+
             AudioManager.PlayGameplayEndAudio(true);
             __instance.State = BannersDefault.BannerActive.Qualified;
             __instance._isEliminateOrQualifiedMessageShowed = true;
+            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
-            if (ConfigManager.SpeedrunMode.Value)
+            if (speedrun)
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["qualified"];
                 AddCMSString("sp_qual", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
                 FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
-            QualifiedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_qual" : "qualified", new Action(() =>
+            QualifiedScreenViewModel.Show(speedrun ? "sp_qual" : "qualified", new Action(() =>
             {
                 FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Qual);
 
@@ -146,13 +207,13 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.ShowState == null)
                 {
-                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    if (speedrun && !CGM.IsTimerEnded())
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
             }), __instance.GetTimeAttackEntry());
-            
+
             Commands.OnQualified?.Invoke();
 
             return false;
@@ -164,15 +225,17 @@ namespace FGTools.LocalServer.Patches
             AudioManager.PlayGameplayEndAudio(false);
             __instance.State = BannersDefault.BannerActive.Eliminated;
             __instance._isEliminateOrQualifiedMessageShowed = true;
+            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
-            if (ConfigManager.SpeedrunMode.Value)
+            if (speedrun)
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["eliminated"];
                 AddCMSString("sp_elim", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
-                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
+                if (!CGM.IsTimerEnded())
+                    FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
-            EliminatedScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_elim" : "eliminated", !LocalServerService.IsUserAloneAndHost ? new Action(__instance.SwitchToSpectator) : null, new Action(() =>
+            EliminatedScreenViewModel.Show(speedrun ? "sp_elim" : "eliminated", !LocalServerService.IsUserAloneAndHost ? new Action(__instance.SwitchToSpectator) : null, new Action(() =>
             {
                 FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Elim);
 
@@ -184,7 +247,7 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.ShowState == null)
                 {
-                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    if (speedrun)
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
                 }
                 else
@@ -201,15 +264,17 @@ namespace FGTools.LocalServer.Patches
         static bool CreateMessageWonEpisode(BannersDefault __instance)
         {
             AudioManager.PlayGameplayEndAudio(true);
+            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
-            if (ConfigManager.SpeedrunMode.Value)
+            if (speedrun)
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["winner"];
                 AddCMSString("sp_win", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
-                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
+                if (!CGM.IsTimerEnded())
+                    FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
 
-            WinnerScreenViewModel.Show(ConfigManager.SpeedrunMode.Value ? "sp_win" : "winner", true, new Action(() => 
+            WinnerScreenViewModel.Show(speedrun ? "sp_win" : "winner", true, new Action(() => 
             {
                 if (!LocalServerService.IsUserAloneAndHost)
                 {
@@ -219,7 +284,7 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.ShowState == null)
                 {
-                    if (ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                    if (speedrun)
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
                 }
                 else
@@ -227,6 +292,22 @@ namespace FGTools.LocalServer.Patches
             }), __instance.GetTimeAttackEntry());
 
             Commands.OnWon?.Invoke();
+
+            return false;
+        }
+
+        //temp
+        [HarmonyPatch(typeof(HexSnakeManager), nameof(HexSnakeManager.ManagePlayingParticipantCount)), HarmonyPrefix]
+        static bool ManagePlayingParticipantCount(HexSnakeManager __instance, int playingParticipantCount)
+        {
+            playingParticipantCount = FGTServiceManager.GetService<RoundOptionsService>().GetPlayers();
+            for (int i = 0; i < __instance.PlayerPlayAreaList.Count; i++)
+            {
+                __instance.PlayerPlayAreaList[i].SetActive(i < playingParticipantCount);
+            }
+
+            foreach (var test in Resources.FindObjectsOfTypeAll<COMMON_RoundProgressValueScaler>())
+                test.enabled = false;
 
             return false;
         }

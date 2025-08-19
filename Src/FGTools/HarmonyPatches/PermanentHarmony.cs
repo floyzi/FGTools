@@ -121,38 +121,15 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(LeaveMatchPopupManager), nameof(LeaveMatchPopupManager.OnClose)), HarmonyPrefix]
         static bool OnClose(LeaveMatchPopupManager __instance, bool wasOk)
         {
-            AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericCancel, default(Vector3));
             if (wasOk)
             {
-                LeaveLobbySilentlyIfNecessaryEvent evt = new LeaveLobbySilentlyIfNecessaryEvent("PartyStateManager_Core_HandlePartyEntered", LeaveLobbyReason.EnteredParty);
-                Broadcaster.Instance.Broadcast<LeaveLobbySilentlyIfNecessaryEvent>(evt);
-                if (CGM != null && StateManager.FGTCurrentState == FGTStateManager.FGTState.RoundIntro)
-                {
-                    foreach (var fmodevt in CGM._ambienceInstances)
-                    {
-                        fmodevt?.Stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    }
-
-                    FMODTool.UnloadAllLoadedBanks();
-                    CGM.Shutdown();
-                }
-
                 if (StateManager.ExploreState == null)
                     __instance.LeaveMatch();
                 else
                     StateManager.QuitExplore();
                 FGTServiceManager.GetService<StatisticsService>().ProcessNewRound(StatisticsService.RoundResult.Leave);
-                PartyStateManager.Instance.HidePartyMenu();
             }
-            else
-            {
-                __instance.CloseScreen();
-                if (PartyStateManager.Instance.IsInPartyWithOthers() && InGameOptionsMenuManager.Instance.IsScreenActive && ShowsManager.Instance.SelectedGameMode == ShowsManager.GameMode.Public)
-                {
-                    PartyStateManager.Instance.ShowPartyMenu();
-                }
-            }
-            return false;
+            return true;
         }
 
         [HarmonyPatch(typeof(GenericCelebrationPreviewViewModel), nameof(GenericCelebrationPreviewViewModel.ShowFullScreenPopup)), HarmonyPrefix]

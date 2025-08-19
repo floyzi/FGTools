@@ -1,23 +1,31 @@
 ﻿extern alias wle;
 using FG.Common;
 using FG.Common.Character;
+using FG.Common.Character.MotorSystem;
 using FG.Common.LODs;
 using FG.Common.Network;
 using FGClient;
 using FGTools.Services;
+using FGTools.States.Logic;
 using HarmonyLib;
 using Levels;
+using Levels.DoorDash;
 using Levels.Obstacles;
 using Levels.Progression;
+using Levels.Rollout;
+using Levels.ScoreZone;
+using Levels.TipToe;
 using Levels.WallGuys;
+using Mediatonic.Strings;
 using SRF;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static wle::LevelEditorRespawnerController;
 
 namespace FGTools.LocalServer.Patches
 {
-    internal class ServerGameplayPatches
+    internal class ServerGameplayPatches : FGTBase
     {
         public static readonly HashSet<string> IsGameServerList =
         [
@@ -111,7 +119,24 @@ namespace FGTools.LocalServer.Patches
             "COMMON_PlayerEliminationVolume",
             "TimeAttackPlayerStats",
             "COMMON_InfiniteSegmentSpawner",
-            "VolumeZone"
+            "VolumeZone",
+            "COMMON_FakeDoorRandomiser",
+            "MPGNetObjectPossessable",
+            "COMMON_GridPathRandomiser",
+            "TipToe_PlatformShakeController",
+            "JumbotronController",
+            "FloorFall_FloorController",
+            "COMMON_RespawningTile",
+            "LevelEditorSlimeKillZone",
+            "LevelEditorLavaController",
+            "LevelEditorCheckpointManager",
+            "LevelEditorCheckpointZone",
+            "LevelEditorSlimeVolume",
+            "COMMON_Forcefield",
+            "COMMON_Sequence",
+            //"MotorAgent", //causes crash, no clue why
+            "COMMON_TimedPivotable",
+            ""
         ];
 
 
@@ -171,27 +196,27 @@ namespace FGTools.LocalServer.Patches
            ServerGameStateActions.Instance.SetupNetworkObject(__instance, __instance.gameObject.transform.position, __instance.gameObject.transform.rotation, __instance.gameObject.transform.localScale, postSpawnAction);
         }
 
-        [HarmonyPatch(typeof(FGBehaviour), nameof(FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
+        [HarmonyPatch(typeof(FG.Common.FGBehaviour), nameof(FG.Common.FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
         static void GameState(FGBehaviour __instance, ref IGameStateView __result)
         {
             if (IsGameServerList.Contains(__instance.GetIl2CppType().Name) && LocalServerService.GameStateView != null)
                     __result = LocalServerService.GameStateView;
         }
 
-        [HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.InstantiateObject))]
-        [HarmonyPrefix]
-        private static bool InstantiateObject(COMMON_PrefabSpawnerBase __instance, COMMON_PrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
-        {
-            entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
-            entry.value.RemoveComponentIfExists<LodController>();
+        //[HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.InstantiateObject))]
+        //[HarmonyPrefix]
+        //private static bool InstantiateObject(COMMON_PrefabSpawnerBase __instance, COMMON_PrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
+        //{
+        //    entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
+        //    entry.value.RemoveComponentIfExists<LodController>();
 
-            if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
-                result = entry.value.AddComponent<MPGNetObject>();
+        //    if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
+        //        result = entry.value.AddComponent<MPGNetObject>();
 
-            result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
-            result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
-            return false;
-        }
+        //    result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
+        //    result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
+        //    return false;
+        //}
 
         [HarmonyPatch(typeof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase), nameof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.InstantiateObject))]
         [HarmonyPrefix]
@@ -269,6 +294,42 @@ namespace FGTools.LocalServer.Patches
                 netObj.SpawnPrefab(netObj.transform.position += new Vector3(UnityEngine.Random.Range(deviationMin.x, deviationMax.x), objectBounds.extents.y + (currentCellPosition.y - objectBounds.center.y), UnityEngine.Random.Range(deviationMin.z, deviationMax.z)), netObj.transform.rotation, netObj.transform.localScale);
             }
             return false;
+        }
+
+        [HarmonyPatch(typeof(MPGNetObjectPossessable), nameof(MPGNetObjectPossessable.PossessObject)), HarmonyPostfix]
+        static void PossessObject(MPGNetObjectPossessable __instance)
+        {
+            Debug.Log($"[MPGNetObjectPossessable] Generating Possession Request for scene object {__instance.name} with hash {__instance.PossessionId}, SpawnObjectType={__instance.SpawnObjectType()}, Unity instance id {__instance.CachedGameObject.GetInstanceID()}");
+            __instance.GameStateServerActioner.SetupNetworkObject(__instance, __instance.CachedTransform.position, __instance.CachedTransform.rotation, __instance.CachedTransform.localScale, null);
+        }
+
+        [HarmonyPatch(typeof(COMMON_FakeDoorRandomiser), nameof(COMMON_FakeDoorRandomiser.Awake)), HarmonyPostfix]
+        static void Awake(COMMON_FakeDoorRandomiser __instance)
+        {
+            if (__instance.TryGetComponent<MPGNetObjectPossessable>(out var poss))
+                poss.PossessObject();
+        }
+
+        [HarmonyPatch(typeof(COMMON_GridPathRandomiser), nameof(COMMON_GridPathRandomiser.Awake)), HarmonyPostfix]
+        static void Awake(COMMON_GridPathRandomiser __instance)
+        {
+            if (__instance.TryGetComponent<MPGNetObjectPossessable>(out var poss))
+                poss.PossessObject();
+        }
+
+        [HarmonyPatch(typeof(BubbleZone), nameof(BubbleZone.ZoneBeginNetworkAction)), HarmonyPostfix]
+        static void ZoneBeginNetworkAction(BubbleZone __instance)
+        {
+            __instance._numActiveBubbles = 10;
+            __instance.RefreshAndReseedBubblePool();
+            __instance.SpawnStartBubbles();
+        }
+
+        [HarmonyPatch(typeof(wle.LevelEditorSlimeVolume), nameof(wle.LevelEditorSlimeVolume.OnTriggerEnter)), HarmonyPostfix]
+        static void OnTriggerEnter(COMMON_PlayerEliminationVolume __instance, Collider other)
+        {
+            if (other.TryGetComponent<MPGNetObject>(out var net) && net.IsFallGuy)
+                __instance.GameStateServerActioner.EliminateParticipant(net, false, LiveOps.Challenges.EliminationReason.Slime);
         }
     }
 }

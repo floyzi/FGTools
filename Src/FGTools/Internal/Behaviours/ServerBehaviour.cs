@@ -44,7 +44,10 @@ namespace FGTools.Internal.Behaviours
 
             _respawnPos = -75f;
 
-            if (ServerManager.CGM != null && !ServerManager.CGM.IsUGCRound)
+            if (CGM == null)
+                return _respawnPos;
+
+            if (!CGM.IsUGCRound)
             {
                 foreach (StaticGeometryHashID testCol in Resources.FindObjectsOfTypeAll<StaticGeometryHashID>())
                 {
@@ -54,12 +57,16 @@ namespace FGTools.Internal.Behaviours
                     }
                 }
 
-                return _respawnPos -= 10f;
+                return _respawnPos;
             }
             else
             {
-                _respawnPos = float.MaxValue;
-                if (ServerManager.CGM != null && ServerManager.CGM._round.Archetype.Id.Split('_')[1] != "survival")
+                _respawnPos = float.MinValue;
+                var potentialPos = Resources.FindObjectsOfTypeAll<CheckpointManager>().FirstOrDefault();
+
+                if (potentialPos != null)
+                    _respawnPos = potentialPos.transform.position.y;
+                else if (!CGM.GameRules.IsSurvivalRound)
                 {
                     foreach (wle.LevelEditorPlaceableObject obj in wle.LevelIO.PlaceableObjects._dictionary.Values)
                     {
@@ -75,15 +82,14 @@ namespace FGTools.Internal.Behaviours
                             _respawnPos = Mathf.Min(_respawnPos, y);
                         }
                         catch { }
+
                     }
                 }
                 else
-                {
-                    _respawnPos = -75;
-                }
-            }
+                    _respawnPos = -200;
 
-            return _respawnPos;
+                return _respawnPos;
+            }
         }
 
         internal static RespawnLocation GetRespawnLocation()

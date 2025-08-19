@@ -1,6 +1,8 @@
 ﻿using BepInEx.Logging;
 using Events;
+using FG.Common;
 using FG.Common.CMS;
+using FGClient;
 using FGClient.UI;
 using FGClient.UI.Notifications;
 using FGTools.States.Logic;
@@ -73,6 +75,8 @@ namespace FGTools.Internal.Extensions
             process.StartInfo.CreateNoWindow = true;
             process.Start();
         }
+
+        internal static void ForceExit() => GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
 
         public static void DoModal(string title, string msg, ModalType type, OKButtonType btnType, Il2CppSystem.Action<bool> act = null, bool doSfx = true, string btnOkStr = null, TextAlignmentOptions al = TextAlignmentOptions.Center, float closeDelay = 0f, ModalHideGUIType hideGUI = ModalHideGUIType.None)
         {
