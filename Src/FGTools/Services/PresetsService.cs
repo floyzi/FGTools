@@ -91,7 +91,7 @@ namespace FGTools.Services
                         SecondWheel = secondWheel,
                     }
                 };
-                var path = Path.Combine(Plugin.PresetsDir, $"FGTPreset_{name}.json");
+                var path = Path.Combine(Launcher.PresetsDir, $"FGTPreset_{name}.json");
                 File.WriteAllText(path, JsonSerializer.Serialize(newPreset));
                 if (Presets.ContainsKey(name))
                     Presets.Remove(name);
@@ -102,7 +102,7 @@ namespace FGTools.Services
 
         public string PreviewPresetContent(string name)
         {
-            var preset = PresetFromPath(Path.Combine(Plugin.PresetsDir, name));
+            var preset = PresetFromPath(Path.Combine(Launcher.PresetsDir, name));
             if (preset != null)
             {
                 int wheelIndex = 1;
@@ -162,7 +162,7 @@ namespace FGTools.Services
 
         public void SetPreset(string name, bool ignoreMenu, bool silent = false)
         {
-            var preset = PresetFromPath(Path.Combine(Plugin.PresetsDir, name));
+            var preset = PresetFromPath(Path.Combine(Launcher.PresetsDir, name));
             if (preset == null)
                 return;
 
@@ -272,7 +272,7 @@ namespace FGTools.Services
         public override void RegisterService()
         {
             Presets = new();
-            foreach (var file in Directory.GetFiles(Plugin.PresetsDir))
+            foreach (var file in Directory.GetFiles(Launcher.PresetsDir))
             {
                 try
                 {

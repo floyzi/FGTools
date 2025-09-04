@@ -106,15 +106,15 @@ namespace FGTools.Services
         {
             FGTLog(LogLevel.Warning, base.GetType(), $"Failed to recover fav list.");
 
-            if (File.Exists(Plugin.CustomFavList))
-                File.Delete(Plugin.CustomFavList);
+            if (File.Exists(Launcher.CustomFavList))
+                File.Delete(Launcher.CustomFavList);
 
             FavList = new CustomFavList()
             {
                 Id = [],
             };
             var stats = JsonSerializer.Serialize(FavList);
-            File.WriteAllText(Plugin.CustomFavList, stats);
+            File.WriteAllText(Launcher.CustomFavList, stats);
         }
 
         public void Load()
@@ -127,13 +127,13 @@ namespace FGTools.Services
                 {
                     try
                     {
-                        if (!File.Exists(Plugin.CustomFavList))
+                        if (!File.Exists(Launcher.CustomFavList))
                         {
                             var stats = JsonSerializer.Serialize(FavList);
-                            File.WriteAllText(Plugin.CustomFavList, stats);
+                            File.WriteAllText(Launcher.CustomFavList, stats);
                         }
                         else
-                            FavList = JsonSerializer.Deserialize<CustomFavList>(File.ReadAllText(Plugin.CustomFavList));
+                            FavList = JsonSerializer.Deserialize<CustomFavList>(File.ReadAllText(Launcher.CustomFavList));
 
                         FavList.Id ??= new();
                     }
@@ -235,7 +235,7 @@ namespace FGTools.Services
                     EndLoad();
 
                     SearchLoaded = true;
-                    SearchPanel = new SearchPanel(Plugin.UniverseUIBase);
+                    SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
 
                     Loaded = true;
                     if (AllCosmetics.Value)
@@ -359,7 +359,7 @@ namespace FGTools.Services
             }
         }
 
-        bool UIPrevState;
+        bool UIPrevState = true;
 
         internal bool IsSomeScreenActive()
         {
@@ -370,18 +370,14 @@ namespace FGTools.Services
                 if (SearchPanel.UIRoot.gameObject.activeSelf && !res)
                 {
                     SearchPanel.Reset();
-
-                    StateManager.InternalState.LoaderUIToggle = UIPrevState;
-                    StateManager.InternalState.ToolsUI.SetActive(UIPrevState);
+                    StateManager.InternalState.ToolsUI.ToggleUI(UIPrevState);
                 }
 
                 if (!SearchPanel.UIRoot.gameObject.activeSelf && res)
                 {
-                    UniversalUI.SetUIActive(UniverseGUID, true);
                     UIPrevState = StateManager.InternalState.LoaderUIToggle;
-
-                    StateManager.InternalState.LoaderUIToggle = false;
-                    StateManager.InternalState.ToolsUI.SetActive(false);
+                    StateManager.InternalState.ToolsUI.ToggleUI(true);
+                    StateManager.InternalState.ToolsUI.UIRoot.gameObject.SetActive(false);
                 }
                 
                 SearchPanel?.UIRoot.gameObject.SetActive(res);
@@ -1023,7 +1019,7 @@ namespace FGTools.Services
                 __instance.OnEnable(); //i don't want to talk about this one
                 AudioManager.SetGlobalParam(AudioManager.EventMasterData.MainMenuMusicParam, 1f);
                 var json = JsonSerializer.Serialize(FavList);
-                File.WriteAllText(Plugin.CustomFavList, json);
+                File.WriteAllText(Launcher.CustomFavList, json);
                 return false;
             }
 

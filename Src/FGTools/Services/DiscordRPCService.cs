@@ -7,7 +7,7 @@ using FGTools.Internal;
 using FGTools.Services.Logic;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static FGTools.Plugin;
+using static FGTools.Launcher;
 using static FGTools.States.Logic.FGTStateManager;
 using LogLevel = BepInEx.Logging.LogLevel;
 
@@ -187,7 +187,7 @@ namespace FGTools.Services
                         break;
                 }
                 act.Assets.LargeImage = "fgtools_logo_big";
-                act.Assets.LargeText = $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version}";
+                act.Assets.LargeText = $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version}";
 
                 _Discord.GetActivityManager().UpdateActivity(act, null);
             }

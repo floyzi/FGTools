@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using BepInEx.Configuration;
@@ -13,6 +14,7 @@ using KeyCode = UnityEngine.KeyCode;
 
 namespace FGTools.Config
 {
+    [Obsolete("Will be rewrited soon (i hope)")]
     public class ConfigManager : FGTBase
     {
         public static ConfigFile CFG;
@@ -133,7 +135,7 @@ namespace FGTools.Config
         public static ConfigEntry<ElimType> ElimLevel { get; set; }
         public static ConfigEntry<WinType> WinLevel { get; set; }
         public static ConfigEntry<bool> GravZoneEffect { get; set; }
-        public static ConfigEntry<bool> OneTimeCheckpoint { get; set; }
+        //public static ConfigEntry<bool> OneTimeCheckpoint { get; set; }
         public static ConfigEntry<int> PointsObjective { get; set; }
         public static ConfigEntry<int> AirTimeObjective { get; set; }
         public static ConfigEntry<bool> InvisibleCheckpoint { get; set; }
@@ -203,7 +205,7 @@ namespace FGTools.Config
             CFG = bepCfg;
             FGTLog(LogLevel.Info, "LoadCFG", "Started parsing config...");
 
-            Descs = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Plugin.StaticConfigDescs));
+            Descs = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Launcher.StaticConfigDescs));
 
             #region DEFAULT
             LangFileName = CFG.Bind(OptionsSect, "Localization File Name", "en", "Name of folder that will be used for FGTools localization");
@@ -240,7 +242,7 @@ namespace FGTools.Config
             AutoSetPreset = CFG.Bind(OptionsSect, "Auto Set Preset", true, GetDesc("auto_preset"));
             #endregion
 
-            LocalizationService.SelectedLocalizeFolder ??= Path.Combine(Plugin.LocalizationDir + LangFileName.Value + "\\");
+            LocalizationService.SelectedLocalizeFolder ??= Path.Combine(Launcher.LocalizationDir + LangFileName.Value + "\\");
 
             #region HOTKEYS
             ToggleCusorHotkey = CFG.Bind(HotkeysUISect, "Toggle Cursor", KeyCode.F1);
@@ -304,10 +306,10 @@ namespace FGTools.Config
             GravZoneEffect.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            OneTimeCheckpoint = CFG.Bind(GPSect, "One Time Checkpoint", false, GetDesc("one_time_checkpoint"));
-            OneTimeCheckpoint.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
+            //OneTimeCheckpoint = CFG.Bind(GPSect, "One Time Checkpoint", false, GetDesc("one_time_checkpoint"));
+            //OneTimeCheckpoint.SettingChanged += (sender, args) => {
+            //    ConfigAction();
+            //};
             PointsObjective = CFG.Bind(GPSect, "Points Objective", 0, GetDesc("points_goal"));
             PointsObjective.SettingChanged += (sender, args) => {
                 ConfigAction();
@@ -319,7 +321,7 @@ namespace FGTools.Config
             InvisibleCheckpoint = CFG.Bind(GPSect, "Invisible Checkpoint", false, GetDesc("hide_checkpoint"));
             InvisibleCheckpoint.SettingChanged += (sender, args) => {
                 if (StateManager.IsInGameplay)
-                   FallGuyBehaviour._instance.spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
+                  FGBehaviour.CurrentGPState.Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
             };
             RealHardMode = CFG.Bind(GPSect, "Hard Mode", false, GetDesc("hard_mode"));
             RCDelay = CFG.Bind(GPSect, "Delay", 0.5f, GetDesc("cr_delay"));

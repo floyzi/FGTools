@@ -3,6 +3,7 @@ using System.IO;
 using BepInEx.Logging;
 using FGClient;
 using FGTools.Services;
+using FGTools.States;
 using FGTools.States.Logic;
 using NAudio.Wave;
 using UnityEngine;
@@ -58,6 +59,7 @@ namespace FGTools.Internal.Behaviours
             {
                 GUI.Box(new Rect(10f, guiPosBase + 10, 250f, 332f), "");
                 GUI.Label(new Rect(15f, guiPosBase + 15, 255f, 30f), "MenuAudioDebug - F5 toggle");
+
                 if (targetTime != -1)
                 {
                     input = GUI.TextField(new Rect(15f, guiPosBase + 40, 240f, 20f), input);
@@ -109,44 +111,49 @@ namespace FGTools.Internal.Behaviours
 #endif
         public void PlayMusic(bool force)
         {
-            if (FGTServiceManager.GetService<MenuThemeService>().CurrentThemePath != null)
+            if (string.IsNullOrEmpty(FGTServiceManager.GetService<MenuThemeService>().CurrentThemePath))
+                return;
+
+            var ms = StateManager.GetState<MenuState>();
+            if (ms != null && ms.IntroStopwatch.IsRunning)
+                return;
+
+            if (Application.isFocused)
             {
-                if (Application.isFocused)
-                {
 #if AUDIODEBUG
-                    cutoffEdit = FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff;
-                    introEdit = FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.IntroLength;
+                cutoffEdit = FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff;
+                introEdit = FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.IntroLength;
 #endif
-                    string loopPath = $"{Plugin.ThemesDir}{Path.GetDirectoryName(FGTServiceManager.GetService<MenuThemeService>().CurrentThemePath)}\\{FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.LoopMusic}";
-                    StopMusic(false);
+                string loopPath = $"{Launcher.ThemesDir}{Path.GetDirectoryName(FGTServiceManager.GetService<MenuThemeService>().CurrentThemePath)}\\{FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.LoopMusic}";
+                StopMusic(false);
 
-                    if (File.Exists(loopPath) && (force || loopEvent == null))
+                if (File.Exists(loopPath) && (force || loopEvent == null))
+                {
+                    FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): force: {force}, fileName {Path.GetFileName(loopPath)}");
+
+                    loopEvent = new WaveOutEvent();
+                    loopWaveProvider = Path.GetExtension(loopPath) == ".wav" ? new WaveFileReader(loopPath) : new Mp3FileReader(loopPath);
+                    loopVolumeWaveProvider = new VolumeWaveProvider16(loopWaveProvider)
                     {
-                        FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): force: {force}, fileName {Path.GetFileName(loopPath)}");
+                        Volume = 0
+                    };
 
-                        loopEvent = new WaveOutEvent();
-                        loopWaveProvider = Path.GetExtension(loopPath) == ".wav" ? new WaveFileReader(loopPath) : new Mp3FileReader(loopPath);
-                        loopVolumeWaveProvider = new VolumeWaveProvider16(loopWaveProvider)
-                        {
-                            Volume = 0
-                        };
-
-                        stop = false;
-                        loopEvent.Init(loopVolumeWaveProvider);
+                    stop = false;
+                    loopEvent.Init(loopVolumeWaveProvider);
 #if AUDIODEBUG
-                        targetTime = loopWaveProvider.TotalTime.TotalSeconds - cutoffEdit;
+                    targetTime = loopWaveProvider.TotalTime.TotalSeconds - cutoffEdit;
 #else
-                            targetTime = loopWaveProvider.TotalTime.TotalSeconds - FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff;
+                    targetTime = loopWaveProvider.TotalTime.TotalSeconds - FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff;
 #endif
-                        loopEvent.Play();
-                    }
-                }
-                else
-                {
-                    FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): waiting for game to focus...");
-                    focusPending = true;
+                    loopEvent.Play();
                 }
             }
+            else
+            {
+                FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): waiting for game to focus...");
+                focusPending = true;
+            }
+
         }
 
         public void StopMusic(bool fadeout = false)
@@ -162,10 +169,13 @@ namespace FGTools.Internal.Behaviours
                 loopEvent = null;
                 loopWaveProvider = null;
                 FGTLog(LogLevel.Info, base.GetType(), "StopMusic(): Music was stopped");
+
                 GC.Collect();
             }
             else
+            {
                 FGTLog(LogLevel.Info, base.GetType(), $"StopMusic(): Music can't be stopped as it not playing | {loopEvent != null} {loopWaveProvider != null}");
+            }
         }
 
         void Update()

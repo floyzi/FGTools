@@ -27,6 +27,7 @@ namespace FGTools.LocalServer.Patches
 {
     internal class ServerGameplayPatches : FGTBase
     {
+        //list of classes that should think they're running on server side (wait, they ACTUALLY running on server side :rofl:)
         public static readonly HashSet<string> IsGameServerList =
         [
             "WallGuysSegmentGenerator",
@@ -136,14 +137,30 @@ namespace FGTools.LocalServer.Patches
             "COMMON_Sequence",
             //"MotorAgent", //causes crash, no clue why
             "COMMON_TimedPivotable",
-            ""
+            "CollectableZoneTrigger",
+            "LodController",
+            "LodManager",
+            "COMMON_ObjectiveBase"
         ];
 
 
         [HarmonyPatch(typeof(ClientGameStateView), nameof(ClientGameStateView.IsGameServer), MethodType.Getter), HarmonyPostfix]
         static void IsGameServer(ClientGameStateView __instance, ref bool __result)
         {
-            __result =/* LocalServerService.ServerInOperation && GlobalGameStateClient.Instance.GameStateView.IsGamePlaying*/ false ;
+            __result = /*LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.GameStateView.IsGamePlaying*/ false;
+        }
+
+        [HarmonyPatch(typeof(FG.Common.FGBehaviour), nameof(FG.Common.FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
+        static void GameState(FGBehaviour __instance, ref IGameStateView __result)
+        {
+            if (LocalServerService.IsServerInOperation && IsGameServerList.Contains(__instance.GetIl2CppType().Name) && LocalServerService.GameStateView != null)
+                __result = LocalServerService.GameStateView;
+        }
+
+        [HarmonyPatch(typeof(ClientGameStateView), nameof(ClientGameStateView.IsComboServer), MethodType.Getter), HarmonyPostfix]
+        static void IsComboServer(ClientGameStateView __instance, ref bool __result)
+        {
+            __result = LocalServerService.IsServerInOperation;
         }
 
         [HarmonyPatch(typeof(wle.LevelEditorBubbleHandler), nameof(wle.LevelEditorBubbleHandler.IsInExploreOrPlayState), MethodType.Getter), HarmonyPrefix]
@@ -193,44 +210,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(MPGNetObjectBootstrapper), nameof(MPGNetObjectBootstrapper.BootstrapObject)), HarmonyPostfix]
         static void BootstrapObject(MPGNetObjectBootstrapper __instance, Il2CppSystem.Action<MPGNetID, GameObject> postSpawnAction)
         {
-           ServerGameStateActions.Instance.SetupNetworkObject(__instance, __instance.gameObject.transform.position, __instance.gameObject.transform.rotation, __instance.gameObject.transform.localScale, postSpawnAction);
-        }
-
-        [HarmonyPatch(typeof(FG.Common.FGBehaviour), nameof(FG.Common.FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
-        static void GameState(FGBehaviour __instance, ref IGameStateView __result)
-        {
-            if (IsGameServerList.Contains(__instance.GetIl2CppType().Name) && LocalServerService.GameStateView != null)
-                    __result = LocalServerService.GameStateView;
-        }
-
-        //[HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.InstantiateObject))]
-        //[HarmonyPrefix]
-        //private static bool InstantiateObject(COMMON_PrefabSpawnerBase __instance, COMMON_PrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
-        //{
-        //    entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
-        //    entry.value.RemoveComponentIfExists<LodController>();
-
-        //    if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
-        //        result = entry.value.AddComponent<MPGNetObject>();
-
-        //    result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
-        //    result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
-        //    return false;
-        //}
-
-        [HarmonyPatch(typeof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase), nameof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.InstantiateObject))]
-        [HarmonyPrefix]
-        private static bool InstantiateObject(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase __instance, wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
-        {
-            entry.value.RemoveComponentIfExists<MPGNetObjectBootstrapper>();
-            entry.value.RemoveComponentIfExists<LodController>();
-
-            if (!entry.value.TryGetComponent<MPGNetObject>(out var result))
-                result = entry.value.AddComponent<MPGNetObject>();
-
-            result.GameObjectHash = result.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
-            result.SpawnPrefab(spawnPosition, __instance.GetInitialRotation(entry), entry.value.transform.localScale, new Action<MPGNetID, GameObject>((MPGNetID netId, GameObject obj) => { __instance.OnInstantiateObject(obj, entry); }));
-            return false;
+            ServerGameStateActions.Instance.SetupNetworkObject(__instance, __instance.gameObject.transform.position, __instance.gameObject.transform.rotation, __instance.gameObject.transform.localScale, postSpawnAction);
         }
 
         [HarmonyPatch(typeof(RMIBehaviourManager), nameof(RMIBehaviourManager.SetActive)), HarmonyPostfix]
@@ -320,7 +300,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(BubbleZone), nameof(BubbleZone.ZoneBeginNetworkAction)), HarmonyPostfix]
         static void ZoneBeginNetworkAction(BubbleZone __instance)
         {
-            __instance._numActiveBubbles = 10;
+            __instance._numActiveBubbles = (int)Mathf.Max(__instance._playerCount * __instance._bubbleZoneConfig.BubblesPerPlayer, __instance._bubbleZoneConfig.MinActiveBubbles);
             __instance.RefreshAndReseedBubblePool();
             __instance.SpawnStartBubbles();
         }
@@ -328,7 +308,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(wle.LevelEditorSlimeVolume), nameof(wle.LevelEditorSlimeVolume.OnTriggerEnter)), HarmonyPostfix]
         static void OnTriggerEnter(COMMON_PlayerEliminationVolume __instance, Collider other)
         {
-            if (other.TryGetComponent<MPGNetObject>(out var net) && net.IsFallGuy)
+            if (other.TryGetComponent<MPGNetObject>(out var net) && net.IsFallGuy && ServerManager.CGM.GameRules.IsSurvivalRound)
                 __instance.GameStateServerActioner.EliminateParticipant(net, false, LiveOps.Challenges.EliminationReason.Slime);
         }
     }

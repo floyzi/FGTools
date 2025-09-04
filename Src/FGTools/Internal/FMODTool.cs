@@ -1,8 +1,10 @@
-﻿using System;
+﻿using FMOD.Studio;
+using FMODUnity;
+using NAudio.Codecs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using FMOD.Studio;
-using FMODUnity;
+using System.Threading.Tasks;
 using UnityEngine.AddressableAssets;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.Internal
@@ -16,30 +18,19 @@ namespace FGTools.Internal
             public EventInstance Event;
         }
 
-        static readonly Dictionary<string, AssetReference> LoadedBanks = [];
         static readonly Dictionary<string, FMODEvent> ValidEvents = [];
 
         internal static void UnloadBank(string bankName)
         {
-            foreach (var bank in LoadedBanks)
-            {
-                if (bank.Key == bankName || bank.Key == bankName + ".assets")
-                {
-                    RuntimeManager.UnloadBank(bank.Value);
-                    LoadedBanks.Remove(bank.Key);
-                }
-            }
+            RuntimeManager.UnloadBank(bankName);
+            RuntimeManager.UnloadBank($"{bankName}.assets");
         }
 
-        internal static void LoadBank(string bankName, Action onceLoaded = null) 
+        internal static void LoadBank(string bankName) 
         {
             foreach (var bank in AudioManager.Instance._fmodData.SoundBanksArray.ToList().FindAll(x => x.Name == bankName || x.Name == bankName + ".assets"))
             {
-                RuntimeManager.LoadBank(bank.AssetReference, true, true, new Action(() =>
-                {
-                    LoadedBanks.Add(bank.Name, bank.AssetReference);
-                    onceLoaded?.Invoke();
-                }));
+                var res = RuntimeManager.LoadBank(bank.AssetReference, true);
             }
         }
 
@@ -53,7 +44,6 @@ namespace FGTools.Internal
             }
 
             ValidEvents.Clear();
-            LoadedBanks.Clear();
         }
 
         internal static bool CreateFMODEvent(string eventName, out EventInstance res)
@@ -115,19 +105,7 @@ namespace FGTools.Internal
             }
 
             var banks = AudioManager.Instance._fmodData.GetEventBanks(eventName);
-            int loadedBanks = 0;
             int neededBanks = banks == null || banks.BankNames == null ? 0 : banks.BankNames.Length;
-
-            Action _banksReady = () =>
-            {
-                loadedBanks++;
-
-                if (loadedBanks >= neededBanks)
-                {
-                    if (CreateFMODEvent(eventName, out var evt))
-                        evt.start();
-                }
-            };
 
             if (neededBanks > 0)
             {
@@ -135,17 +113,10 @@ namespace FGTools.Internal
                 {
                     if (!RuntimeManager.HasBankLoaded(bank))
                     {
-                        LoadBank(bank, new(() =>
-                        {
-                            _banksReady();
-                        }));
+                        LoadBank(bank);
                     }
-                    else
-                        _banksReady();
                 }
             }
-            else
-                _banksReady();
         }
 
         public static void EndFmod(EventInstance evt, FMOD.Studio.STOP_MODE mode) => evt.stop(mode);

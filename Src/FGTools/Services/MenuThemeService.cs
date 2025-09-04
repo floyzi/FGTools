@@ -201,10 +201,10 @@ namespace FGTools.Services
                 CurrentTheme = null;
                 CurrentThemePath = null;
                 ConfigManager.InGameTheme.Value = LocalizedStr("gui_default");
-                if (Plugin.ThemesHarmonyPatched)
+                if (Launcher.ThemesHarmonyPatched)
                 {
-                    Plugin.ThemesHarmony.UnpatchSelf();
-                    Plugin.ThemesHarmonyPatched = false;
+                    Launcher.ThemesHarmony.UnpatchSelf();
+                    Launcher.ThemesHarmonyPatched = false;
                 }
 
                 GameObject.Destroy(AudioProvider);
@@ -347,10 +347,10 @@ namespace FGTools.Services
 
         public void LoadThemeFromPreview()
         {
-            if (!Plugin.ThemesHarmonyPatched)
+            if (!Launcher.ThemesHarmonyPatched)
             {
-                Plugin.ThemesHarmony.PatchAll(typeof(ThemePatches));
-                Plugin.ThemesHarmonyPatched = true;
+                Launcher.ThemesHarmony.PatchAll(typeof(ThemePatches));
+                Launcher.ThemesHarmonyPatched = true;
             }
             if (ThemeOnPreview != null)
             {
@@ -381,7 +381,7 @@ namespace FGTools.Services
                 themeActions.gameObject?.SetActive(true);
 
                 ThemeOnPreviewPath = themesDirs[index - 1];
-                string themeString = File.ReadAllText($"{Plugin.ThemesDir}{themesDirs[index - 1]}");
+                string themeString = File.ReadAllText($"{Launcher.ThemesDir}{themesDirs[index - 1]}");
                 ThemeOnPreview = JsonSerializer.Deserialize<Theme>(themeString);
 
                 if (CurrentTheme != null)
@@ -416,7 +416,7 @@ namespace FGTools.Services
             {
                 upper = new(theme.UpperGradientRGBA[0], theme.UpperGradientRGBA[1], theme.UpperGradientRGBA[2], theme.UpperGradientRGBA[3]);
                 lower = new(theme.LowerGradientRGBA[0], theme.LowerGradientRGBA[1], theme.LowerGradientRGBA[2], theme.LowerGradientRGBA[3]);
-                pat = PNGtoSprite($"{Plugin.ThemesDir}/{Path.GetDirectoryName(ThemeOnPreviewPath)}/{theme.Pattern}");
+                pat = PNGtoSprite($"{Launcher.ThemesDir}/{Path.GetDirectoryName(ThemeOnPreviewPath)}/{theme.Pattern}");
                 patCol = new(theme.CirclesRGBA[0], theme.CirclesRGBA[1], theme.CirclesRGBA[2], theme.CirclesRGBA[3]);
             }
 
@@ -439,7 +439,7 @@ namespace FGTools.Services
 
         public void SetThemeForLoadingScreens()
         {
-            if (File.Exists($"{Plugin.ThemesDir}/{ConfigManager.InGameTheme.Value}") && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default"))
+            if (File.Exists($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}") && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default"))
             {
                 foreach (LoadingGameScreenViewModel loadingGameScreen in Resources.FindObjectsOfTypeAll<LoadingGameScreenViewModel>())
                 {
@@ -459,22 +459,22 @@ namespace FGTools.Services
             }
             else if (ConfigManager.InGameTheme.Value == LocalizedStr("gui_default"))
             {
-                if (Plugin.ThemesHarmonyPatched)
+                if (Launcher.ThemesHarmonyPatched)
                 {
-                    Plugin.ThemesHarmony.UnpatchSelf();
-                    Plugin.ThemesHarmonyPatched = false;
+                    Launcher.ThemesHarmony.UnpatchSelf();
+                    Launcher.ThemesHarmonyPatched = false;
                 }
             }
         }
 
         public void SetTheme(Theme theme, GameObject gameObject)
         {
-            if (FGTTargetSettings.CustomThemes && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default") && File.Exists($"{Plugin.ThemesDir}/{ConfigManager.InGameTheme.Value}"))
+            if (FGTTargetSettings.CustomThemes && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default") && File.Exists($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}"))
             {
-                string themeString = File.ReadAllText($"{Plugin.ThemesDir}/{ConfigManager.InGameTheme.Value}");
+                string themeString = File.ReadAllText($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}");
                 CurrentTheme = JsonSerializer.Deserialize<Theme>(themeString);
 
-                Sprite pattern = PNGtoSprite($"{Plugin.ThemesDir}/{Path.GetDirectoryName(CurrentThemePath)}/{theme.Pattern}");
+                Sprite pattern = PNGtoSprite($"{Launcher.ThemesDir}/{Path.GetDirectoryName(CurrentThemePath)}/{theme.Pattern}");
                 Transform mask = gameObject.transform.GetChild(1);
                 if (theme.UpperGradientRGBA != null)
                 {
@@ -506,7 +506,7 @@ namespace FGTools.Services
             {
                 if (wasok)
                 {
-                    var target = Plugin.ThemesDir + ThemeOnPreviewPath.Split('\\')[0];
+                    var target = Launcher.ThemesDir + ThemeOnPreviewPath.Split('\\')[0];
                     foreach (var file in Directory.GetFiles(target))
                         File.Delete(file);
                     Directory.Delete(target);
@@ -543,7 +543,7 @@ namespace FGTools.Services
             else
                 currentUrl = null;
 
-            if (folderName != null && Directory.Exists(Plugin.ThemesDir + folderName))
+            if (folderName != null && Directory.Exists(Launcher.ThemesDir + folderName))
             {
                 idk++;
                 toInfo += $"\n\n<color=yellow>{LocalizedStr("gui_catalogue_theme_exists_new")}</color>";
@@ -600,14 +600,14 @@ namespace FGTools.Services
             themes.Clear();
             themesDirs.Clear();
             themes.Add(LocalizedStr("gui_default"));
-            string[] dirs = Directory.GetDirectories($"{Plugin.ThemesDir}");
+            string[] dirs = Directory.GetDirectories($"{Launcher.ThemesDir}");
             foreach (string dir in dirs)
             {
                 foreach (string file in Directory.GetFiles(dir))
                 {
                     if (file.EndsWith(".json"))
                     {
-                        var target = Path.Combine(Path.GetDirectoryName(Path.GetRelativePath($"{Plugin.ThemesDir}", file)), Path.GetFileName(file));
+                        var target = Path.Combine(Path.GetDirectoryName(Path.GetRelativePath($"{Launcher.ThemesDir}", file)), Path.GetFileName(file));
                         themesDirs.Add(target);
                         var a = JsonSerializer.Deserialize<MenuThemeService.Theme>(File.ReadAllText(file));
                         themes.Add(a.DisplayName);
@@ -643,19 +643,19 @@ namespace FGTools.Services
                 yield break;
             }
 
-            if (Directory.Exists(Plugin.ThemesDir + folderName) && deleteFolderFirst)
+            if (Directory.Exists(Launcher.ThemesDir + folderName) && deleteFolderFirst)
             {
-                foreach (string file in Directory.GetFiles(Plugin.ThemesDir + folderName))
+                foreach (string file in Directory.GetFiles(Launcher.ThemesDir + folderName))
                     File.Delete(file);
 
-                Directory.Delete(Plugin.ThemesDir + folderName);
+                Directory.Delete(Launcher.ThemesDir + folderName);
                 deleteFolderFirst = false;
             }
 
             didStartNotif = false;
-            string zipPath = $"{Plugin.AssetsDir}{folderName}.zip";
+            string zipPath = $"{Launcher.AssetsDir}{folderName}.zip";
             File.WriteAllBytes(zipPath, www.downloadHandler.data);
-            ZipFile.ExtractToDirectory(zipPath, Plugin.ThemesDir);
+            ZipFile.ExtractToDirectory(zipPath, Launcher.ThemesDir);
             File.Delete(zipPath);
             RefreshThemesDropdown();
             themeActions.gameObject.SetActive(false);

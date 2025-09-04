@@ -40,12 +40,12 @@ namespace FGTools.Services
         public void Init(bool cleanup)
         {
             FGTLog(LogLevel.Info, base.GetType(), $"init: cleanup = {cleanup}");
-            if (cleanup && File.Exists(Plugin.StatsFile))
+            if (cleanup && File.Exists(Launcher.StatsFile))
             {
-                File.Delete(Plugin.StatsFile);
+                File.Delete(Launcher.StatsFile);
             }
-            if (File.Exists(Plugin.StatsFile))
-                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Plugin.StatsFile));
+            if (File.Exists(Launcher.StatsFile))
+                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
             else
             {
                 var newStats = new StatJSON
@@ -63,8 +63,8 @@ namespace FGTools.Services
                     StatsUser = "DEFAULT",
                 };
                 var json = JsonSerializer.Serialize(newStats);
-                File.AppendAllText(Plugin.StatsFile, json);
-                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Plugin.StatsFile));
+                File.AppendAllText(Launcher.StatsFile, json);
+                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
             }
 
             RefreshHistoryPages();
@@ -96,7 +96,7 @@ namespace FGTools.Services
         public void Save()
         {
             var stats = JsonSerializer.Serialize(currentStats);
-            File.WriteAllText(Plugin.StatsFile, stats);
+            File.WriteAllText(Launcher.StatsFile, stats);
             FGTLog(LogLevel.Info, base.GetType(), "Save");
         }
 

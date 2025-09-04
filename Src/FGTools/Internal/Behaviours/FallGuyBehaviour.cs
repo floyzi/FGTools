@@ -7,31 +7,14 @@ using FG.Common;
 using FG.Common.Audio;
 using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
-using FG.Common.Fraggle;
 using FGClient;
 using FGClient.Rendering.XRay;
 using FGClient.UI;
-using FGClient.UI.Core;
-using FGTools.Config;
-using FGTools.HarmonyPatches;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States;
 using FGTools.States.Logic;
 using Il2CppInterop.Runtime.Attributes;
-using Levels.DoorDash;
-using Levels.HexARing;
-using Levels.HexSnake;
-using Levels.Obstacles;
-using Levels.Powerups;
-using Levels.Progression;
-using Levels.Rollout;
-using Levels.ScoreZone;
-using Levels.ScoreZone.FollowTheLeader;
-using Levels.TimeAttack;
-using Levels.TipToe;
-using Mediatonic.Tools.Utils;
-using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -52,7 +35,6 @@ namespace FGTools.Internal.Behaviours
         public static FallGuyBehaviour _instance;
         public FreeCameraController fc;
         public GameObject controller;
-        public GameObject spawnpoint;
         public GameObject FallGuy;
         public FallGuysCharacterController FGCC;
         public MPGNetObject FGMPG;
@@ -93,7 +75,7 @@ namespace FGTools.Internal.Behaviours
             FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {gamemodeType}");
         }
 
-        void PreloadPowAudio(SelectedPowerup power)
+        static void PreloadPowAudio(SelectedPowerup power)
         {
             switch (power)
             {
@@ -200,10 +182,10 @@ namespace FGTools.Internal.Behaviours
                     FGTController.CheckpointManager._netIDToCheckpointMap.Clear();
                     var trans = CGM.GameRules.PickRespawnPosition(PeakId, 0, PlayerTeamId, 0, false).gameObject.transform;
                     FGCC.TeleportMotorFunction.RequestTeleport(trans.position, trans.rotation);
-                    spawnpoint.transform.SetPositionAndRotation(trans.position, trans.rotation);
+                    CurrentGPState.Spawnpoint.transform.SetPositionAndRotation(trans.position, trans.rotation);
                 }
                 else
-                    FGCC.TeleportMotorFunction.RequestTeleport(spawnpoint.transform.position, spawnpoint.transform.rotation);
+                    FGCC.TeleportMotorFunction.RequestTeleport(CurrentGPState.Spawnpoint.transform.position, CurrentGPState.Spawnpoint.transform.rotation);
 
                 FallGuy.GetComponent<FallGuysCharacterController>().ResetToDefaultState();
                 FallGuy.GetComponent<Rigidbody>().DORestart();
@@ -285,7 +267,7 @@ namespace FGTools.Internal.Behaviours
                 {
                     if (Input.GetKeyDown(CheckpointHotkey.Value) && FallGuy != null && !RealHardMode.Value && !delay)
                     {
-                        spawnpoint.transform.position = FallGuy.transform.position;
+                        CurrentGPState.Spawnpoint.transform.position = FallGuy.transform.position;
                         FallGuy.GetComponent<FallGuysCharacterController>().CharacterEventSystem.RaiseEvent(FGEventFactory.GetVfxCheckpointEvent());
                         StartCoroutine(dumbDelay().WrapToIl2Cpp());
                     }
@@ -293,7 +275,7 @@ namespace FGTools.Internal.Behaviours
                     if (Input.GetKeyDown(ResetCheckpointHotkey.Value) && FallGuy != null && !RealHardMode.Value && !delay)
                     {
                         MultiplayerStartingPosition pos = CGM.GameRules.PickRespawnPosition(102, 0, PlayerTeamId, 0, false);
-                        spawnpoint.transform.SetPositionAndRotation(pos.transform.position, pos.transform.rotation);
+                        CurrentGPState.Spawnpoint.transform.SetPositionAndRotation(pos.transform.position, pos.transform.rotation);
                     }
                 }
                 if (Input.GetKeyDown(EnterFFM.Value) && FallGuy != null)

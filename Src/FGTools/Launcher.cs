@@ -3,6 +3,8 @@ using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using FGTools.HarmonyPatches;
 using FGTools.Internal.Behaviours;
+using FGTools.Internal.Behaviours.ServerSide;
+using FGTools.Internal.Extensions;
 using FGTools.LocalServer;
 using FGTools.Services;
 using HarmonyLib;
@@ -21,7 +23,7 @@ using static FGTools.Config.ConfigManager;
 namespace FGTools
 {
     [BepInPlugin(GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-    public class Plugin : BasePlugin
+    public class Launcher : BasePlugin
     {
         public readonly struct BuildDetails
         {
@@ -118,7 +120,7 @@ namespace FGTools
         public static string RunsData => Path.Combine(AssetsDir, "speedrunData.txt");
         public static string FallbackCredits => Path.Combine(AssetsDir, "credits.txt");
         public static string VariantData => Path.Combine(AssetsDir, "variantData.txt");
-        public static string LoadingSplash => Path.Combine(AssetsDir, "FGToolsSplash.png");
+        public static string LoadingScreen => Path.Combine(AssetsDir, "loading.png");
         public static string VidDir => Path.Combine(CommonDir, "Videos\\");
         public static string ImgDir => Path.Combine(CommonDir, "Images\\");
         public static string CustomBGDir => Path.Combine(ImgDir, "CustomBG\\");
@@ -131,7 +133,7 @@ namespace FGTools
         public static string ThemesDir => Path.Combine(CommonDir, "Themes\\");
         public static string IntroBundle => Path.Combine(AssetsDir, "fgtoolsgamingintro");
         public static string BundlePath => Path.Combine(AssetsDir, "fgtools_content");
-        public static string IntroMusic => Path.Combine(AssetsDir, "gamingIntroOst.wav");
+        public static string IntroMusic => Path.Combine(AssetsDir, "INTRO_MUSIC.wav");
         public static string StatsFile => Path.Combine(AssetsDir, "stats.json");
         public static string IconsDir => Path.Combine(AssetsDir, "Icons\\");
         public static string CustomFavList => Path.Combine(AssetsDir, "favList.json");
@@ -150,10 +152,11 @@ namespace FGTools
         public static string BuildScenesList => Path.Combine(AssetsDir, "build_scenes.json");
         public static string ControllerDatasList => Path.Combine(AssetsDir, "controller_presets.json");
         public static string ExploreBackupV2 => Path.Combine(AssetsDir, "explore-codes_V2.json");
+        public static string Splash => Path.Combine(AssetsDir, "splash.png");
         #endregion
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        static extern int MessageBox(IntPtr ptr, string msg, string title, uint type);
+        internal static extern int MessageBox(IntPtr ptr, string msg, string title, uint type);
 
         public override void Load()
         {
@@ -184,15 +187,10 @@ namespace FGTools
                 LoadCFG(Config);
 
                 ClassInjector.RegisterTypeInIl2Cpp<FallGuyBehaviour>();
-                ClassInjector.RegisterTypeInIl2Cpp<RespawnTileController>();
-                ClassInjector.RegisterTypeInIl2Cpp<SpawnedObjectController>();
-                ClassInjector.RegisterTypeInIl2Cpp<LocalPLatformShake>();
                 ClassInjector.RegisterTypeInIl2Cpp<FGTController>();
                 ClassInjector.RegisterTypeInIl2Cpp<MenuAudioProvider>();
                 ClassInjector.RegisterTypeInIl2Cpp<FreeCameraController>();
-                ClassInjector.RegisterTypeInIl2Cpp<FFAButtonManager>();
                 ClassInjector.RegisterTypeInIl2Cpp<SimpleTrigger>();
-                ClassInjector.RegisterTypeInIl2Cpp<SelfDestcructObject>();
                 ClassInjector.RegisterTypeInIl2Cpp<ServerBehaviour>();
                 ClassInjector.RegisterTypeInIl2Cpp<ServerControlledObject>();
 
@@ -203,7 +201,6 @@ namespace FGTools
                 Log.LogMessage($" --- ");
 
                 PermanentHarmony.PatchAll(typeof(ServerCorePatches));
-                //PermanentHarmony.PatchAll(typeof(FGCGameplay));
                 PermanentHarmony.PatchAll(typeof(GlobalPatches));
                 PermanentHarmony.PatchAll(typeof(CosmeticsService.LockerHarmony));
 
@@ -232,15 +229,19 @@ namespace FGTools
         void OnValidateFail()
         {
             Log.LogFatal("[Launcher] Startup failed. Certain files or folders missing!");
-            _ = MessageBox(IntPtr.Zero, $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", MissingData)}", $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})", 0);
-            Application.Quit();
+
+            FLZ_Extensions.QuitWithMessage(
+                $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
+                $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", MissingData)}");
         }
 
         void OnCrash(Exception e)
         {
             Log.LogFatal($"[Launcher] Startup failed. Exception! {e}");
-            _ = MessageBox(IntPtr.Zero, $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed", $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})", 0);
-            Application.Quit();
+
+            FLZ_Extensions.QuitWithMessage(
+                $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
+                $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed");
         }
 
         readonly List<string> MissingData = [];
@@ -249,7 +250,7 @@ namespace FGTools
             Log.LogInfo("[Launcher] Validating...");
 
             string[] importantDirs = [CommonDir, AssetsDir, LocalizationDir, Path.Combine(AssetsDir, "Lib")];
-            string[] importantFiles = [Plugin.BundlePath, StaticConfigDescs];
+            string[] importantFiles = [Launcher.BundlePath, StaticConfigDescs];
 
             foreach (string folder in importantDirs)
             {

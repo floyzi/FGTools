@@ -108,12 +108,12 @@ namespace FGTools.Services
             };
 
             FGT_EventList latestList = null;
-            if (File.Exists(Plugin.EventsListNew))
+            if (File.Exists(Launcher.EventsListNew))
             {
                 if (cleanup)
-                    File.Delete(Plugin.EventsListNew);
+                    File.Delete(Launcher.EventsListNew);
                 else
-                    latestList = JsonSerializer.Deserialize<FGT_EventList>(File.ReadAllText(Plugin.EventsListNew));
+                    latestList = JsonSerializer.Deserialize<FGT_EventList>(File.ReadAllText(Launcher.EventsListNew));
             }
 
             foreach (var str in StringDefinitions)
@@ -143,7 +143,7 @@ namespace FGTools.Services
             FGTLog(LogLevel.Info, base.GetType(), "Events registred");
         }
 
-        void WriteSave() => File.WriteAllText(Plugin.EventsListNew, JsonSerializer.Serialize<FGT_EventList>(EventList));
+        void WriteSave() => File.WriteAllText(Launcher.EventsListNew, JsonSerializer.Serialize<FGT_EventList>(EventList));
 
         public override void UpdateService()
         {

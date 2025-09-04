@@ -128,29 +128,29 @@ namespace FGTools.Services
 
         void TryToConvertOldData()
         {
-            if (!File.Exists(Plugin.RunsData))
+            if (!File.Exists(Launcher.RunsData))
                 return;
 
-            var all = File.ReadAllLines(Plugin.RunsData);
+            var all = File.ReadAllLines(Launcher.RunsData);
             foreach (string line in all)
             {
                 var split = line.Split(':');
                 latestSave.saveData[split[0]] = float.Parse(split[1]);
             }
             FGTLog(LogLevel.Info, base.GetType(), $"CONVERT: Total lines parsed: {all.Length}. New lines: {latestSave.saveData.Count}");
-            File.Delete(Plugin.RunsData);
+            File.Delete(Launcher.RunsData);
             WriteSave();
         }
 
-        void WriteSave() => File.WriteAllText(Plugin.RunsDataNew, JsonSerializer.Serialize<SpeedrunSaveJson>(latestSave));
+        void WriteSave() => File.WriteAllText(Launcher.RunsDataNew, JsonSerializer.Serialize<SpeedrunSaveJson>(latestSave));
 
         public void LoadData()
         {
             try
             {
-                if (File.Exists(Plugin.RunsDataNew))
+                if (File.Exists(Launcher.RunsDataNew))
                 {
-                    latestSave = JsonSerializer.Deserialize<SpeedrunSaveJson>(File.ReadAllText(Plugin.RunsDataNew));
+                    latestSave = JsonSerializer.Deserialize<SpeedrunSaveJson>(File.ReadAllText(Launcher.RunsDataNew));
                 }
                 else
                 {
@@ -163,7 +163,7 @@ namespace FGTools.Services
             }
             catch
             {
-                File.Delete(Plugin.RunsDataNew);
+                File.Delete(Launcher.RunsDataNew);
                 LoadData();
             }
         }

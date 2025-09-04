@@ -44,7 +44,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(ClientNetworkMessageProcessor), nameof(ClientNetworkMessageProcessor.processMessage)), HarmonyPrefix]
         static bool processMessage(ClientNetworkMessageProcessor __instance, GameConnection sender, GameMessageBase msg)
         {
-            Commands.OnRecivedMessage?.Invoke(msg.getGameMessageType());
+            Commands.OnReceivedMessage?.Invoke(msg.getGameMessageType());
             return true;
         }
 
@@ -60,16 +60,14 @@ namespace FGTools.LocalServer.Patches
             return !isCustom;
         }
 
-        [HarmonyPatch(typeof(NetworkConnection), nameof(NetworkConnection.SetHandlers)), HarmonyPrefix]
-        static bool SetHandlers(NetworkConnection __instance, NetworkMessageHandlers handlers)
+        [HarmonyPatch(typeof(NetworkConnection), nameof(NetworkConnection.SetHandlers)), HarmonyPostfix]
+        static void SetHandlers(NetworkConnection __instance, NetworkMessageHandlers handlers)
         {
             foreach (var obj in Enum.GetValues(typeof(FLZ_CustomMessage)))
             {
                 FGTLog(BepInEx.Logging.LogLevel.Debug, "CONN - " + __instance.connectionId, $"Reserving handle [{(byte)(FLZ_CustomMessage)obj}] for custom messages");
                 handlers.RegisterHandler((byte)(FLZ_CustomMessage)obj, DelegateSupport.ConvertDelegate<NetworkMessageDelegate>(LocalServerService.CustomMessageManager.OnCustomMessageReceived));
             }
-
-            return true;
         }
 
         [HarmonyPatch(typeof(UnityNetworkingGameConnection), nameof(UnityNetworkingGameConnection.SendUnreliable)), HarmonyPrefix]
@@ -95,11 +93,10 @@ namespace FGTools.LocalServer.Patches
             Commands.OnRoundLoaded?.Invoke();
         }
 
-        [HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.HandleCheckpointReached)), HarmonyPostfix]
-        static void HandleCheckpointReached(CheckpointManager __instance, CheckpointZone cpz, MPGNetObject mpgno, ref bool __result)
+        [HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.OnCheckpointReached)), HarmonyPostfix]
+        static void HandleCheckpointReached(CheckpointManager __instance, CheckpointZone cpz, MPGNetObject mpgno)
         {
-            if (__result)
-                Commands.OnCheckpointReached?.Invoke(mpgno, cpz);
+            Commands.OnCheckpointReached?.Invoke(mpgno, cpz);
         }
 
         [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.HandleLocalPlayerLapComplete)), HarmonyPostfix]
@@ -209,6 +206,13 @@ namespace FGTools.LocalServer.Patches
                 {
                     if (speedrun && !CGM.IsTimerEnded())
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
+                    else
+                    {
+                        if (StateManager.ExploreState == null)
+                            FLZ_Extensions.ForceExit(); //TEMP
+                        else
+                            StateManager.ExploreState.RequestNewRound();
+                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
@@ -231,6 +235,7 @@ namespace FGTools.LocalServer.Patches
             {
                 string txt = CMSLoader.Instance._localisedStrings._localisedStrings["eliminated"];
                 AddCMSString("sp_elim", txt[..^1] + ": " + FGTServiceManager.GetService<SpeedrunService>().ReturnTimerText());
+
                 if (!CGM.IsTimerEnded())
                     FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Finish);
             }
@@ -247,8 +252,15 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.ShowState == null)
                 {
-                    if (speedrun)
+                    if (speedrun && !CGM.IsTimerEnded())
                         FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
+                    else
+                    {
+                        if (StateManager.ExploreState == null)
+                            FLZ_Extensions.ForceExit(); //TEMP
+                        else
+                            StateManager.ExploreState.RequestNewRound();
+                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
@@ -285,7 +297,14 @@ namespace FGTools.LocalServer.Patches
                 if (StateManager.ShowState == null)
                 {
                     if (speedrun)
-                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
+                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
+                    else
+                    {
+                        if (StateManager.ExploreState == null)
+                            FLZ_Extensions.ForceExit(); //TEMP
+                        else
+                            StateManager.ExploreState.RequestNewRound();
+                    }
                 }
                 else
                     StateManager.ShowState.OnShowProgress();
@@ -296,7 +315,7 @@ namespace FGTools.LocalServer.Patches
             return false;
         }
 
-        //temp
+        //TEMP
         [HarmonyPatch(typeof(HexSnakeManager), nameof(HexSnakeManager.ManagePlayingParticipantCount)), HarmonyPrefix]
         static bool ManagePlayingParticipantCount(HexSnakeManager __instance, int playingParticipantCount)
         {

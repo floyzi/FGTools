@@ -100,7 +100,7 @@ namespace FGTools.Internal.Behaviours
             {
                 if (GlobalGameStateClient.Instance.GameStateView.GameplayTimeElapsed > Random.Range(52, 70) && !FGTServiceManager.GetService<EventService>().ReturnBoolEventValue("MeetPingasAgain"))
                 {
-                    StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(Plugin.AssetsDir + "pingas.jpg", true).WrapToIl2Cpp());
+                    StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(Launcher.AssetsDir + "pingas.jpg", true).WrapToIl2Cpp());
                     FGTServiceManager.GetService<EventService>().SetEventValue("MeetPingasAgain", true);
                 }
             }

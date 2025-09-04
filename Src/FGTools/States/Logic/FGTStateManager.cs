@@ -62,7 +62,7 @@ namespace FGTools.States.Logic
         internal bool IsInGameplay => FGTCurrentState == FGTState.GameActive || FGTCurrentState == FGTState.FGCGameActive;
         internal bool IsInEditor => FGTCurrentState == FGTState.InCreative;
 
-        internal bool FirstTimeLogin = false;
+        internal bool LoggedInBefore = false;
         internal bool CanUseHotkeys = false;
         internal bool HaveActivePopup = false;
 
@@ -143,14 +143,14 @@ namespace FGTools.States.Logic
             using var stream = File.OpenRead(Path.Combine(Application.dataPath, "..", "GameAssembly.dll"));
             AssemblyHash = BitConverter.ToString(SHA256.Create().ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
 
-            var theme = $"{Plugin.ThemesDir}/{InGameTheme.Value}";
+            var theme = $"{Launcher.ThemesDir}/{InGameTheme.Value}";
 
             if (File.Exists(theme))
             {
-                if (!Plugin.ThemesHarmonyPatched)
+                if (!Launcher.ThemesHarmonyPatched)
                 {
-                    Plugin.ThemesHarmony.PatchAll(typeof(ThemePatches));
-                    Plugin.ThemesHarmonyPatched = true;
+                    Launcher.ThemesHarmony.PatchAll(typeof(ThemePatches));
+                    Launcher.ThemesHarmonyPatched = true;
                 }
 
                 var themeService = FGTServiceManager.GetService<MenuThemeService>();
@@ -165,9 +165,9 @@ namespace FGTools.States.Logic
                 FGTLog(LogLevel.Warning, base.GetType(), "Theme files are missing or not set yet, fallback to default.");
             }
 
-            if (File.Exists(Plugin.BundlePath))
+            if (File.Exists(Launcher.BundlePath))
             {
-                Plugin.FGToolsBundle = AssetBundle.LoadFromFile(Plugin.BundlePath);
+                Launcher.FGToolsBundle = AssetBundle.LoadFromFile(Launcher.BundlePath);
 
                 //if (UseCustomFonts.Value)
                 //    InternalState.TargetFont = Plugin.FGToolsBundle.LoadAssetAsync<Font>(TargetFontName).asset.Cast<Font>();
@@ -197,8 +197,8 @@ namespace FGTools.States.Logic
         {
             try
             {
-                if (File.Exists(Plugin.BuildScenesList))
-                    BuildScenes = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(File.ReadAllText(Plugin.BuildScenesList));
+                if (File.Exists(Launcher.BuildScenesList))
+                    BuildScenes = JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(File.ReadAllText(Launcher.BuildScenesList));
             }
             catch
             {
@@ -236,7 +236,7 @@ namespace FGTools.States.Logic
 
             BuildScenes.Add(AssemblyHash, list);
 
-            File.WriteAllText(Plugin.BuildScenesList, JsonSerializer.Serialize(BuildScenes));
+            File.WriteAllText(Launcher.BuildScenesList, JsonSerializer.Serialize(BuildScenes));
             sw.Stop();
 
             FGTLog(LogLevel.Info, this.GetType(), $"Total scenes in this build ({Application.version} | {ClientBuildDetails.PlatformServiceProvider}): {BuildScenes[AssemblyHash].Count}. Checkup took: {sw.Elapsed.TotalSeconds:F3}s");
@@ -417,15 +417,15 @@ namespace FGTools.States.Logic
                         CGM.CurrentGameSession.SetSessionState(GameSession.SessionState.Playing);
                     break;
                 case FGTState.InCreative:
-                    if (!Plugin.FGCHarmonyPatched)
+                    if (!Launcher.FGCHarmonyPatched)
                     { 
-                        Plugin.FGCHarmony.PatchAll(typeof(FGCHarmonyPatches)); 
-                        Plugin.FGCHarmonyPatched = true; 
+                        Launcher.FGCHarmony.PatchAll(typeof(FGCHarmonyPatches)); 
+                        Launcher.FGCHarmonyPatched = true; 
                     }
-                    if (Plugin.HarmonyPatched)
+                    if (Launcher.HarmonyPatched)
                     { 
-                        Plugin.GlobalHarmony.UnpatchSelf(); 
-                        Plugin.HarmonyPatched = false; 
+                        Launcher.GlobalHarmony.UnpatchSelf(); 
+                        Launcher.HarmonyPatched = false; 
                     }
                     if (!FGTServiceManager.GetService<EventService>().ReturnBoolEventValue("RpcFGCAlert"))
                     {
@@ -434,8 +434,8 @@ namespace FGTools.States.Logic
                     }
                     break;
                 case FGTState.GPFGCLoading:
-                    if (Plugin.HarmonyPatched)
-                    { Plugin.GlobalHarmony.UnpatchSelf(); Plugin.HarmonyPatched = false; }
+                    if (Launcher.HarmonyPatched)
+                    { Launcher.GlobalHarmony.UnpatchSelf(); Launcher.HarmonyPatched = false; }
                     break;
             }
         }

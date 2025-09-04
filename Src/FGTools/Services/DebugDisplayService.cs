@@ -101,18 +101,18 @@ namespace FGTools.Services
             {
                 var b1 = new StringBuilder();
 
-                b1.AppendLine($"Build: {Plugin.BuildInfo.BuildDate}");
-                b1.AppendLine($"Ver: {Plugin.BuildInfo.UI_Version} | BuildEnv: {Plugin.BuildInfo.Config} | Commit: #{Plugin.BuildInfo.GetCommit()}");
-                b1.AppendLine($"Build ID: {Plugin.BuildInfo.GUID}");
-                b1.AppendLine($"Session Length: {DateTime.UtcNow.Subtract(Plugin.StartupTime):hh\\:mm\\:ss}");
+                b1.AppendLine($"Build: {Launcher.BuildInfo.BuildDate}");
+                b1.AppendLine($"Ver: {Launcher.BuildInfo.UI_Version} | BuildEnv: {Launcher.BuildInfo.Config} | Commit: #{Launcher.BuildInfo.GetCommit()}");
+                b1.AppendLine($"Build ID: {Launcher.BuildInfo.GUID}");
+                b1.AppendLine($"Session Length: {DateTime.UtcNow.Subtract(Launcher.StartupTime):hh\\:mm\\:ss}");
                 b1.AppendLine($"Locale: {ConfigManager.LangFileName.Value}");
                 b1.AppendLine($"CanUseHotkeys: {StateManager.CanUseHotkeys}");
-                b1.AppendLine($"HarmonyPatched: {Plugin.HarmonyPatched}");
+                b1.AppendLine($"HarmonyPatched: {Launcher.HarmonyPatched}");
                 b1.AppendLine($"AdditiveLoad: {FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad}");
                 b1.AppendLine($"CurrentRoundID: {curRound}");
                 b1.AppendLine($"PreviousRoundID: {defRound}");
                 b1.AppendLine($"OfflinePatches: {StateManager.InternalState.OfflinePatches}");
-                b1.AppendLine($"FGCPatches: {Plugin.FGCHarmonyPatched}");
+                b1.AppendLine($"FGCPatches: {Launcher.FGCHarmonyPatched}");
                 b1.AppendLine($"AllCosmetics: {ConfigManager.AllCosmetics.Value}");
                 b1.AppendLine($"SelectedTheme: {ConfigManager.InGameTheme.Value}");
                 b1.AppendLine($"DiscordRpc: {ConfigManager.AllowRPC.Value}");
@@ -221,7 +221,7 @@ namespace FGTools.Services
             }
             if (GUI.Button(new Rect(Screen.width - _width / 2 + 5, Screen.height - 25, buttonWidth - 0, 20), LocalizedStr("gui_debug_report_folder")))
             {
-                Application.OpenURL(Plugin.BugReportsDir);
+                Application.OpenURL(Launcher.BugReportsDir);
             }
         }
 
@@ -231,20 +231,20 @@ namespace FGTools.Services
         {
             if (!_displaySaveResult)
             {
-                foreach (string file in Directory.GetFiles(Plugin.BugReportsDir))
+                foreach (string file in Directory.GetFiles(Launcher.BugReportsDir))
                 {
                     if (file.Contains("_LATEST"))
                         File.Move(file, file.Split("_LATEST")[0] + "." + file.Split('.')[1]);
                 }
 
-                foreach (string dir in Directory.GetDirectories(Plugin.BugReportsDir))
+                foreach (string dir in Directory.GetDirectories(Launcher.BugReportsDir))
                 {
                     if (dir.Contains("_LATEST"))
                         Directory.Move(dir, dir.Split("_LATEST")[0]);
                 }
 
                 string newReportName = $"Report_{DateTime.UtcNow:HHMMssFF}_LATEST";
-                string newReportDir = Path.Combine(Plugin.BugReportsDir, newReportName);
+                string newReportDir = Path.Combine(Launcher.BugReportsDir, newReportName);
                 Directory.CreateDirectory(newReportDir);
 
                 ScreenCapture.CaptureScreenshot(Path.Combine(newReportDir, "Screenshot.png"));
@@ -277,7 +277,7 @@ namespace FGTools.Services
                 File.WriteAllText(Path.Combine(newReportDir, $"DebugInfo.txt"), debug);
                 if (createAsZip)
                 {
-                    System.IO.Compression.ZipFile.CreateFromDirectory(newReportDir, Plugin.BugReportsDir + "\\" + newReportName + ".zip");
+                    System.IO.Compression.ZipFile.CreateFromDirectory(newReportDir, Launcher.BugReportsDir + "\\" + newReportName + ".zip");
                     foreach (string file in Directory.GetFiles(newReportDir))
                         File.Delete(file);
                     Directory.Delete(newReportDir);

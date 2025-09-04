@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Events;
 using FG.Common;
@@ -17,15 +15,18 @@ using FGTools.Internal.Behaviours;
 using FGTools.Services;
 using FGTools.States.Logic;
 using Levels.PixelPerfect;
+using Levels.Progression;
 using Levels.ScoreZone;
 using SRF;
+using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static FG.Common.GameStateMachine;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.FMODTool;
-using static FGTools.Plugin;
+using static FGTools.Launcher;
 using static FGTools.Services.LocalizationService;
 using static FGTools.Services.SpeedrunService;
 using static FGTools.States.Logic.FGTStateManager;
@@ -44,15 +45,26 @@ namespace FGTools.States
         public bool timeAttackWinResultsPending;
         private float skipIntroHold;
         private bool holdingSkipIntro;
+        public GameObject Spawnpoint;
 
         public override void OnStateSet()
         {
             scoringView = Resources.FindObjectsOfTypeAll<GameplayScoringViewModel>();
 
-            var controller = new GameObject($"{Plugin.DisplayName}_Controller");
+            var controller = new GameObject($"{Launcher.DisplayName}_Controller");
             Controller = controller.AddComponent<FGTController>();
 
             Commands.OnRoundStarts += OnGameplayBegins;
+            Commands.OnCheckpointReached += OnCheckpoint;
+        }
+
+        void OnCheckpoint(MPGNetObject mpg, CheckpointZone zone)
+        {
+            if (!mpg.IsFallGuy || !mpg.FGCharacterController.IsLocalPlayer || !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
+                return;
+
+            zone.GetNextSpawnPositionAndRotation(out var pos, out var rot);
+            Spawnpoint.transform.SetPositionAndRotation(pos, rot);
         }
 
         public void UpdateTeamsUI(int teamId, int score)
@@ -78,18 +90,18 @@ namespace FGTools.States
 
             FGBehaviour.FallGuy.GetComponent<Rigidbody>().isKinematic = false;
 
-            if (FGBehaviour.spawnpoint == null)
+            if (Spawnpoint == null)
             {
                 if (StateManager.CheckpointModel != null)
-                    FGBehaviour.spawnpoint = GameObject.Instantiate(StateManager.CheckpointModel);
+                    Spawnpoint = GameObject.Instantiate(StateManager.CheckpointModel);
                 else
-                    FGBehaviour.spawnpoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    Spawnpoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-                FGBehaviour.spawnpoint.DestroyComponentImmediateIfExists<BoxCollider>();
-                FGBehaviour.spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
-                FGBehaviour.spawnpoint.name = "Checkpoint";
-                FGBehaviour.spawnpoint.transform.SetPositionAndRotation(FGBehaviour.FallGuy.transform.position, FGBehaviour.FallGuy.transform.rotation);
-                FGBehaviour.spawnpoint.SetActive(true);
+                Spawnpoint.DestroyComponentImmediateIfExists<BoxCollider>();
+                Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
+                Spawnpoint.name = "Checkpoint";
+                Spawnpoint.transform.SetPositionAndRotation(FGBehaviour.FallGuy.transform.position, FGBehaviour.FallGuy.transform.rotation);
+                Spawnpoint.SetActive(true);
 
                 if (SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)
                     FGTServiceManager.GetService<SpeedrunService>().PrepareForGameplay();
@@ -116,7 +128,7 @@ namespace FGTools.States
                 }
             }
 
-            string currVer = Plugin.BuildInfo.UI_Version;
+            string currVer = Launcher.BuildInfo.UI_Version;
 
             var oS = FGTServiceManager.GetService<OnlineCheckService>();
 
@@ -131,6 +143,7 @@ namespace FGTools.States
         public override void OnStateExit()
         {
             Commands.OnRoundStarts -= OnGameplayBegins;
+            Commands.OnCheckpointReached -= OnCheckpoint;
         }
 
         public void FinishGameplay()

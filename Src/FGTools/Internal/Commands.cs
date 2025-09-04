@@ -26,6 +26,6 @@ namespace FGTools.Internal
         internal static Action OnEliminated;
         internal static Action OnWon;
         internal static Action OnConnectedToServer;
-        internal static Action<EnumGameMessageType> OnRecivedMessage;
+        internal static Action<EnumGameMessageType> OnReceivedMessage;
     }
 }

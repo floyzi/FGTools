@@ -118,7 +118,7 @@ namespace FGTools.UI
                 }
             }
 
-            public override string Name => Plugin.DisplayName;
+            public override string Name => Launcher.DisplayName;
             public override int MinWidth => 700;
             public override int MinHeight => 480;
             public override Vector2 DefaultAnchorMin => new(0.05f, 0.05f);
@@ -177,8 +177,8 @@ namespace FGTools.UI
             public override Vector2 DefaultPosition => new Vector2(-350, 400);
             Queue<Action> PendindTabs = new();
 
-            internal Text TabHoverText;
-            internal bool TabHover;
+            Text TabHoverText;
+            bool HoveringOnTab;
 
             void AssignToGroups(object obj, Dictionary<GroupPolicy, Func<bool>> statePerGroup, Action<ObjectGroup> onChanged = null)
             {
@@ -250,13 +250,13 @@ namespace FGTools.UI
 
                 entry.callback.AddListener((data) =>
                 {
-                    TabHover = true;
+                    HoveringOnTab = true;
                     TabHoverText.text = LocalizedStr(localizedTabName);
                 });
 
                 exit.callback.AddListener((data) =>
                 {
-                    TabHover = false;
+                    HoveringOnTab = false;
                     TabHoverText.text = "";
                 });
 
@@ -343,7 +343,7 @@ namespace FGTools.UI
                     DrawFGCAutosaves();
                     DrawCredits();
 
-                    TabHoverText = UIFactory.CreateLabel(Plugin.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
+                    TabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
                     TabHoverText.rectTransform.sizeDelta = new(500, 100);
                     TabHoverText.gameObject.AddComponent<Outline>();
                     CanvasGroup popupGroup = TabHoverText.gameObject.AddComponent<CanvasGroup>();
@@ -375,9 +375,21 @@ namespace FGTools.UI
 
             protected override void OnClosePanelClicked()
             {
-                UniversalUI.SetUIActive(UniverseGUID, false);
-                UIRoot.gameObject.SetActive(false);
-                StateManager.InternalState.LoaderUIToggle = false;
+                ToggleUI(false);
+            }
+
+            internal void ToggleUI(bool state)
+            {
+                if (HoveringOnTab)
+                {
+                    HoveringOnTab = false;
+                    TabHoverText.text = null;
+                }
+
+                UniversalUI.SetUIActive(UniverseGUID, state);
+                UIRoot.gameObject.SetActive(state);
+
+                StateManager.InternalState.LoaderUIToggle = state;
             }
 
             void TryDrawUI(Func<bool> condition, GameObject group, Action onValid)
@@ -454,11 +466,11 @@ namespace FGTools.UI
                     var searchbarGroup = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "Search", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
                     AssignToGroups(searchbarGroup, new()
                     {
-                    { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false }
+                        { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
+                        { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false }
                     });
 
                     UIFactory.SetLayoutElement(searchbarGroup, minHeight: 30, flexibleHeight: 0);
@@ -469,21 +481,21 @@ namespace FGTools.UI
                     ButtonRef delList = UIFactory.CreateButton(searchbarGroup, "Advanced_DelList", $"{LocalizedStr("gui_del_list")}", GUIRed);
                     delList.OnClick += () =>
                     {
-                        if (File.Exists(Plugin.CMSRounds))
-                            File.Delete(Plugin.CMSRounds);
+                        if (File.Exists(Launcher.CMSRounds))
+                            File.Delete(Launcher.CMSRounds);
                     };
                     delList.GameObject.SetActive(false);
 
                     var roundNamesGroup = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "Dropdowns", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
                     AssignToGroups(roundNamesGroup, new()
-                {
-                    { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => true },
-                });
+                    {
+                        { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
+                        { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false },
+                        { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
+                        { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => true },
+                    });
 
                     GameObject roundNamesDropUI = UIFactory.CreateDropdown(roundNamesGroup, "RoundNames", out roundNamesDrop, $"{LocalizedStr("dropdown_placeholder")}", 14, null, null);
                     UIFactory.SetLayoutElement(roundNamesDropUI, minHeight: 25, flexibleHeight: 0);
@@ -1059,11 +1071,10 @@ namespace FGTools.UI
                                     Instance.uiRoot.transform.SetParent(null);
                                     Instance.uiRoot.gameObject.SetActive(false);
                                     Instance = null;
-                                    StateManager.FirstTimeLogin = false;
-                                    StateManager.GetState<MenuState>().menuComplete = false;
-                                    FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Plugin.LocalizationDir, selectedLang, "locale.json"));
+                                    StateManager.LoggedInBefore = false;
+                                    FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Launcher.LocalizationDir, selectedLang, "locale.json"));
                                     ConfigManager.LangFileName.Value = selectedLang;
-                                    StateManager.GetState<MenuState>().menuManager.ShowMainMenu(true, true, false);
+                                    GlobalGameStateClient.Instance._mainMenuManager.ShowMainMenu(true, true, false);
                                 }));
                             }
                         }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
@@ -1284,7 +1295,7 @@ namespace FGTools.UI
                     loadBtn.OnClick += () =>
                     {
                         if (!FGTServiceManager.GetService<MediaService>().urlLoad)
-                            CoroutineRunner.Instance.StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(Plugin.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath).WrapToIl2Cpp());
+                            CoroutineRunner.Instance.StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(Launcher.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath).WrapToIl2Cpp());
                         else
                             CoroutineRunner.Instance.StartCoroutine(FGTServiceManager.GetService<MediaService>().LoadImage(FGTServiceManager.GetService<MediaService>().url).WrapToIl2Cpp());
                     };
@@ -1292,7 +1303,7 @@ namespace FGTools.UI
                     ButtonRef dirBtn = UIFactory.CreateButton(btnActs, "dirBtn", $"{LocalizedStr("gui_folder")}", null);
                     dirBtn.OnClick += () =>
                     {
-                        Application.OpenURL(Plugin.ImgDir);
+                        Application.OpenURL(Launcher.ImgDir);
                     };
                     UIFactory.SetLayoutElement(dirBtn.GameObject, 30, 25, null, 0, null, null, null);
                     ButtonRef destAllBtn = UIFactory.CreateButton(btnActs, "destAllBtn", $"{LocalizedStr("gui_destroy_all")}", GUIRed);
@@ -1415,7 +1426,7 @@ namespace FGTools.UI
                     UIFactory.SetLayoutElement(img2fgcInput.UIRoot, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
 
                     ButtonRef imagesFolderBtn = UIFactory.CreateButton(img2fgc_imageName, "openImgFolder", $"{LocalizedStr("gui_folder")}", null);
-                    imagesFolderBtn.OnClick += () => { Application.OpenURL(Plugin.ImgDir); };
+                    imagesFolderBtn.OnClick += () => { Application.OpenURL(Launcher.ImgDir); };
                     //UIFactory.SetLayoutElement(imagesFolderBtn.GameObject, minHeight: 25, flexibleHeight: 0);
                     UIFactory.SetLayoutElement(imagesFolderBtn.Component.gameObject, minWidth: 100, minHeight: 25, flexibleWidth: 0, flexibleHeight: 0);
 
@@ -1456,7 +1467,7 @@ namespace FGTools.UI
                     GameObject img2fgc_actions = UIFactory.CreateHorizontalGroup(FGTImg2FGCGUI, "img2fgcActions", false, true, true, true, 2, new Vector4(2, 2, 2, 2));
                     UIFactory.SetLayoutElement(img2fgc_actions, minHeight: 25, flexibleHeight: 0);
                     ButtonRef genLevel = UIFactory.CreateButton(img2fgc_actions, "genLevel", $"{LocalizedStr("gui_img2fgc_gen_level")}", null);
-                    genLevel.OnClick += () => { img2fgcAlert(); };
+                    genLevel.OnClick += () => { IMG2FGCAlert(); };
                     UIFactory.SetLayoutElement(genLevel.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
                     ButtonRef repAll = UIFactory.CreateButton(img2fgc_actions, "repAll", $"{LocalizedStr("gui_img2fgc_replace")}", GUIRed);
                     repAll.OnClick += () =>
@@ -1483,7 +1494,7 @@ namespace FGTools.UI
                     RectTransform actualRect = actualImageObj.GetComponent<RectTransform>();
                     actualRect.anchorMin = new(0, 0);
                     actualRect.anchorMax = new(1, 1);
-                    actualImageObj.AddComponent<Image>().sprite = SetSpriteFromFile(Plugin.AssetsDir + "obedguyslore.png", 356, 170);
+                    actualImageObj.AddComponent<Image>().sprite = GetSpriteFromFile(Launcher.AssetsDir + "obedguyslore.png", 356, 170);
                     GameObject img2fgc_about = UIFactory.CreateLabel(FGTImg2FGCGUI, "img2fgc_about", $"{LocalizedStr("gui_img2fgc_desc")}\n{LocalizedStr("gui_img2fgc_credits")}", TextAnchor.LowerCenter, default, true, 14).gameObject;
                     UIFactory.SetLayoutElement(img2fgc_about.gameObject, preferredHeight: 1000, flexibleHeight: 9999, flexibleWidth: 9999);
                 }));
@@ -1724,7 +1735,7 @@ namespace FGTools.UI
                     UIFactory.SetLayoutElement(openDirBtn.Component.gameObject, 100, 25, 0, 0);
                     openDirBtn.OnClick += () =>
                     {
-                        var target = Plugin.ThemesDir + tS.ThemeOnPreviewPath.Split('\\')[0];
+                        var target = Launcher.ThemesDir + tS.ThemeOnPreviewPath.Split('\\')[0];
                         Application.OpenURL(target);
                     };
 
@@ -1824,7 +1835,7 @@ namespace FGTools.UI
                     GameObject langDir = UIFactory.CreateHorizontalGroup(MiscContent, "Lang Dir Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                     ButtonRef langDirBtn = UIFactory.CreateButton(langDir, "Dir Button", LocalizedStr("gui_localization_lang_dir"));
                     UIFactory.SetLayoutElement(langDirBtn.Component.gameObject, 100, 25, 100, 0, 99999);
-                    langDirBtn.OnClick += () => { Application.OpenURL(Plugin.LocalizationDir + selectedLang); };
+                    langDirBtn.OnClick += () => { Application.OpenURL(Launcher.LocalizationDir + selectedLang); };
 
                     langAuthor = UIFactory.CreateLabel(MiscContent, "langAuthor", LocalizedStr("gui_localization_author_v2"), TextAnchor.UpperCenter);
                     UIFactory.SetLayoutElement(langAuthor.gameObject, minHeight: 20);
@@ -1992,7 +2003,7 @@ namespace FGTools.UI
 
                 Text credits = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo", $"{strBuilder}", TextAnchor.LowerCenter, default, true, 14);
                 credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
-                Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
+                Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
                 UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
             }
 
@@ -2067,7 +2078,7 @@ namespace FGTools.UI
             void UpdateTitle(string title)
             {
                 if (!string.IsNullOrEmpty(title))
-                    TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} > {title}";
+                    TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} > {title}";
             }
 
             internal void GoToTab(Tab selectedTab, SubLevel tabLevel, bool shouldChangeTitle = true, bool enableExtraStuff = true, bool silent = false)
@@ -2172,7 +2183,7 @@ namespace FGTools.UI
                 string startTag = $"[{sceneName} START]";
                 string endTag = $"[{sceneName} END]";
 
-                List<string> lines = new List<string>(File.ReadAllLines(Plugin.VariantData));
+                List<string> lines = new List<string>(File.ReadAllLines(Launcher.VariantData));
 
                 int startTagIndex = lines.IndexOf(startTag);
                 int endTagIndex = lines.IndexOf(endTag);
@@ -2199,11 +2210,11 @@ namespace FGTools.UI
                 }
 
                 newLines.Add(endTag);
-                File.WriteAllLines(Plugin.VariantData, newLines.ToArray());
+                File.WriteAllLines(Launcher.VariantData, newLines.ToArray());
             }
             void SetVariants()
             {
-                string[] data = File.ReadAllLines(Plugin.VariantData);
+                string[] data = File.ReadAllLines(Launcher.VariantData);
                 var sceneName = SceneManager.GetActiveScene().name;
                 string startTag = $"[{sceneName} START]";
                 string endTag = $"[{sceneName} END]";
@@ -2296,7 +2307,7 @@ namespace FGTools.UI
             {
                 try
                 {
-                    if (TabHover)
+                    if (HoveringOnTab)
                         TabHoverText.transform.position = Input.mousePosition + (Vector3.up * 15);
 
                     if (fgc_desc != null)

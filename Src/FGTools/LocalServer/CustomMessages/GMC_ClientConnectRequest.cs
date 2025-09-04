@@ -37,10 +37,10 @@ namespace FGTools.LocalServer.CustomMessages
             netWriter ??= new();
 
             netWriter.Write((byte)lvl);
-            netWriter.Write(Plugin.BuildInfo.Version);
-            netWriter.Write(Plugin.BuildInfo.GUID.ToString());
-            netWriter.Write(Plugin.BuildInfo.GetCommit());
-            netWriter.Write(Plugin.BuildInfo.BuildDate.ToString());
+            netWriter.Write(Launcher.BuildInfo.Version);
+            netWriter.Write(Launcher.BuildInfo.GUID.ToString());
+            netWriter.Write(Launcher.BuildInfo.GetCommit());
+            netWriter.Write(Launcher.BuildInfo.BuildDate.ToString());
             netWriter.Write(GlobalGameStateClient.Instance.GetLocalClientNetworkID().NetworkID);
 
             var segment = netWriter.AsArraySegment();

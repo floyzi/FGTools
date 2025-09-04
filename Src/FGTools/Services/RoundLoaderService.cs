@@ -311,34 +311,17 @@ namespace FGTools.Services
 
             UsingAdditiveLoad = mode == LoadSceneMode.Additive;
         }
-
-        public void HideMenus()
-        {
-            try { AudioMixing.Instance.ResetAllSnapshotParams(); } catch { }
-
-            if (SpeedrunMode.Value)
-                FGTServiceManager.GetService<SpeedrunService>().HandleState(RunState.Inactive);
-
-            var menu = StateManager.GetState<MenuState>();
-
-            if (menu != null && menu.menuManager != null)
-            {
-                menu.menuManager.StopMusic(true);
-                try
-                {
-                    menu.menuManager.HideLobbyScreen();
-                    menu.menuManager.HideChallenges();
-                    menu.menuManager.RemoveMainMenuBuilder();
-                }
-                catch { }
-            }
-        }
-
         public void LoadCMSRound(string roundToLoad, LoadSceneMode mode)
         {
             if (!StateManager.RoundLoadingAllowed)
             {
                 ErrorPopup(LocalizedStr("gui_rl_block"));
+                return;
+            }
+
+            if (!CMSLoader.Instance.CMSData.Rounds.ContainsKey(roundToLoad))
+            {
+                ErrorPopup(LocalizedStr("gui_missing_round", [roundToLoad]));
                 return;
             }
 
@@ -484,6 +467,12 @@ namespace FGTools.Services
 
         public void LoadFGCRound(string code, LevelInfoDto preloadedDto, bool userRequest)
         {
+            if (string.IsNullOrEmpty(code))
+            {
+                ErrorPopup(LocalizedStr("gui_default_load"));
+                return;
+            }
+
             if (StateManager.IsInEditor)
             {
                 StateManager.RoundLoadingAllowed = true;
@@ -746,15 +735,15 @@ namespace FGTools.Services
                     }
                 }
 
-                if (!File.Exists(Plugin.CMSRounds))
+                if (!File.Exists(Launcher.CMSRounds))
                 {
                     int linesCount = cmsRounds.Count;
-                    File.WriteAllLines(Plugin.CMSRounds, cmsRounds);
+                    File.WriteAllLines(Launcher.CMSRounds, cmsRounds);
 
-                    File.AppendAllText(Plugin.CMSRounds, $"\nTotal Rounds Added: {linesCount} | File Generated On: {Application.version} | CMS Version: {CMSLoader.Instance.CMSData.ContentVersion}");
+                    File.AppendAllText(Launcher.CMSRounds, $"\nTotal Rounds Added: {linesCount} | File Generated On: {Application.version} | CMS Version: {CMSLoader.Instance.CMSData.ContentVersion}");
                 }
 
-                FGTLog(LogLevel.Message, base.GetType(), File.ReadAllText(Plugin.CMSRounds));
+                FGTLog(LogLevel.Message, base.GetType(), File.ReadAllText(Launcher.CMSRounds));
             }
         }
 

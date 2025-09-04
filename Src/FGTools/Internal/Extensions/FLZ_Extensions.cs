@@ -25,9 +25,9 @@ using static FGTools.Services.LocalizationService;
 
 namespace FGTools.Internal.Extensions
 {
-    public static class FLZ_Extensions
+    internal static class FLZ_Extensions
     {
-        public static ManualLogSource logSource = new(Plugin.DisplayName);
+        internal static ManualLogSource logSource = new(Launcher.DisplayName);
         public enum ModalHideGUIType
         {
             None,
@@ -36,7 +36,7 @@ namespace FGTools.Internal.Extensions
             ShowOnCancel,
         }
 
-        public static IEnumerator LoadObject<T>(string name, Action<T> res)
+        internal static IEnumerator LoadObject<T>(string name, Action<T> res)
         {
             AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(name);
 
@@ -52,7 +52,7 @@ namespace FGTools.Internal.Extensions
             }
         }
 
-        public static void FGTLog(LogLevel logType = LogLevel.Info, object sender = null, object content = null)
+        internal static void FGTLog(LogLevel logType = LogLevel.Info, object sender = null, object content = null)
         {
             if (sender != null)
             {
@@ -66,9 +66,15 @@ namespace FGTools.Internal.Extensions
                 logSource.Log(logType, $"{content}");
         }
 
-        public static void LaunchCMDWithArgs(string args)
+        internal static void QuitWithMessage(string title, string msg)
         {
-            System.Diagnostics.Process process = new System.Diagnostics.Process();
+            Application.Quit();
+            _ = Launcher.MessageBox(IntPtr.Zero, msg, title, 0x00000010);
+        }
+
+        internal static void LaunchCMDWithArgs(string args)
+        {
+            System.Diagnostics.Process process = new();
             process.StartInfo.FileName = "cmd.exe";
             process.StartInfo.Arguments = args;
             process.StartInfo.UseShellExecute = true;
@@ -78,16 +84,12 @@ namespace FGTools.Internal.Extensions
 
         internal static void ForceExit() => GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
 
-        public static void DoModal(string title, string msg, ModalType type, OKButtonType btnType, Il2CppSystem.Action<bool> act = null, bool doSfx = true, string btnOkStr = null, TextAlignmentOptions al = TextAlignmentOptions.Center, float closeDelay = 0f, ModalHideGUIType hideGUI = ModalHideGUIType.None)
+        internal static void DoModal(string title, string msg, ModalType type, OKButtonType btnType, Il2CppSystem.Action<bool> act = null, bool doSfx = true, string btnOkStr = null, TextAlignmentOptions al = TextAlignmentOptions.Center, float closeDelay = 0f, ModalHideGUIType hideGUI = ModalHideGUIType.None)
         {
             if (hideGUI > 0)
             {
                 if (FGToolsUI.NewGUI.Instance != null && FGToolsUI.NewGUI.Instance.UIRoot != null)
-                {
-                    UniversalUI.SetUIActive(UniverseGUID, false);
-                    FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(false);
-                }
-                FGTStateManager._stateManager.InternalState.LoaderUIToggle = false;
+                    FGToolsUI.NewGUI.Instance.ToggleUI(false);
             }
 
             act += new Action<bool>(wasok =>
@@ -116,12 +118,11 @@ namespace FGTools.Internal.Extensions
             if (btnOkStr != null)
                 AddCMSString("latest_btn_ok", btnOkStr);
 
-            Il2CppSystem.IObservable<UniRx.Unit> acceptWaitObs = ModalMessageBaseData.CreateTimerObservable(closeDelay);
             string okStr = btnOkStr == null ? null : $"latest_btn_ok";
             var ModalMessageDataDisclaimer = new ModalMessageData
             {
                 Title = title,
-                Message = $"<size=70%>{msg}</size>",
+                Message = $"<size=80%>{msg}</size>",
                 LocaliseTitle = LocaliseOption.NotLocalised,
                 LocaliseMessage = LocaliseOption.NotLocalised,
                 ModalType = type,
@@ -129,7 +130,7 @@ namespace FGTools.Internal.Extensions
                 OnCloseButtonPressed = act,
                 OkTextOverrideId = okStr,
                 MessageTextAlignment = al,
-                AcceptWaitObservable = acceptWaitObs,
+                AcceptWaitObservable = ModalMessageBaseData.CreateTimerObservable(closeDelay),
                 Priority = PopupMessagePriority.Default,
 
             };
@@ -139,19 +140,24 @@ namespace FGTools.Internal.Extensions
                 AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
         }
 
-        public static Sprite SetSpriteFromFile(string path, int Width, int Height)
+        internal static Sprite GetSpriteFromFile(string path, int Width, int Height)
         {
-            byte[] ImageAsByte = File.ReadAllBytes(path);
-            Texture2D Texture = new(Width, Height, TextureFormat.RGBA32, false);
-            if (Texture.LoadImage(ImageAsByte))
+            if (!File.Exists(path))
+                return null;
+
+            var bytes = File.ReadAllBytes(path);
+            Texture2D tex = new(Width, Height, TextureFormat.RGBA32, false);
+            if (tex.LoadImage(bytes))
             {
-                Texture.filterMode = FilterMode.Point;
-                return Sprite.Create(Texture, new Rect(0.0f, 0.0f, Texture.width, Texture.height), new Vector2(0.5f, 0.5f));
+                tex.filterMode = FilterMode.Point;
+                var spr = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                spr.name = Path.GetFileNameWithoutExtension(path);
+                return spr;
             }
             return null;
         }
 
-        public static Sprite SetSpriteFromBytes(byte[] bytes, int Width, int Height)
+        internal static Sprite SetSpriteFromBytes(byte[] bytes, int Width, int Height)
         {
             Texture2D Texture = new(Width, Height, TextureFormat.RGBA32, false);
             if (Texture.LoadImage(bytes))
@@ -162,21 +168,27 @@ namespace FGTools.Internal.Extensions
             return null;
         }
 
-        public static void AddCMSString(string key, string value)
+        internal static LocalisedString AddCMSString(string key, string value)
         {
             if (CMSLoader.Instance._localisedStrings.ContainsString(key))
                 CMSLoader.Instance._localisedStrings._localisedStrings.Remove(key);
+
             CMSLoader.Instance._localisedStrings._localisedStrings.Add(key, value);
+            return new()
+            {
+                Id = key,
+                Text = value,
+            };
         }
 
-        public static GameObject GetChild(GameObject Parent, string Name)
+        internal static GameObject GetChild(GameObject Parent, string Name)
         {
             foreach (Transform Transform in Parent.GetComponentsInChildren<Transform>(true))
                 if (Transform.name == Name) return Transform.gameObject;
             return null;
         }
 
-        public static string CleanStr(string strIN, bool rpcFormat = false)
+        internal static string CleanStr(string strIN, bool rpcFormat = false)
         {
             string strOUT = Regex.Replace(strIN, @"<.*?>|\t|\s{2,}", " ");
             strOUT = Regex.Replace(strOUT, @"(?<=<) | (?=>)", "");
@@ -192,7 +204,7 @@ namespace FGTools.Internal.Extensions
             return strOUT;
         }
 
-        public static long CalculateDirSize(string path)
+        internal static long CalculateDirSize(string path)
         {
             long size = 0;
 
@@ -209,7 +221,7 @@ namespace FGTools.Internal.Extensions
             return size;
         }
 
-        public static string CalculateSizeString(long size)
+        internal static string CalculateSizeString(long size)
         {
             string[] sizes = ["KB", "MB", "GB"];
             double len = size / 1024.0;
@@ -224,7 +236,7 @@ namespace FGTools.Internal.Extensions
             return $"{len:0.##} {sizes[order]}";
         }
 
-        public static void XorByteArray(ref byte[] data, byte[] key)
+        internal static void XorByteArray(ref byte[] data, byte[] key)
         {
             int num = data.Length;
             int num2 = key.Length;
@@ -236,7 +248,7 @@ namespace FGTools.Internal.Extensions
             }
         }
 
-        public static bool BytesCheck(byte[] arr1, byte[] arr2)
+        internal static bool BytesCheck(byte[] arr1, byte[] arr2)
         {
             if (arr1.Length < arr2.Length)
                 return false;
@@ -251,7 +263,7 @@ namespace FGTools.Internal.Extensions
 
         }
 
-        public static T GetItem<T>(string id) where T : ScriptableObject
+        internal static T GetItem<T>(string id) where T : ScriptableObject
         {
             foreach (T option in Resources.FindObjectsOfTypeAll<T>())
             {
@@ -261,7 +273,7 @@ namespace FGTools.Internal.Extensions
             return null;
         }
 
-        public static string GetItemName(string id)
+        internal static string GetItemName(string id)
         {
             foreach (ItemDefinitionSO option in Resources.FindObjectsOfTypeAll<ItemDefinitionSO>())
             {
@@ -281,7 +293,7 @@ namespace FGTools.Internal.Extensions
             return LocalizedStr("gui_unable_get_name");
         }
 
-        public static byte[] GetFileInZip(byte[] zipContent, string file)
+        internal static byte[] GetFileInZip(byte[] zipContent, string file)
         {
             using var zipStream = new MemoryStream(zipContent);
             using var zip = new ZipArchive(zipStream, ZipArchiveMode.Read);
@@ -290,7 +302,7 @@ namespace FGTools.Internal.Extensions
             return loadedBytes;
         }
 
-        public static void CreateNotification(string title, string msg, string headerCol = null, float durination = -1, Action onComplete = null)
+        internal static void CreateNotification(string title, string msg, string headerCol = null, float durination = -1, Action onComplete = null)
         {
             var dat = new TextNotificationData(null)
             {

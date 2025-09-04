@@ -23,8 +23,8 @@ namespace FGTools.States
         int CurrentStage = 1;
         bool IsCurrentShowUseStages;
         int MaxStage;
-        HashSet<string> PlayedRounds = new();
-        HashSet<string> RemainingPool = new();
+        readonly HashSet<string> PlayedRounds = new();
+        readonly HashSet<string> RemainingPool = new();
 
         public void OnNewShowSet(string ShowCMSID)
         {

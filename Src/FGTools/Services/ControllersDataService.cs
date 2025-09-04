@@ -43,8 +43,8 @@ namespace FGTools.Services
             Broadcaster.Instance.Register<OnMainMenuDisplayed>(new Action<OnMainMenuDisplayed>(OnEnterMenu));
             Commands.OnIntroStarts += OnIntroStarts;
 
-            if (File.Exists(Plugin.ControllerDatasList))
-                ControllerDatas = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object>>>(File.ReadAllText(Plugin.ControllerDatasList));
+            if (File.Exists(Launcher.ControllerDatasList))
+                ControllerDatas = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object>>>(File.ReadAllText(Launcher.ControllerDatasList));
         }
 
         void OnEnterMenu(OnMainMenuDisplayed evt)

@@ -21,8 +21,8 @@ namespace FGTools.Services
                 ConfigManager.LangFileName.Value = "en";
 
             string targetPatn = null;
-            string targetDir = Path.Combine(Plugin.LocalizationDir, "en", "locale.json");
-            string backupDir = Path.Combine(Plugin.AssetsDir, "locale.json");
+            string targetDir = Path.Combine(Launcher.LocalizationDir, "en", "locale.json");
+            string backupDir = Path.Combine(Launcher.AssetsDir, "locale.json");
 
             if (File.Exists(targetDir))
                 targetPatn = targetDir;
@@ -33,7 +33,7 @@ namespace FGTools.Services
 
             Fallback = ParseLocalization(targetPatn);
 
-            foreach (var dir in Directory.GetDirectories(Plugin.LocalizationDir))
+            foreach (var dir in Directory.GetDirectories(Launcher.LocalizationDir))
                 KnownLocales.Add(Path.GetFileName(dir).ToUpper());
 
             FGTLog(LogLevel.Info, base.GetType(), $"Setup complete");
@@ -73,7 +73,7 @@ namespace FGTools.Services
             LocalizedStrings = ParseLocalization(localization);
         }
 
-        static string InitString(string value) => value.Replace("{loaderName}", Plugin.DisplayName).Replace("{discordUrl}", DiscordUrl).Replace("\"\"", "\"").Trim('\"');
+        static string InitString(string value) => value.Replace("{loaderName}", Launcher.DisplayName).Replace("{discordUrl}", DiscordUrl).Replace("\"\"", "\"").Trim('\"');
 
         public static string LocalizedStr(string key, object[] format = null, bool fromCMS = false)
         {

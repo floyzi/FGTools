@@ -38,9 +38,9 @@ namespace FGTools.Services
         {
             try
             {
-                if (File.Exists(Plugin.RoundOptionsData))
+                if (File.Exists(Launcher.RoundOptionsData))
                 {
-                    latestOptions = JsonSerializer.Deserialize<RoundOptionsJson>(File.ReadAllText(Plugin.RoundOptionsData));
+                    latestOptions = JsonSerializer.Deserialize<RoundOptionsJson>(File.ReadAllText(Launcher.RoundOptionsData));
                 }
                 else
                 {
@@ -56,7 +56,7 @@ namespace FGTools.Services
             }
             catch
             {
-                File.Delete(Plugin.RoundOptionsData);
+                File.Delete(Launcher.RoundOptionsData);
                 LoadData();
             }
         }
@@ -65,7 +65,7 @@ namespace FGTools.Services
         internal int GetSeedForGame() => latestOptions.RoundSeed == 0 ? UnityEngine.Random.Range(0, int.MaxValue) : latestOptions.RoundSeed;
         internal float GetRoundLength(GameRulesSchema round) => latestOptions.TimeLimit ? (latestOptions.TimeLimitLength > 1 ? latestOptions.TimeLimitLength : round.Duration) + 5 : float.MaxValue;
         internal int GetPlayers() => !LocalServerService.IsUserAloneAndHost ? LocalServerService.ServerManager.GetConnections().Length : latestOptions.PlayerCount;
-        public void WriteData() => File.WriteAllText(Plugin.RoundOptionsData, JsonSerializer.Serialize(latestOptions));
+        public void WriteData() => File.WriteAllText(Launcher.RoundOptionsData, JsonSerializer.Serialize(latestOptions));
 
         public override void DrawGUI()
         {

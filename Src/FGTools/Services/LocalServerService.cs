@@ -58,40 +58,45 @@ namespace FGTools.Services
                 if (gsm.IsInState<StateMainMenu>() && mmManager != null)
                     gsm.CurrentState.Cast<StateMainMenu>().StartConnecting(ip, port, MatchmakingEnvironment.Production);
 
-                Broadcaster.Instance.Broadcast(new OnDisplayLobby());
                 SubscribeToEvents();
-                //var state = new StateConnectToGame(GlobalGameStateClient.Instance._gameStateMachine, ip, port, "idk", false, GlobalGameStateClient.Instance.CreateClientGameStateData(), 1, false);
-                //GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(state.Cast<GameStateMachine.IGameState>());
             }
             catch (Exception ex)
             {
                 ErrorPopup(ex, new Action<bool>(wasok =>
                 {
-
+                    ForceExit();
                 }), title: "server_generic_error_title", desc: "server_join_error", displayOnlyError: false, forceLeaveToMenu: true);
             }
         }
 #endif
 
-        internal void SingleplayerGame(Round round) => Host("127.0.0.1", 0, 1, round);
+        internal void SingleplayerGame(Round round) => Host("127.0.0.1", -1, 1, round);
+        internal static int GetPort()
+        {
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            var p = ((IPEndPoint)socket.LocalEndPoint).Port;
+            socket.Close();
+            return p;
+        }
 
-        internal static void Host(string ip, int port, int usedFor, Round TEMP_round)
+        internal static void Host(string ip, int port, int usedFor, Round round)
         {
             if (usedFor == 0)
                 throw new ArgumentException("Can't host the server for 0 players");
 
+            if (port < 1000 && port != -1)
+                throw new ArgumentOutOfRangeException(nameof(port), "Port must be at least 1000 or -1 to use random avaiable");
+
             try
             {
+                FGTLog(LogLevel.Info, typeof(LocalServerService), $"Attempt to host the server on {ip}:{port}");
+
                 var gsm = GlobalGameStateClient.Instance._gameStateMachine;
                 var mmManager = GlobalGameStateClient.Instance._mainMenuManager;
 
-                if (port >= 0)
-                {
-                    var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
-                    port = ((IPEndPoint)socket.LocalEndPoint).Port;
-                    socket.Close();
-                }
+                if (port == -1)
+                    port = GetPort();
 
                 if (gsm.IsInState<StateMainMenu>() && mmManager != null)
                     gsm.CurrentState.Cast<StateMainMenu>().StartConnecting(ip, port, MatchmakingEnvironment.Production);
@@ -99,8 +104,8 @@ namespace FGTools.Services
                 if (IsServerInOperation)
                     FGTServiceManager.Instance.GetService<LocalServerService>().ShutdownSerer(null);
 
-                if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerReader>())
-                    ClassInjector.RegisterTypeInIl2Cpp<ServerReader>();
+                if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerMessageProcessor>())
+                    ClassInjector.RegisterTypeInIl2Cpp<ServerMessageProcessor>();
 
                 if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerGameActions>())
                     ClassInjector.RegisterTypeInIl2Cpp<ServerGameActions>();
@@ -108,17 +113,20 @@ namespace FGTools.Services
                 if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerGameStateView>())
                     ClassInjector.RegisterTypeInIl2Cpp<ServerGameStateView>();
 
-                Plugin.ServerHarmony.PatchAll(typeof(ServerGameplayPatches));
+                Launcher.ServerHarmony.PatchAll(typeof(ServerGameplayPatches));
 
                 SubscribeToEvents();
 
-                ServerReader _messageProcessor = new();
-                NetworkRequest _networkRequest = FG_UnityInternetNetworkManager.HostServer(ip, port, _messageProcessor.Cast<INetworkMessageProcessor>());
+                ServerMessageProcessor _messageProcessor = new();
 
+                foreach (var obj in Enum.GetValues(typeof(FLZ_CustomMessage)))
+                    NetworkServer.RegisterHandler((byte)(FLZ_CustomMessage)obj, DelegateSupport.ConvertDelegate<NetworkMessageDelegate>(LocalServerService.CustomMessageManager.OnCustomMessageReceived));                  
+
+                NetworkRequest _networkRequest = FG_UnityInternetNetworkManager.HostServer(ip, port, _messageProcessor.Cast<INetworkMessageProcessor>());
                 var actions = new ServerGameActions();
                 ServerGameStateActions.Instance = new IGameStateServerActions(actions.Pointer);
                 GameStateView = new ServerGameStateView().Cast<IGameStateView>();
-                ServerManager = new(FGTServiceManager.Instance.GetService<LocalServerService>(), _networkRequest, _networkRequest.NetworkManager, TEMP_round, usedFor);
+                ServerManager = new(FGTServiceManager.Instance.GetService<LocalServerService>(), _networkRequest, _networkRequest.NetworkManager, round, usedFor);
 
                 if (!gsm.IsInState<StateConnectToGame>())
                 {
@@ -132,7 +140,7 @@ namespace FGTools.Services
             {
                 ErrorPopup(ex, new Action<bool>(wasok =>
                 {
-
+                    ForceExit();
                 }), title: "server_generic_error_title", desc: "server_host_error", displayOnlyError: false, forceLeaveToMenu: true);
             }
         }
@@ -145,11 +153,11 @@ namespace FGTools.Services
                 return;
             }
 
-            FGTLog(LogLevel.Error, GetType(), $"TERMINATING SERVER BECAUSE OF AN EXCEPTION\n\n{ex}");
+            FGTLog(LogLevel.Error, GetType(), $"TERMINATING SERVER DUE TO EXCEPTION\n\n{ex}");
             FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);
             DoModal(LocalizationService.LocalizedStr("server_fatal_error_title"), LocalizationService.LocalizedStr("server_fatal_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
             {
-               
+                ForceExit();
             }));
         }
         internal void ShutdownSerer(Action onShutdown)
@@ -189,8 +197,8 @@ namespace FGTools.Services
         static void SubscribeToEvents()
         {
             CustomMessageManager = new();
-            Plugin.ServerHarmony.PatchAll(typeof(CommonServerPatches));
-            Commands.OnRecivedMessage += OnClientReceiveMessage;
+            Launcher.ServerHarmony.PatchAll(typeof(CommonServerPatches));
+            Commands.OnReceivedMessage += OnClientReceiveMessage;
 
             CustomMessageDespatcher.OnClientSendAuthRequest += SendAuthRequest;
             CustomMessageDespatcher.OnClientSendUserInfo += SendCommonUserInfo;
@@ -200,13 +208,15 @@ namespace FGTools.Services
 
             var cSets = FGTServiceManager.GetService<ControllersDataService>();
             cSets.SetDataPreset(ConfigManager.OldPhysics.Value ? "10_8" : "Default");
+
+            ShowsManager.Instance.SelectedGameMode = ShowsManager.GameMode.PrivateLobby;
         }
 
         static void UnSubscribeFromEvents()
         {
             CustomMessageManager = null;
-            Plugin.ServerHarmony.UnpatchSelf();
-            Commands.OnRecivedMessage -= OnClientReceiveMessage;
+            Launcher.ServerHarmony.UnpatchSelf();
+            Commands.OnReceivedMessage -= OnClientReceiveMessage;
 
             CustomMessageDespatcher.OnClientSendAuthRequest -= SendAuthRequest;
             CustomMessageDespatcher.OnClientSendUserInfo -= SendCommonUserInfo;

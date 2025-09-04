@@ -45,7 +45,7 @@ namespace FGTools.LocalServer.CustomMessages.Logic
 
         }
 
-        T DeserealizeMessage<T>(NetworkReader netReader) where T : FLZMessage, new()
+        static T DeserealizeMessage<T>(NetworkReader netReader) where T : FLZMessage, new()
         {
             var msg = new T();
             msg.Deserealize(netReader);

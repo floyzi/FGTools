@@ -39,7 +39,7 @@ namespace FGTools.Services
             public JsonElement ExploreContent { get; set; }
         }
         public static string Error = "";
-        public static string LastVer = Plugin.BuildInfo.UI_Version;
+        public static string LastVer = Launcher.BuildInfo.UI_Version;
         public Dictionary<string, string> ExploreCodes = [];
 
         LoadingScreenManager LoadingManager;
@@ -123,7 +123,7 @@ namespace FGTools.Services
             LoadingManager.HideScreen(new(true));
             LoadingManager.ShowScreen(new(true));
             ProgressBar = LoadingManager._loadingScreen.gameObject.GetComponentInChildren<UnityEngine.UI.Slider>();
-            DownloadCoroutine = CoroutineRunner.Instance.StartCoroutine(StartDownloading(DownloadSource, Plugin.BuildInfo.Config.ToLower() != "prod").WrapToIl2Cpp());
+            DownloadCoroutine = CoroutineRunner.Instance.StartCoroutine(StartDownloading(DownloadSource, Launcher.BuildInfo.Config.ToLower() != "prod").WrapToIl2Cpp());
         }
 
         public void DownloadNewLang(string newLang, Action after)
@@ -168,7 +168,7 @@ namespace FGTools.Services
 
         void ReadLocale(string langCode, LocaleParseStrategy parseStrategy)
         {
-            var targetDir = Path.Combine(Plugin.LocalizationDir, langCode);
+            var targetDir = Path.Combine(Launcher.LocalizationDir, langCode);
             var targetPath = Path.Combine(targetDir, "locale.json");
             byte[] newBytes = null;
 
@@ -207,13 +207,13 @@ namespace FGTools.Services
             if (!FGTTargetSettings.FGTNewsfeed)
                 return;
 
-            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyDev && Plugin.BuildInfo.Config != "DEV")
+            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyDev && Launcher.BuildInfo.Config != "DEV")
                 return;
 
-            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyClosedBetaTesters && Plugin.BuildInfo.Config != "ClosedBeta")
+            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyClosedBetaTesters && Launcher.BuildInfo.Config != "ClosedBeta")
                 return;
 
-            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(Plugin.BuildInfo.UI_Version))
+            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(Launcher.BuildInfo.UI_Version))
                 return;
 
             Il2CppReferenceArray<DescriptionParameter> EndsAtDescription = new(1);
@@ -446,7 +446,7 @@ namespace FGTools.Services
             });
 
             //explore
-            if (!File.Exists(Plugin.ExploreBackupV2))
+            if (!File.Exists(Launcher.ExploreBackupV2))
                 FGTServiceManager.GetService<EventService>().SetEventValue("ExploreDownloadSchedule", DateTime.UtcNow);
 
             if (FGTServiceManager.GetService<EventService>().CheckIfEventIsExpired("ExploreDownloadSchedule"))
@@ -464,7 +464,7 @@ namespace FGTools.Services
                 {
                     try
                     {
-                        File.WriteAllText(Plugin.ExploreBackupV2, JsonSerializer.Serialize(ParseCodes(result)));
+                        File.WriteAllText(Launcher.ExploreBackupV2, JsonSerializer.Serialize(ParseCodes(result)));
                         FGTServiceManager.GetService<EventService>().SetEventValue("ExploreDownloadSchedule", DateTime.UtcNow.AddDays(5));
                     }
                     catch (Exception e)
@@ -476,9 +476,9 @@ namespace FGTools.Services
                 {
                     FGTLog(LogLevel.Error, base.GetType(), "Failed to fetch info about explore rounds! " + errorMsg);
                     Error += $"\n(explore {errorMsg})";
-                    if (File.Exists(Plugin.ExploreBackupV2))
+                    if (File.Exists(Launcher.ExploreBackupV2))
                     {
-                        var scheme = JsonSerializer.Deserialize<ExploreCodesSave>(File.ReadAllText(Plugin.ExploreBackupV2));
+                        var scheme = JsonSerializer.Deserialize<ExploreCodesSave>(File.ReadAllText(Launcher.ExploreBackupV2));
                         ParseCodes(scheme.ExploreContent);
                     }
                 }, LocalizedStr("gui_download_progress_explore_waiting", null, true));
@@ -486,7 +486,7 @@ namespace FGTools.Services
             else
             {
                 FGTLog(LogLevel.Info, base.GetType(), $"Next explore rounds update is set to {FGTServiceManager.GetService<EventService>().ReturnScheduledEventValue("ExploreDownloadSchedule")}. Using old codes for now");
-                var scheme = JsonSerializer.Deserialize<ExploreCodesSave>(File.ReadAllText(Plugin.ExploreBackupV2));
+                var scheme = JsonSerializer.Deserialize<ExploreCodesSave>(File.ReadAllText(Launcher.ExploreBackupV2));
                 ParseCodes(scheme.ExploreContent);
                 Checks++;
             }
@@ -566,9 +566,9 @@ namespace FGTools.Services
             Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault().OnTitleScreenComplete();
             CatapultAnalyticsClient.Boot.BootCompleteEvent.TrackEvent();
             GlobalGameStateClient.Instance.BootTimeLogger?.BootComplete();
+
             if (CatapultGatewayConnection.Instance.TryGetAccountId(out string accountId))
                 Broadcaster.Instance.Broadcast(new LoginSuccessfulEvent(accountId, TitleScreenViewModel.CameFromSplashScreen));
-            StateManager.GetState<MenuState>().menuComplete = false;
         }
 
         public string ReturnChangelog(string ver, int linesPerSection)

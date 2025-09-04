@@ -32,77 +32,30 @@ namespace FGTools.UI
 {
     public class ReadyPopups : FGTBase
     {
-        public static void img2fgcAlert()
+        public static void IMG2FGCAlert()
         {
             DoModal(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(LaunchIMG2FGC), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
             static void LaunchIMG2FGC(bool wasok)
             {
                 if (wasok)
                 {
-                    //System.Diagnostics.Process process = new System.Diagnostics.Process();
-                    //process.StartInfo.FileName = "cmd.exe";
-                    //process.StartInfo.Arguments = $"/C cd /D \"{Path.GetDirectoryName(Plugin.img2fgcExe)}\" && {Path.GetFileName(Plugin.img2fgcExe)} --path-to-file \"{Plugin.imgDir + ServiceManagerFGT.GetService<MediaService>().imgPath}\" --width \"{FGTGUI.NewGUI.instance.imgWidth}\" --height \"{FGTGUI.NewGUI.instance.imgHeight}\" --isDigital \"{FGTGUI.NewGUI.instance.isDigital}\" --shouldDeleteBlackPixels \"{FGTGUI.NewGUI.instance.shouldDeleteBlackPixels}\" --shouldDeleteWhitePixels \"{FGTGUI.NewGUI.instance.shouldDeleteWhitePixels}\"";
-                    //process.StartInfo.UseShellExecute = true;
-                    //process.StartInfo.CreateNoWindow = false;
-                    //process.Start();
-                    //process.WaitForExit();
-                    //FGTGUI.NewGUI.instance.haveGeneratedLevel = true;
                     List<string> writeInfo = new List<string>();
                     string outputfile = Path.Combine(Application.persistentDataPath, "output.txt");
                     if (File.Exists(outputfile))
                         File.Delete(outputfile);
                     File.Create(outputfile).Close();
-                    writeInfo.Add("path_to_file" + " = " + Plugin.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath);
+                    writeInfo.Add("path_to_file" + " = " + Launcher.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath);
                     writeInfo.Add("width" + " = " + NewGUI.Instance.imgWidth);
                     writeInfo.Add("height" + " = " + NewGUI.Instance.imgHeight);
                     writeInfo.Add("shouldDeleteBlackPixels" + " = " + NewGUI.Instance.shouldDeleteBlackPixels);
                     writeInfo.Add("shouldDeleteWhitePixels" + " = " + NewGUI.Instance.shouldDeleteWhitePixels);
                     writeInfo.Add("isDigital" + " = " + NewGUI.Instance.isDigital);
                     File.WriteAllLines(outputfile, writeInfo);
-                    Application.OpenURL(Plugin.IMG2FGCExe);
+                    Application.OpenURL(Launcher.IMG2FGCExe);
                     NewGUI.Instance.haveGeneratedLevel = true;
                 }
             }
         }
-
-
-        public static void SelectUsernamePopup()
-        {
-            /* NewCmsStr("userchange_title", $"{LocalizedStr("userchange_title")}");
-             NewCmsStr("userchange_desc", $"{LocalizedStr("userchange_desc")}");
-             NewCmsStr("userchange_holder", $"{LocalizedStr("userchange_holder")}");
-             UniversalUI.SetUIActive(Plugin.universeGUID, false); FGTGUI.NewGUI.instance.UIRoot.gameObject.SetActive(false); StateManager.InternalState.loaderUIToggle = false;
-             string name = "OfflineGuy";
-             void pop(bool wasOk)
-             {
-                 offlineUsername.Value = name;
-                 UniversalUI.SetUIActive(Plugin.universeGUID, true); FGTGUI.NewGUI.instance.UIRoot.gameObject.SetActive(true); StateManager.InternalState.loaderUIToggle = true;
-             }
-
-
-             Il2CppSystem.Action<bool> popact = new System.Action<bool>(pop);
-
-             var ModalMessageDataDisclaimer = new ModalMessageWithInputFieldData
-             {
-                 Title = "userchange_title",
-                 Message = "userchange_desc",
-                 ModalType = UIModalMessage.ModalType.MT_OK,
-                 OkButtonType = UIModalMessage.OKButtonType.Default,
-                 InputTextPlaceholder = "userchange_holder",
-                 OnCloseButtonPressed = popact
-             };
-
-             void OnInput(string text) => name = text;
-
-             PopupManager.Instance.Show(PopupInteractionType.Error, ModalMessageDataDisclaimer);
-             AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
-             GameObject inputfiledig = GameObject.Find("InputField");
-             //TMP_InputField fieldig = Resources.FindObjectsOfTypeAll<ModalMessageWithInputFieldViewModel>().FirstOrDefault()._inputField;
-             inputfiledig.GetComponent<TMP_InputField>().onValueChanged.AddListener(OnInput);
-             //inputfiledig.GetComponent<TMP_InputField>().characterLimit = 30;
-             StateManager.HaveActivePopup = true;*/
-        }
-
 
         public static void AreYouSurePopup(string action, Action<bool> popAct = null)
         {
@@ -111,7 +64,7 @@ namespace FGTools.UI
 
         public static void TryTriggerChangelogPopup()
         {
-            DoModal(string.Format($"V{Plugin.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Plugin.BuildInfo.UI_Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            DoModal(string.Format($"V{Launcher.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Launcher.BuildInfo.UI_Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
         }
 
         public static void MenuPopup()
@@ -127,12 +80,12 @@ namespace FGTools.UI
 
         public static void ErrorPopup(object err, Action<bool> onClick = null, bool forceLeaveToMenu = false, bool displayOnlyError = true, string title = "failed_title", string desc = "failed_desc_new")
         {
-            string MessageAsString = string.Empty;
+            string msgAsStr = string.Empty;
 
             if (err is Exception fail_ex)
-                MessageAsString = $"Meesage: {fail_ex.Message}\nStackTrace: {fail_ex.StackTrace}";
+                msgAsStr = $"Meesage: {fail_ex.Message}\nStackTrace: {fail_ex.StackTrace}";
             else if (err is string fail_str)
-                MessageAsString = fail_str;
+                msgAsStr = fail_str;
             else
             {
                 FGTLog(LogLevel.Error, "FailedPopup()", "Not valid type = " + err.GetType().FullName);
@@ -151,14 +104,13 @@ namespace FGTools.UI
                 });
             }
 
-            FGTLog(LogLevel.Error, "FailedPopup()", $"Called popup with reason: {MessageAsString}");
-            StateManager.InternalState.LatestError = MessageAsString;
+            FGTLog(LogLevel.Error, "FailedPopup()", $"Called popup with reason: {msgAsStr}");
+            StateManager.InternalState.LatestError = msgAsStr;
 
-            //string outSubStr = forceLeaveToMenu ? LocalizedStr("gui_error_0") : LocalizedStr("gui_error_1");
-            string output = $"{LocalizedStr(desc)}\n\n<size=45%>{MessageAsString}</size>\n\n{LocalizedStr("gui_error_msg", [DebugUIHotkey.Value.ToString()])}";
+            string output = $"{LocalizedStr(desc)}\n\n<size=45%>{msgAsStr}</size>\n\n{LocalizedStr("gui_error_msg_v2", [DebugUIHotkey.Value.ToString()])}";
 
             if (displayOnlyError)
-                output = $"<size=45%>{MessageAsString}</size>";
+                output = $"<size=45%>{msgAsStr}</size>";
 
             DoModal(LocalizedStr(title), output, UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive, onClick, hideGUI: ModalHideGUIType.KeepHidden);
         }
@@ -182,7 +134,7 @@ namespace FGTools.UI
                     {
                         if (quit)
                             Application.Quit();
-                        else
+                        else if (StateManager.FGTCurrentState != FGTStateManager.FGTState.Menu)
                         {
                             if (StateManager.CurrentRound != null)
                                 FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);

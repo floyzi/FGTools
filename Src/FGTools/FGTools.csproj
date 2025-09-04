@@ -5,8 +5,8 @@
 		<AssemblyName>FGTools</AssemblyName>
 		<Description>Fall Guys level loader by @floyzi102 on Twitter</Description>
 		<Version>1.5.0-pre1</Version>
-		<AssemblyVersion>1.4.4.0</AssemblyVersion>
-		<FileVersion>1.4.4.0</FileVersion>
+		<AssemblyVersion>1.4.99.0</AssemblyVersion>
+		<FileVersion>1.4.99.0</FileVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>latest</LangVersion>
 		<RestoreAdditionalProjectSources>
@@ -59,7 +59,7 @@
 	</Target>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dev|AnyCPU'">
-		<DefineConstants>$(DefineConstants);AUDIODEBUG;LAN_MULTIPLAYER;LOCAL_CONTENT</DefineConstants>
+		<DefineConstants>$(DefineConstants);AUDIODEBUG;LAN_MULTIPLAYER</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ClosedBeta|AnyCPU'">
 		<DefineConstants>$(DefineConstants);AUDIODEBUG;</DefineConstants>
@@ -96,7 +96,7 @@
 		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' == 'Dev'">
 			<HintPath>$(LibsDir)UniverseLib\UniverseLib.BIE.IL2CPP.Interop_CUE.dll</HintPath>
 		</Reference>
-		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' != 'Dev'">
+		<Reference Include="UniverseLib.IL2CPP.Interop" Condition="'$(Configuration)' != 'Dev'">
 			<HintPath>$(LibsDir)UniverseLib\UniverseLib.IL2CPP.Interop.dll</HintPath>
 		</Reference>
 	</ItemGroup>

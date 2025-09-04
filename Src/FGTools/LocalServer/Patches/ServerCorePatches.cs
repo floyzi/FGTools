@@ -29,11 +29,17 @@ namespace FGTools.LocalServer
         //    if (!LocalServerService.ServerInOperation)
         //        return true;
 
-            
+
         //    return false;
         //}
 
-        [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
+        [HarmonyPatch(typeof(MotorFunctionBeingGrabbedStateInactive), nameof(MotorFunctionBeingGrabbedStateInactive.Begin)), HarmonyPostfix]
+        static void Begin(MotorFunctionBeingGrabbedStateInactive __instance, int prevState)
+        {
+            __instance._motorFunctionBeingGrabbed = __instance.GetMotorFunction<MotorFunctionBeingGrabbed>();
+        }
+
+            [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
         static bool OnPlayerSpawned(StateGameLoading __instance, MPGNetObject pNetObject, uint playerID, FG_NetworkID playerNetworkID, string accountId, string platformId, string playerName, string playerGeneratedName, uint squadId, int teamId, string partyId, int vsGroupId, bool tailEnabled, CustomisationSelections customisationSelections)
         {
             ServerManager.OnPlayerSpawned?.Invoke(pNetObject, playerID, playerNetworkID, accountId, platformId, playerName, playerGeneratedName, squadId, teamId, partyId, vsGroupId, tailEnabled, customisationSelections);

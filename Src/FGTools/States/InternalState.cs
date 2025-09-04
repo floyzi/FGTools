@@ -27,7 +27,7 @@ using UnityEngine.SceneManagement;
 using UniverseLib.UI;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static FGTools.Plugin;
+using static FGTools.Launcher;
 using static FGTools.Services.SpeedrunService;
 using static FGTools.States.Logic.FGTStateManager;
 using Random = UnityEngine.Random;
@@ -130,14 +130,14 @@ namespace FGTools.States
             FMODTool.UnloadAllLoadedBanks();
             if (activeScene != "Transition")
             {
-                if (!Plugin.HarmonyPatched)
+                if (!Launcher.HarmonyPatched)
                 {
                     //Plugin.DoHarmonyPatch();
 
-                    if (Plugin.FGCHarmonyPatched)
+                    if (Launcher.FGCHarmonyPatched)
                     {
-                        Plugin.FGCHarmony.UnpatchSelf();
-                        Plugin.FGCHarmonyPatched = false;
+                        Launcher.FGCHarmony.UnpatchSelf();
+                        Launcher.FGCHarmonyPatched = false;
                     }
                 }
 
@@ -175,10 +175,7 @@ namespace FGTools.States
                 }
 
                 if (activeScene == "MainMenu")
-                {
                     StateManager.SetState(new MenuState());
-                    StateManager.GetState<MenuState>().menuComplete = false;
-                }
 
                 if (activeScene.Contains("Reward_Screen"))
                     StateManager.HandleFGTState(FGTStateManager.FGTState.Results);
@@ -250,20 +247,12 @@ namespace FGTools.States
                 {
                     if (isInLocker)
                     {
-                        FLZ_Extensions.CreateNotification("not here", "you can't toggle UI in locker", FGT_Warning_Color);
+                        FLZ_Extensions.CreateNotification(LocalizationService.LocalizedStr("gui_unavailable"), LocalizationService.LocalizedStr("gui_ui_in_locker"), FGT_Warning_Color);
                         return;
                     }
 
                     LoaderUIToggle = !LoaderUIToggle;
-                    guiInst.UIRoot.gameObject.SetActive(LoaderUIToggle);
-
-                    if (guiInst.TabHover)
-                    {
-                        guiInst.TabHover = false;
-                        guiInst.TabHoverText.text = null;
-                    }
-
-                    UniversalUI.SetUIActive(UniverseGUID, LoaderUIToggle);
+                    guiInst.ToggleUI(LoaderUIToggle);
                 }
 
             }
@@ -282,18 +271,18 @@ namespace FGTools.States
             }
 
             var target = BuildInfoColor;
-            target.a -= 0.7f;
+            target.a -= 0.55f;
             GUIStyle def = new(GUI.skin.label)
             {
                 fontStyle = FontStyle.Bold,
-                fontSize = (int)(0.0133f * Screen.height),
+                fontSize = (int)(0.0153f * Screen.height),
                 alignment = TextAnchor.LowerLeft,
                 normal = { textColor = target },
                 font = TargetFont,
                
             };
 
-            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Plugin.DisplayName, Plugin.BuildInfo.Config.ToUpper(), Plugin.BuildInfo.UI_Version, Plugin.BuildInfo.BuildDate, Plugin.BuildInfo.GUID, Plugin.BuildInfo.GetCommit(), OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, Plugin.BuildInfo.GetDefines(), DateTime.UtcNow]), def);
+            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Launcher.DisplayName, Launcher.BuildInfo.Config, Launcher.BuildInfo.UI_Version, Launcher.BuildInfo.BuildDate, Launcher.BuildInfo.GUID, Launcher.BuildInfo.GetCommit(), OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, Launcher.BuildInfo.GetDefines(), DateTime.UtcNow]), def);
         }
 #endif
 
@@ -301,9 +290,9 @@ namespace FGTools.States
         {
             var watermark = ConfigManager.WatermarkLevel.Value switch
             {
-                Watermark.OnlyVersion => $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version}",
+                Watermark.OnlyVersion => $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version}",
                 Watermark.None => string.Empty,
-                Watermark.VersionAndCredits => $"{Plugin.DisplayName} V{Plugin.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}",
+                Watermark.VersionAndCredits => $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}",
                 _ => throw new NotImplementedException(),
             };
 

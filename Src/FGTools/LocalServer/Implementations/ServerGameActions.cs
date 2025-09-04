@@ -75,14 +75,22 @@ namespace FGTools.LocalServer.Implementations
             if (isNotInSpeedrun)
                 ServerManager.CGM._qualifiedPlayerCount++;
 
-            LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
-            {
-                isFinal = ServerManager.CGM._round.GameRules.IsFinalRound,
-                playerId = playerNetObject.NetID.m_NetworkID,
-                progressCause = GameMessageServerPlayerProgress.ProgressCause.Individual,
-                succeeded = true,
-            });
+            ServerManager.CGM._clientPlayerManager.GetClientPlayerDataForNetId(playerNetObject.NetID).completedLevel = true;
 
+            var roundEndCondition = ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded;
+            
+            if (roundEndCondition && ServerManager.CGM._round.GameRules.IsFinalRound)
+                LocalServerService.ServerManager.EndRound(true);
+            else if (!ServerManager.CGM._round.GameRules.IsFinalRound)
+            {
+                LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
+                {
+                    isFinal = ServerManager.CGM._round.GameRules.IsFinalRound,
+                    playerId = playerNetObject.NetID.m_NetworkID,
+                    progressCause = GameMessageServerPlayerProgress.ProgressCause.Individual,
+                    succeeded = true,
+                });
+            }
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerQualificationProgressUpdated()
             {
                 NumQualifiedPlayers = (uint)ServerManager.CGM._qualifiedPlayerCount,
@@ -91,8 +99,8 @@ namespace FGTools.LocalServer.Implementations
 
             if (isNotInSpeedrun)
             {
-                if (ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount)
-                    LocalServerService.ServerManager.EndRound();
+                if (roundEndCondition)
+                    LocalServerService.ServerManager.EndRound(true);
 
                 if (shouldDespawn)
                     RequestDestroy(playerNetObject);
@@ -150,8 +158,8 @@ namespace FGTools.LocalServer.Implementations
 
             if (isNotInSpeedrun)
             {
-                if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount)
-                    LocalServerService.ServerManager.EndRound();
+                if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded)
+                    LocalServerService.ServerManager.EndRound(true);
 
                 RequestDestroy(playerNetObject);
             }
@@ -159,7 +167,7 @@ namespace FGTools.LocalServer.Implementations
 
         void RequestDestroy(MPGNetObject go)
         {
-            if (go == null)
+            if (go == null || go.NetID == default)
                 return;
 
             FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "RequestDestroy", $"Trying to destroy NetObject {go.name} with ID {go.NetID}");
@@ -172,14 +180,20 @@ namespace FGTools.LocalServer.Implementations
             GlobalGameStateClient.Instance.NetObjectManager.UnspawnNetObject(go.NetID, MPGNetObjectManager.UnspawnGameObjectPolicy.Destroy);
         }
 
-        void SetupNetworkObject(MPGNetObjectBase netObjectBase, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 spawnScale, Il2CppSystem.Action<GameObject> PostSpawnAction)
+        void SetupNetworkObject(MPGNetObjectBase netObjectBase, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 spawnScale, Il2CppSystem.Action<MPGNetID, GameObject> PostSpawnAction)
         {
-            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object {netObjectBase.name}");
+            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object {netObjectBase.name} {PostSpawnAction != null}");
 
             if (!netObjectBase.gameObject.TryGetComponent<MPGNetObject>(out var result))
                 result = netObjectBase.gameObject.AddComponent<MPGNetObject>();
 
+            if (!netObjectBase.gameObject.TryGetComponent<ServerControlledObject>(out var servControl))
+                servControl = netObjectBase.gameObject.AddComponent<ServerControlledObject>();
+
             var hash = (uint)netObjectBase.IdentifyingHash();
+            var unified = ServerManager.ShouldUseUnifiedSetup(netObjectBase);
+
+            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Debug, "SetupNetworkObject", $"IsUnified={unified}");
 
             result.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
             result.UniqueId = hash;
@@ -189,30 +203,31 @@ namespace FGTools.LocalServer.Implementations
             result.SyncTransform = netObjectBase.SyncTransform;
             result.LodControllerBehaviour = netObjectBase.LodControllerBehaviour;
             result.AreAnimationsNetworkControlled = netObjectBase.AreAnimationsNetworkControlled;
-            result._postSpawnAction = new Action<MPGNetID, GameObject>((NetId, obj) => { PostSpawnAction?.Invoke(obj); });
-            result.UseUnifiedSetup = ServerManager.ShouldUseUnifiedSetup(netObjectBase);
+            result._postSpawnAction = PostSpawnAction;
+            result.UseUnifiedSetup = unified;
 
-            if (!result.UseUnifiedSetup)
+            var objSpawnData = new GameObjectSpawnData();
+            objSpawnData.FromGameObject(result.CachedGameObject, false);
+
+            var spawnData = new NetObjectSpawnData()
             {
-                GameObjectSpawnData gameObjectSpawnData = new();
-                gameObjectSpawnData.FromGameObject(result.CachedGameObject, result._areAnimationsNetworkControlled);
+                Position = spawnPosition,
+                Rotation = spawnRotation,
+                Scale = spawnScale,
+                _additionalSpawnData = objSpawnData,
+                _spawnObjectType = netObjectBase.SpawnObjectType(),
+                _creationMode = netObjectBase.CreationMode(),
+                _prefabHash = result.GenerateGameObjectHash(netObjectBase.CreationMode()),
+                _useUnifiedSetup = false,
+                _lodControllerBehaviour = netObjectBase.LodControllerBehaviour,
+                _netID = result.NetID,
+                _rmiIdentifier = RMIBehaviourManager.GetNextID(),
+                _postSpawnAction = result._postSpawnAction,
+            };
 
-                NetObjectSpawnData spawnData = new()
-                {
-                    Position = spawnPosition,
-                    Rotation = spawnRotation,
-                    _additionalSpawnData = gameObjectSpawnData,
-                    _spawnObjectType = EnumSpawnObjectType.OBJECT,
-                    _creationMode = NetObjectCreationMode.Possess,
-                    _prefabHash = result.GenerateGameObjectHash(NetObjectCreationMode.Possess),
-                    _useUnifiedSetup = false,
-                };
-
+            if (unified)
                 SetupNetworkedObject((result._creationMode == NetObjectCreationMode.Possess) ? result.CachedGameObject : null, spawnData);
-            }
         }
-
-        List<NetObjectSpawnData> test = [];
 
         void SetupNetworkedObject(GameObject gameObject, NetObjectSpawnData spawnData)
         {
@@ -222,11 +237,10 @@ namespace FGTools.LocalServer.Implementations
             if (spawnData.RmiIdentifier == default)
                 spawnData._rmiIdentifier = RMIBehaviourManager.GetNextID();
 
-            test.Add(spawnData);
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerSpawnObject()
             {
                 _netObjectSpawnData = spawnData,
-                _isAuth = true,
+                _isAuth = false,
             });
         }
 

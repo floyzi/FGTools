@@ -78,8 +78,8 @@ namespace FGTools.Services
 
         public override void RegisterService()
         {
-            if (!Directory.Exists(Plugin.FGCAutosavesDir))
-                Directory.CreateDirectory(Plugin.FGCAutosavesDir);
+            if (!Directory.Exists(Launcher.FGCAutosavesDir))
+                Directory.CreateDirectory(Launcher.FGCAutosavesDir);
 
             LevelEditorEnter = new Action<LevelEditorEnterEvent>(LevelEditorEnterEvt);
             LevelEditorExit = new Action<LevelEditorExitEvent>(LevelEditorExitEvt);
@@ -168,12 +168,12 @@ namespace FGTools.Services
 
         public void TryDeleteEverything()
         {
-            string modalMessage = $"{LocalizedStr("gui_deletion_generic_warning")}\n{LocalizedStr("gui_delete_local_saves_desc")}\n\n{LocalizedStr("gui_space_after_deletion", [CalculateSizeString(CalculateDirSize(Plugin.FGCAutosavesDir))])}";
+            string modalMessage = $"{LocalizedStr("gui_deletion_generic_warning")}\n{LocalizedStr("gui_delete_local_saves_desc")}\n\n{LocalizedStr("gui_space_after_deletion", [CalculateSizeString(CalculateDirSize(Launcher.FGCAutosavesDir))])}";
             DoModal(LocalizedStr("gui_delete_local_saves_title"), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val =>
             {
                 if (val)
                 {
-                    Directory.Delete(Plugin.FGCAutosavesDir, true);
+                    Directory.Delete(Launcher.FGCAutosavesDir, true);
                     Application.Quit();
                 }
             }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
@@ -229,7 +229,7 @@ namespace FGTools.Services
                 return;
             }    
 
-            if (LoadSave(Path.Combine(Plugin.FGCAutosavesDir, SelectedAutosave.LevelName, SelectedAutosave.SaveName)))
+            if (LoadSave(Path.Combine(Launcher.FGCAutosavesDir, SelectedAutosave.LevelName, SelectedAutosave.SaveName)))
             {
                 var mmm = Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault();
                 if (mmm == null)
@@ -329,7 +329,7 @@ namespace FGTools.Services
                 return;
             }
 
-            LevelPath = Path.Combine(Plugin.FGCAutosavesDir, SelectedLevelName);
+            LevelPath = Path.Combine(Launcher.FGCAutosavesDir, SelectedLevelName);
 
             foreach (var a in MetadatasOfLevel)
                 stupidIl2cppList.Add(a.SaveName);
@@ -355,7 +355,7 @@ namespace FGTools.Services
                 return;
             }
 
-            var baseDir = Path.Combine(Plugin.FGCAutosavesDir, SelectedAutosave.LevelName, SelectedAutosave.SaveName);
+            var baseDir = Path.Combine(Launcher.FGCAutosavesDir, SelectedAutosave.LevelName, SelectedAutosave.SaveName);
             SavePath = baseDir;
             var pic = Path.Combine(baseDir, picName);
             var dto = Path.Combine(baseDir, dtoName);
@@ -365,7 +365,7 @@ namespace FGTools.Services
             SaveImg.gameObject.SetActive(File.Exists(pic));
 
             if (SaveImg.gameObject.activeSelf)
-                SaveImg.sprite = SetSpriteFromFile(pic, 2048, 1024);
+                SaveImg.sprite = GetSpriteFromFile(pic, 2048, 1024);
 
             var stringBuilder = new StringBuilder();
 
@@ -411,7 +411,7 @@ namespace FGTools.Services
                 return;
             }
 
-            var saveDir = Path.Combine(Plugin.FGCAutosavesDir, manager.LevelName);
+            var saveDir = Path.Combine(Launcher.FGCAutosavesDir, manager.LevelName);
 
             if (!Directory.Exists(saveDir))
                 Directory.CreateDirectory(saveDir);
@@ -462,11 +462,11 @@ namespace FGTools.Services
         void LoadMetadata()
         {
 
-            if (File.Exists(Plugin.FGCAutosavesMetadata))
+            if (File.Exists(Launcher.FGCAutosavesMetadata))
             {
                 try
                 {
-                    var bytes = File.ReadAllBytes(Plugin.FGCAutosavesMetadata);
+                    var bytes = File.ReadAllBytes(Launcher.FGCAutosavesMetadata);
                     XorByteArray(ref bytes, XorKey);
 
                     SavedMetadata = System.Text.Json.JsonSerializer.Deserialize<List<SaveMetadata>>(Encoding.UTF8.GetString(bytes));
@@ -497,7 +497,7 @@ namespace FGTools.Services
 
             XorByteArray(ref bytes, XorKey);
 
-            File.WriteAllBytes(Plugin.FGCAutosavesMetadata, bytes);
+            File.WriteAllBytes(Launcher.FGCAutosavesMetadata, bytes);
         }
 
         public void RefreshUI()
