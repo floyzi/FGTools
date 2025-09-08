@@ -10,6 +10,7 @@ using FG.Common.Character.MotorSystem;
 using FGClient;
 using FGClient.Rendering.XRay;
 using FGClient.UI;
+using FGClient.UI.Core;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States;
@@ -217,8 +218,12 @@ namespace FGTools.Internal.Behaviours
 
         public void FreeFlyController()
         {
-
             if (StateManager.FGCurrentState != PlayerState.FreeFly)
+                return;
+
+            FGCC.RigidBody.isKinematic = true;
+
+            if (UIManager.Instance.GetScreen<InGameMenuViewModel>(ScreenStackType.PartyMenu) != null)
                 return;
 
             if (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0)), out RaycastHit hit))
@@ -327,9 +332,9 @@ namespace FGTools.Internal.Behaviours
             StateManager.HandleFGState(PlayerState.Active);
 
             if (!StateManager.IsFGC)
-                StateManager.HandleFGTState(FGTStateManager.FGTState.GameActive);
+                StateManager.HandleFGTState(FGTStateManager.ToolsState.GameActive);
             else
-                StateManager.HandleFGTState(FGTStateManager.FGTState.FGCGameActive);
+                StateManager.HandleFGTState(FGTStateManager.ToolsState.FGCGameActive);
 
             if (SpeedrunMode.Value)
                 FGTServiceManager.Instance.GetService<SpeedrunService>().NewRun();

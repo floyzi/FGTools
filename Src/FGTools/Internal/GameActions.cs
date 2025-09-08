@@ -2,13 +2,14 @@
 using FGClient.UI;
 using Levels.Progression;
 using System;
+using UnityEngine;
 using static FGTools.States.Logic.FGTStateManager;
 
 namespace FGTools.Internal
 {
-    internal static class Commands
+    internal static class GameActions
     {
-        internal static Action<FGTState> OnStateChange;
+        internal static Action<ToolsState> OnStateChange;
         internal static Action OnFGCPlaymodeEnter;
         internal static Action OnFGCPlaymodeExit;
         internal static Action OnTargetsParsed;
@@ -27,5 +28,7 @@ namespace FGTools.Internal
         internal static Action OnWon;
         internal static Action OnConnectedToServer;
         internal static Action<EnumGameMessageType> OnReceivedMessage;
+        internal static Action<MPGNetID, GameObject, int> OnNetObjSpawned;
+        internal static Action OnAllPlayersSpawned;
     }
 }

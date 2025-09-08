@@ -1,10 +1,13 @@
-﻿using FG.Common;
+﻿extern alias wle;
+using FG.Common;
 using FG.Common.CMS;
+using FG.Common.LODs;
 using FG.Common.Messages;
 using FGClient;
 using FGClient.UI;
 using FGTools.Config;
 using FGTools.Internal;
+using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.LocalServer.CustomMessages.Logic;
 using FGTools.LocalServer.Implementations;
@@ -19,6 +22,7 @@ using Levels.Obstacles;
 using Levels.Progression;
 using Mediatonic.Networking;
 using Rewired;
+using SRF;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,18 +37,21 @@ using static Il2CppMono.Security.X509.X520;
 
 namespace FGTools.LocalServer.Patches
 {
+    /// <summary>
+    /// Patches that should run on both client and the server during game
+    /// </summary>
     internal class CommonServerPatches : FGTBase
     {
         [HarmonyPatch(typeof(GlobalGameStateClient), nameof(GlobalGameStateClient.InitializeConnectionToServer)), HarmonyPostfix]
         static void OnClientConnected(GlobalGameStateClient __instance, bool wantsToSpectate, GameMessageBasePublicICopyable1ObfInUIInObFGInStBoInByUnique.EnumNPublicSealedva4vUnique clientType, ClientGameStateData gameStateData, int numLocalPlayers, string entryToken)
         {
-            Commands.OnConnectedToServer?.Invoke();
+            GameActions.OnConnectedToServer?.Invoke();
         }
 
         [HarmonyPatch(typeof(ClientNetworkMessageProcessor), nameof(ClientNetworkMessageProcessor.processMessage)), HarmonyPrefix]
         static bool processMessage(ClientNetworkMessageProcessor __instance, GameConnection sender, GameMessageBase msg)
         {
-            Commands.OnReceivedMessage?.Invoke(msg.getGameMessageType());
+            GameActions.OnReceivedMessage?.Invoke(msg.getGameMessageType());
             return true;
         }
 
@@ -90,19 +97,33 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.GameLevelLoaded)), HarmonyPostfix]
         static void GameLevelLoaded(MPGNetObjectManager __instance, string ugcLevelHash)
         {
-            Commands.OnRoundLoaded?.Invoke();
+            GameActions.OnRoundLoaded?.Invoke();
         }
 
-        [HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.OnCheckpointReached)), HarmonyPostfix]
-        static void HandleCheckpointReached(CheckpointManager __instance, CheckpointZone cpz, MPGNetObject mpgno)
+        //[HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.Start)), HarmonyPostfix]
+        //static void Start(CheckpointManager __instance)
+        //{
+        //    uint i = 0;
+        //    foreach (var zone in __instance._checkpointZones)
+        //    {
+        //        zone.uniqueId = i++;
+        //    }
+        //}
+
+        [HarmonyPatch(typeof(CheckpointManager), nameof(CheckpointManager.HandleCheckpointReached)), HarmonyPostfix]
+        static void HandleCheckpointReached(CheckpointManager __instance, CheckpointZone cpz, MPGNetObject mpgno, bool __result)
         {
-            Commands.OnCheckpointReached?.Invoke(mpgno, cpz);
+            if (__instance.NetIDToCheckpointMap.TryGetValue(mpgno.NetID, out var checkpointMap) && checkpointMap == cpz.UniqueId || !__result)
+                return;
+
+            __instance._netIDToCheckpointMap[mpgno.NetID] = cpz.UniqueId;
+            GameActions.OnCheckpointReached?.Invoke(mpgno, cpz);
         }
 
         [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.HandleLocalPlayerLapComplete)), HarmonyPostfix]
         static void HandleLocalPlayerLapComplete(ClientGameManager __instance, LocalPlayerLapCompleteEvent evt)
         {
-            Commands.OnLapComplete?.Invoke();
+            GameActions.OnLapComplete?.Invoke();
         }
 
         [HarmonyPatch(typeof(SkipRoundButton), nameof(SkipRoundButton.OnEnable)), HarmonyPrefix]
@@ -110,6 +131,16 @@ namespace FGTools.LocalServer.Patches
         {
             __instance._rewiredPlayer = ReInput.players.GetPlayer(0);
             __instance._rewiredActions = new([199]);
+            return false;
+        }
+
+        [HarmonyPatch(typeof(SkipRoundButton), nameof(SkipRoundButton.OnDisable)), HarmonyPrefix]
+        static bool OnDisable(SkipRoundButton __instance)
+        {
+            if (!StateManager.IsPlayingExplore)
+                return true;
+
+            __instance.gameObject.SetActive(true);
             return false;
         }
 
@@ -218,7 +249,7 @@ namespace FGTools.LocalServer.Patches
                     StateManager.ShowState.OnShowProgress();
             }), __instance.GetTimeAttackEntry());
 
-            Commands.OnQualified?.Invoke();
+            GameActions.OnQualified?.Invoke();
 
             return false;
         }
@@ -267,7 +298,7 @@ namespace FGTools.LocalServer.Patches
 
             }), __instance.GetTimeAttackEntry(), 5);
             
-            Commands.OnEliminated?.Invoke();
+            GameActions.OnEliminated?.Invoke();
             
             return false;
         }
@@ -310,7 +341,7 @@ namespace FGTools.LocalServer.Patches
                     StateManager.ShowState.OnShowProgress();
             }), __instance.GetTimeAttackEntry());
 
-            Commands.OnWon?.Invoke();
+            GameActions.OnWon?.Invoke();
 
             return false;
         }
@@ -330,5 +361,23 @@ namespace FGTools.LocalServer.Patches
 
             return false;
         }
+
+        [HarmonyPatch(typeof(MPGNetObjectManager), nameof(MPGNetObjectManager.SetupNetObjectOnGameObject)), HarmonyPostfix]
+        static void SetupNetObjectOnGameObject(MPGNetObjectManager __instance, GameObject go, GameMessageServerSpawnObject msg)
+        {
+            GameActions.OnNetObjSpawned?.Invoke(msg.NetId, go, msg.NetObjectSpawnData.PrefabHash);
+        }
+
+        [HarmonyPatch(typeof(CGMDespatcher), nameof(CGMDespatcher.process), [typeof(GameMessageServerEventGeneric)]), HarmonyPostfix]
+        static void OnServerEventGeneric(GameMessageServerEventGeneric msg)
+        {
+            switch (msg.Type)
+            {
+                case GameMessageServerEventGeneric.EventType.AllPlayersSpawned:
+                    GameActions.OnAllPlayersSpawned?.Invoke();
+                    break;
+            }
+        }
+
     }
 }

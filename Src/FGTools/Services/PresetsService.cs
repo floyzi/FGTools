@@ -255,23 +255,26 @@ namespace FGTools.Services
                 if (string.IsNullOrEmpty(value))
                     return;
 
+                var preset = PresetFromPath(value);
+                if (preset == null)
+                    return;
+
                 SetPreset(value, true, true);
-                CreateNotification(LocalizedStr("latest_preset_set_title"), LocalizedStr("latest_preset_set_desc", [PresetFromPath(value).Name]), FGT_Info_Color, 5);
+                CreateNotification(LocalizedStr("latest_preset_set_title"), LocalizedStr("latest_preset_set_desc", [preset.Name]), FGT_Info_Color, 5);
             }
         }
 
         PresetBase PresetFromPath(string path)
         {
             if (File.Exists(path))
-            {
                 return JsonSerializer.Deserialize<PresetBase>(File.ReadAllText(path));
-            }
+
             return null;
         }
 
         public override void RegisterService()
         {
-            Presets = new();
+            Presets = [];
             foreach (var file in Directory.GetFiles(Launcher.PresetsDir))
             {
                 try
@@ -282,9 +285,7 @@ namespace FGTools.Services
                 catch { }
             }
 
-            FGTLog(BepInEx.Logging.LogLevel.Info, base.GetType(), $"Found {Presets.Count} presets.");
-
-            //Commands.OnDisplayMainMenu += OnMenuEnter2;
+            FGTLog(BepInEx.Logging.LogLevel.Info, base.GetType(), $"Found \"{Presets.Count}\" presets.");
             OnMenu = Broadcaster.Instance.Register<OnMainMenuDisplayed>(new Action<OnMainMenuDisplayed>(OnMenuEnter));
         }
 
@@ -377,7 +378,6 @@ namespace FGTools.Services
                     }
 
                     InitPresetsDrop();
-                    StateManager.HaveActivePopup = false;
                     UniversalUI.SetUIActive(UniverseGUID, true);
                     FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
                     StateManager.InternalState.LoaderUIToggle = true;

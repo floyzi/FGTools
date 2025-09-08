@@ -6,6 +6,7 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Internal.Extensions;
 using FGTools.LocalServer;
+using FGTools.LocalServer.Implementations;
 using FGTools.Services;
 using HarmonyLib;
 using Il2CppInterop.Runtime.Injection;
@@ -177,22 +178,23 @@ namespace FGTools
 #endif
                 BuildInfo = new BuildDetails(cfg, MyPluginInfo.PLUGIN_VERSION, version.FileVersion, commit.Length > 1 ? commit[1] : "LOCAL BUILD", buildDate, buildGuid, defines);
 
-                ClassInjector.RegisterTypeInIl2Cpp<FGTBehaviour>();
-                ClassInjector.RegisterTypeInIl2Cpp<ToolsBehaviour>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<FGTBehaviour>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<ToolsBehaviour>();
 
-                GameObject MonoMain = new() { name = DefaultName };
-                MonoMain.AddComponent<FGTBehaviour>();
-                MonoMain.hideFlags = HideFlags.HideAndDontSave;
+                var monoMain = new GameObject() { name = DefaultName };
+                monoMain.AddComponent<FGTBehaviour>();
+                monoMain.hideFlags = HideFlags.HideAndDontSave;
 
                 LoadCFG(Config);
 
-                ClassInjector.RegisterTypeInIl2Cpp<FallGuyBehaviour>();
-                ClassInjector.RegisterTypeInIl2Cpp<FGTController>();
-                ClassInjector.RegisterTypeInIl2Cpp<MenuAudioProvider>();
-                ClassInjector.RegisterTypeInIl2Cpp<FreeCameraController>();
-                ClassInjector.RegisterTypeInIl2Cpp<SimpleTrigger>();
-                ClassInjector.RegisterTypeInIl2Cpp<ServerBehaviour>();
-                ClassInjector.RegisterTypeInIl2Cpp<ServerControlledObject>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<FallGuyBehaviour>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<FGTController>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<MenuAudioProvider>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<FreeCameraController>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<SimpleTrigger>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<ServerBehaviour>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<ServerControlledObject>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<PrefabSpawnerController>();
 
                 Log.LogMessage($" --- ");
                 Log.LogMessage($"{DisplayName} V{BuildInfo.UI_Version}");
@@ -202,7 +204,7 @@ namespace FGTools
 
                 PermanentHarmony.PatchAll(typeof(ServerCorePatches));
                 PermanentHarmony.PatchAll(typeof(GlobalPatches));
-                PermanentHarmony.PatchAll(typeof(CosmeticsService.LockerHarmony));
+                PermanentHarmony.PatchAll(typeof(LockerHarmony));
 
                 if (Valid())
                 {

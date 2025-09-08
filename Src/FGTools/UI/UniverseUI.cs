@@ -280,7 +280,7 @@ namespace FGTools.UI
                 {
                     FGTLog(LogLevel.Info, GetType(), "Trying to draw tabs");
 
-                    Commands.OnStateChange += OnStateChange;
+                    GameActions.OnStateChange += OnStateChange;
 
                     GameObject tabGroup = UIFactory.CreateHorizontalGroup(ContentRoot, "Tabs", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                     UIFactory.SetLayoutElement(tabGroup, minHeight: 25, flexibleHeight: 0);
@@ -1058,7 +1058,7 @@ namespace FGTools.UI
             {
                 if (selectedLang != null && ConfigManager.LangFileName.Value != selectedLang)
                 {
-                    if (SceneManager.GetActiveScene().name == "MainMenu" && StateManager.FGTCurrentState == FGTStateManager.FGTState.Menu)
+                    if (SceneManager.GetActiveScene().name == "MainMenu" && StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
                     {
                         DoModal(LocalizedStr("gui_localization_act0"), LocalizedStr("gui_localization_act1"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
                         {
@@ -2272,32 +2272,32 @@ namespace FGTools.UI
                 }
             }
 
-            void OnStateChange(FGTStateManager.FGTState state)
+            void OnStateChange(FGTStateManager.ToolsState state)
             {
 
                 GoToTab(Tab.RoundLoader_Main, SubLevel.RoundLoader, silent: true);
 
                 switch (state)
                 {
-                    case FGTStateManager.FGTState.Menu:
+                    case FGTStateManager.ToolsState.Menu:
                         ToggleGroup(ObjectGroup.Menu);
                         break;
-                    case FGTStateManager.FGTState.Results:
+                    case FGTStateManager.ToolsState.Results:
                         ToggleGroup(ObjectGroup.Results);
                         break;
-                    case FGTStateManager.FGTState.RoundLoading:
-                    case FGTStateManager.FGTState.GPFGCLoading:
-                    case FGTStateManager.FGTState.RoundIntro:
+                    case FGTStateManager.ToolsState.RoundLoading:
+                    case FGTStateManager.ToolsState.GPFGCLoading:
+                    case FGTStateManager.ToolsState.RoundIntro:
                         ToggleGroup(ObjectGroup.Loading);
                         break;
-                    case FGTStateManager.FGTState.GameActive:
-                    case FGTStateManager.FGTState.FGCGameActive:
+                    case FGTStateManager.ToolsState.GameActive:
+                    case FGTStateManager.ToolsState.FGCGameActive:
                         PrepareVariations();
                         ToggleGroup(ObjectGroup.Gameplay);
                         if (StateManager.ExploreState != null)
                             ToggleGroup(ObjectGroup.Explore);
                         break;
-                    case FGTStateManager.FGTState.InCreative:
+                    case FGTStateManager.ToolsState.InCreative:
                         ToggleGroup(ObjectGroup.Editor);
                         break;
                 }

@@ -1,7 +1,9 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using FG.Common;
 using FGTools.Config;
+using FGTools.Internal.Behaviours;
 using FGTools.Services.Logic;
+using FGTools.States.Logic;
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -29,7 +31,6 @@ namespace FGTools.Services
         bool _expanded = false;
         string _expandTxt = "<-";
         bool _needSecondPress = false;
-        double _peakMemUsage;
 
         string ReturnDebugInfo()
         {
@@ -57,13 +58,6 @@ namespace FGTools.Services
         static string ReturnException(Exception e) => $"Unable to display debug info!<color=grey>\n\n{e.Message}\n\n{e.StackTrace}</color>\n\nCapture bug report by pressing \"{LocalizedStr("gui_debug_new_report")}\"";
         public override void DrawGUI()
         {
-            var memUsage = Process.GetCurrentProcess().WorkingSet64 / 1024.0 / 1024.0;
-            if (memUsage > _peakMemUsage)
-                _peakMemUsage = memUsage;
-#if DEV
-            GUI.Label(new(0, 0, 200, 60), $"MEM: {memUsage:F2} MB\nPEAK: {_peakMemUsage:F2} MB");
-#endif
-
             if (_needSecondPress)
             {
                 var label = $"<b>{LocalizedStr("gui_debug_press_again", [$"[{ DebugUIHotkey.Value}]"]).ToUpper()}</b>";
@@ -151,10 +145,10 @@ namespace FGTools.Services
                 var b3 = new StringBuilder();
 
                 b3.AppendLine($"Client: {ClientBuildDetails.Platform} | {ClientBuildDetails.AppVersion} | {ClientBuildDetails.PlatformServiceProvider} | {Application.unityVersion}");
-                b3.AppendLine($"MEM: {memUsage:F2} MB | PEAK: {_peakMemUsage:F2} MB");
+                b3.AppendLine($"MEM: {StateManager.MemUsage:F2} MB | PEAK: {StateManager.PeakMemUsage:F2} MB");
                 b3.AppendLine($"Scene: {SceneManager.GetActiveScene().name}");
                 b3.AppendLine($"NetworkOptions: {NetworkGameData.currentGameOptions_._roundID}");
-                b3.AppendLine($"IsGameDead: True");
+                b3.AppendLine($"IsGameDead: {true}");
 
                 DebugContent[2] = b3.ToString();
             }

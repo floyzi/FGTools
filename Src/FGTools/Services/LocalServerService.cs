@@ -6,6 +6,7 @@ using FGClient;
 using FGTools.Config;
 using FGTools.HarmonyPatches;
 using FGTools.Internal;
+using FGTools.Internal.Extensions;
 using FGTools.LocalServer;
 using FGTools.LocalServer.CustomMessages;
 using FGTools.LocalServer.CustomMessages.Logic;
@@ -71,7 +72,7 @@ namespace FGTools.Services
 #endif
 
         internal void SingleplayerGame(Round round) => Host("127.0.0.1", -1, 1, round);
-        internal static int GetPort()
+        internal static int GetRandomPort()
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
@@ -90,13 +91,13 @@ namespace FGTools.Services
 
             try
             {
+                if (port == -1)
+                    port = GetRandomPort();
+
                 FGTLog(LogLevel.Info, typeof(LocalServerService), $"Attempt to host the server on {ip}:{port}");
 
                 var gsm = GlobalGameStateClient.Instance._gameStateMachine;
                 var mmManager = GlobalGameStateClient.Instance._mainMenuManager;
-
-                if (port == -1)
-                    port = GetPort();
 
                 if (gsm.IsInState<StateMainMenu>() && mmManager != null)
                     gsm.CurrentState.Cast<StateMainMenu>().StartConnecting(ip, port, MatchmakingEnvironment.Production);
@@ -104,14 +105,9 @@ namespace FGTools.Services
                 if (IsServerInOperation)
                     FGTServiceManager.Instance.GetService<LocalServerService>().ShutdownSerer(null);
 
-                if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerMessageProcessor>())
-                    ClassInjector.RegisterTypeInIl2Cpp<ServerMessageProcessor>();
-
-                if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerGameActions>())
-                    ClassInjector.RegisterTypeInIl2Cpp<ServerGameActions>();
-
-                if (!ClassInjector.IsTypeRegisteredInIl2Cpp<ServerGameStateView>())
-                    ClassInjector.RegisterTypeInIl2Cpp<ServerGameStateView>();
+                TryRegisterTypeInIl2cpp<ServerMessageProcessor>();
+                TryRegisterTypeInIl2cpp<ServerGameActions>();
+                TryRegisterTypeInIl2cpp<ServerGameStateView>();
 
                 Launcher.ServerHarmony.PatchAll(typeof(ServerGameplayPatches));
 
@@ -134,7 +130,7 @@ namespace FGTools.Services
                     GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(state.Cast<GameStateMachine.IGameState>());
                 }
 
-                FGTLog(LogLevel.Info, typeof(LocalServerService), $"Hosting server on {ip}:{port}");
+                FGTLog(LogLevel.Info, typeof(LocalServerService), $"Successfully started server on {ip}:{port}");
             }
             catch (Exception ex)
             {
@@ -198,7 +194,8 @@ namespace FGTools.Services
         {
             CustomMessageManager = new();
             Launcher.ServerHarmony.PatchAll(typeof(CommonServerPatches));
-            Commands.OnReceivedMessage += OnClientReceiveMessage;
+            GameActions.OnReceivedMessage += OnClientReceiveMessage;
+            GameActions.OnRoundLoaded += OnRoundLoaded;
 
             CustomMessageDespatcher.OnClientSendAuthRequest += SendAuthRequest;
             CustomMessageDespatcher.OnClientSendUserInfo += SendCommonUserInfo;
@@ -209,20 +206,27 @@ namespace FGTools.Services
             var cSets = FGTServiceManager.GetService<ControllersDataService>();
             cSets.SetDataPreset(ConfigManager.OldPhysics.Value ? "10_8" : "Default");
 
-            ShowsManager.Instance.SelectedGameMode = ShowsManager.GameMode.PrivateLobby;
+            if (IsServerInOperation)
+                GlobalGameStateClient.Instance.NetObjectManager._networkMode = MPGNetObjectManager.NetworkMode.ComboServer;
         }
 
         static void UnSubscribeFromEvents()
         {
             CustomMessageManager = null;
             Launcher.ServerHarmony.UnpatchSelf();
-            Commands.OnReceivedMessage -= OnClientReceiveMessage;
+            GameActions.OnReceivedMessage -= OnClientReceiveMessage;
+            GameActions.OnRoundLoaded -= OnRoundLoaded;
 
             CustomMessageDespatcher.OnClientSendAuthRequest -= SendAuthRequest;
             CustomMessageDespatcher.OnClientSendUserInfo -= SendCommonUserInfo;
             CustomMessageDespatcher.OnClientOutdatedHost -= HostVersionOutdated;
             CustomMessageDespatcher.OnClientOutdatedClient -= ClientVersionOutdated;
             CustomMessageDespatcher.OnClientVersionDifference -= VersionDifference;
+
+            GameActions.OnAllPlayersSpawned = null;
+            GameActions.OnRoundStarts = null;
+
+            GlobalGameStateClient.Instance.NetObjectManager._networkMode = MPGNetObjectManager.NetworkMode.StandaloneClient;
         }
 
         void OnDisplayLobby(OnDisplayLobby e)
@@ -237,6 +241,12 @@ namespace FGTools.Services
         {
             UnSubscribeFromEvents();
         }
+
+        static void OnRoundLoaded()
+        {
+            ShowsManager.Instance.SelectedGameMode = ShowsManager.GameMode.PrivateLobby;
+        }
+
         static void HostVersionOutdated()
         {
             DoModal("server_host_update_title", "server_host_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, act: new Action<bool>(wasok =>

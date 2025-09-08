@@ -49,7 +49,7 @@ namespace FGTools.Content
             RoundRules = data.GetBool("round_rules", false);
             VersionWarning = data.GetBool("version_warning", false);
 
-            Commands.OnTargetsParsed?.Invoke();
+            GameActions.OnTargetsParsed?.Invoke();
         }
     }
 }

@@ -11,28 +11,28 @@ namespace FGTools.HarmonyPatches
 {
     public class ThemePatches
     {
-        [HarmonyPatch(typeof(MainMenuManager), "PlayMenuMusic")]
+        [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.PlayMenuMusic))]
         [HarmonyPrefix]
-        static bool PlayMenuMusic(MainMenuManager __instance, int playbackPosition)
+        static bool PlayMenuMusic(MainMenuManager __instance, int playbackPosition = -1)
         {
-            MenuAudioProvider mainMenuCustomAudio = __instance.GetComponent<MenuAudioProvider>() ?? __instance.gameObject.AddComponent<MenuAudioProvider>();
-            mainMenuCustomAudio?.PlayMusic(true);
+            var provider = __instance.GetComponent<MenuAudioProvider>() ?? __instance.gameObject.AddComponent<MenuAudioProvider>();
+            provider?.PlayMusic(true);
             return false;
         }
 
-        [HarmonyPatch(typeof(MainMenuManager), "PauseMusic")]
+        [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.PauseMusic))]
         [HarmonyPrefix]
-        static bool PauseMusic(MainMenuManager __instance, bool immediate)
+        static bool PauseMusic(MainMenuManager __instance, bool immediate = false)
         {
             return false;
         }
 
-        [HarmonyPatch(typeof(MainMenuManager), "StopMusic")]
+        [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.StopMusic))]
         [HarmonyPrefix]
-        static bool StopMusic(MainMenuManager __instance, bool immediate)
+        static bool StopMusic(MainMenuManager __instance, bool immediate = false)
         {
-            MenuAudioProvider mainMenuCustomAudio = __instance.GetComponent<MenuAudioProvider>();
-            mainMenuCustomAudio?.StopMusic();
+            var provider = __instance.GetComponent<MenuAudioProvider>();
+            provider?.StopMusic();
             return false;
         }
     }

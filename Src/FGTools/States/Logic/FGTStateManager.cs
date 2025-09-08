@@ -26,6 +26,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using wle::ScriptableObjects;
@@ -45,8 +46,8 @@ namespace FGTools.States.Logic
 
         internal static string AssemblyHash;
         internal InternalState InternalState = new();
-        internal Logic.FGTState ActiveState;
-        internal Logic.FGTState PreviousState;
+        internal FGTState ActiveState;
+        internal FGTState PreviousState;
         internal UltimatePartyState ExploreState;
         internal ShowState ShowState;
         internal static PlayerTeamManager PTM => CGM._playerTeamManager;
@@ -59,12 +60,11 @@ namespace FGTools.States.Logic
         internal bool PiratedGame = false;
         internal bool IsFGC => CurrentRound != null && CurrentRound.IsUGC();
         internal bool IsPlayingExplore => ExploreState != null;
-        internal bool IsInGameplay => FGTCurrentState == FGTState.GameActive || FGTCurrentState == FGTState.FGCGameActive;
-        internal bool IsInEditor => FGTCurrentState == FGTState.InCreative;
+        internal bool IsInGameplay => FGTCurrentState == ToolsState.GameActive || FGTCurrentState == ToolsState.FGCGameActive;
+        internal bool IsInEditor => FGTCurrentState == ToolsState.InCreative;
 
         internal bool LoggedInBefore = false;
         internal bool CanUseHotkeys = false;
-        internal bool HaveActivePopup = false;
 
         internal static string TargetFontName
         {
@@ -86,7 +86,7 @@ namespace FGTools.States.Logic
 
         internal bool RoundLoadingAllowed = false;
 
-        public enum FGTState
+        public enum ToolsState
         {
             BeforeMenu,
             CMSParsed,
@@ -114,12 +114,16 @@ namespace FGTools.States.Logic
             FreeCam,
         }
 
-        public FGTState FGTCurrentState;
+        public ToolsState FGTCurrentState;
         public PlayerState FGCurrentState;
 
         public Dictionary<string, HashSet<string>> BuildScenes = [];
         public float TimeInState;
         internal GameObject CheckpointModel;
+        internal Process GameProcess;
+        private Thread _memoryThread;
+        internal double PeakMemUsage;
+        internal double MemUsage;
 
         public FGTStateManager()
         {
@@ -175,7 +179,7 @@ namespace FGTools.States.Logic
 
             CheckupScenes();
 
-            Commands.OnMenuEnter += new Action(() =>
+            GameActions.OnMenuEnter += new Action(() =>
             {
                 if (CheckpointModel != null)
                     return;
@@ -189,6 +193,25 @@ namespace FGTools.States.Logic
                     CheckpointModel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
                 })).WrapToIl2Cpp());
             });
+
+            GameProcess = Process.GetCurrentProcess();
+            _memoryThread = new(() =>
+            {
+                var proc = Process.GetCurrentProcess();
+                while (true)
+                {
+                    proc.Refresh();
+                    MemUsage = proc.WorkingSet64 / 1024.0 / 1024.0;
+                    if (MemUsage > PeakMemUsage)
+                        PeakMemUsage = MemUsage;
+
+                    Thread.Sleep(150);
+                }
+            })
+            {
+                IsBackground = true
+            };
+            _memoryThread.Start();
 
             ForceSetState(new MenuState());
         }
@@ -242,13 +265,13 @@ namespace FGTools.States.Logic
             FGTLog(LogLevel.Info, this.GetType(), $"Total scenes in this build ({Application.version} | {ClientBuildDetails.PlatformServiceProvider}): {BuildScenes[AssemblyHash].Count}. Checkup took: {sw.Elapsed.TotalSeconds:F3}s");
         }
 
-        void OnEnterMenu(OnMainMenuDisplayed evt) => Commands.OnMenuEnter?.Invoke();
-        void OnFinish(OnLocalPlayersFinished evt) => Commands.OnFinished?.Invoke();
-        void OnRoundStart(IntroCountdownEndedEvent evt) => Commands.OnRoundStarts?.Invoke();
-        void OnRoundEnd(OnRoundOver evt) => Commands.OnRoundEnds?.Invoke();
-        void OnIntroStart(IntroCameraSequenceStartedEvent evt) => Commands.OnIntroStarts?.Invoke();
-        void OnIntroEnd(IntroCameraSequenceEndedEvent evt) => Commands.OnIntroEnds?.Invoke();
-        void OverlayInit(InitialiseClientOverlayEvent evt) => Commands.OnOverlayInitialize?.Invoke(evt);
+        void OnEnterMenu(OnMainMenuDisplayed evt) => GameActions.OnMenuEnter?.Invoke();
+        void OnFinish(OnLocalPlayersFinished evt) => GameActions.OnFinished?.Invoke();
+        void OnRoundStart(IntroCountdownEndedEvent evt) => GameActions.OnRoundStarts?.Invoke();
+        void OnRoundEnd(OnRoundOver evt) => GameActions.OnRoundEnds?.Invoke();
+        void OnIntroStart(IntroCameraSequenceStartedEvent evt) => GameActions.OnIntroStarts?.Invoke();
+        void OnIntroEnd(IntroCameraSequenceEndedEvent evt) => GameActions.OnIntroEnds?.Invoke();
+        void OverlayInit(InitialiseClientOverlayEvent evt) => GameActions.OnOverlayInitialize?.Invoke(evt);
 
         public void TryJoinExplore(UltimatePartyState.JoinPolicy joinType)
         {
@@ -310,7 +333,7 @@ namespace FGTools.States.Logic
             TimeInState = 0;
 
             if (state is MenuState)
-                HandleFGTState(FGTState.BeforeMenu);
+                HandleFGTState(ToolsState.BeforeMenu);
 
             GC.Collect();
         }
@@ -350,7 +373,7 @@ namespace FGTools.States.Logic
                     FallGuyBehaviour._instance.fc.EnterFC();
                     break;
                 case PlayerState.Finish:
-                    HandleFGTState(FGTState.GameEnded);
+                    HandleFGTState(ToolsState.GameEnded);
                     if (CGM != null)
                     {
                         CGM._gameSession.SetSessionState(FG.Common.GameSession.SessionState.Finished);
@@ -367,15 +390,15 @@ namespace FGTools.States.Logic
             }
         }
 
-        public void HandleFGTState(FGTState newState)
+        public void HandleFGTState(ToolsState newState)
         {
             FGTCurrentState = newState;
 
-            Commands.OnStateChange?.Invoke(newState);
+            GameActions.OnStateChange?.Invoke(newState);
 
             switch (newState)
             {
-                case FGTState.CMSParsed:
+                case ToolsState.CMSParsed:
                     PlayerTargetSettings.UGCLikesEnabled = false;
                     PlayerTargetSettings.UGCThumbnailReportingEnabled = false;
                     PlayerTargetSettings.VoiceChatEnabled = false;
@@ -399,7 +422,7 @@ namespace FGTools.States.Logic
                     }
 
                     break;
-                case FGTState.Menu:
+                case ToolsState.Menu:
                     FraggleCommonManager.Instance.IsInLevelEditor = false;
                     FraggleCommonManager.Instance.SetModeToBuild(new());
                     FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad = false;
@@ -409,14 +432,14 @@ namespace FGTools.States.Logic
                     SetState(new MenuState());
                     RoundLoadingAllowed = true;
                     break;
-                case FGTState.GamePaused:
+                case ToolsState.GamePaused:
                     CGM?.CurrentGameSession.SetSessionState(GameSession.SessionState.Precountdown);
                     break;
-                case FGTState.GameActive:
+                case ToolsState.GameActive:
                     if (CGM != null && CGM.CurrentGameSession.CurrentSessionState != GameSession.SessionState.Playing)
                         CGM.CurrentGameSession.SetSessionState(GameSession.SessionState.Playing);
                     break;
-                case FGTState.InCreative:
+                case ToolsState.InCreative:
                     if (!Launcher.FGCHarmonyPatched)
                     { 
                         Launcher.FGCHarmony.PatchAll(typeof(FGCHarmonyPatches)); 
@@ -433,7 +456,7 @@ namespace FGTools.States.Logic
                         FGTServiceManager.GetService<EventService>().SetEventValue("RpcFGCAlert", true);
                     }
                     break;
-                case FGTState.GPFGCLoading:
+                case ToolsState.GPFGCLoading:
                     if (Launcher.HarmonyPatched)
                     { Launcher.GlobalHarmony.UnpatchSelf(); Launcher.HarmonyPatched = false; }
                     break;

@@ -47,7 +47,7 @@ namespace FGTools.States
 
         public void OnExploreQuit()
         {
-            StateManager.FGTCurrentState = FGTStateManager.FGTState.Results;
+            StateManager.FGTCurrentState = FGTStateManager.ToolsState.Results;
             StateManager.DropActiveState();
             GlobalGameStateClient.Instance.StoreServiceDataSnapshot();
             CompletedEpisodeDto completedEpisode = new CompletedEpisodeDto()

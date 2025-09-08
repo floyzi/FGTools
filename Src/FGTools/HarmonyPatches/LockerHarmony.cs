@@ -1,0 +1,70 @@
+﻿using FG.Common;
+using FGClient;
+using FGClient.Customiser;
+using FGClient.UI;
+using FGTools.Internal.Extensions;
+using FGTools.Services;
+using FGTools.Services.Logic;
+using FGTools.States.Logic;
+using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using static FGTools.Config.ConfigManager;
+using static FGTools.Services.LocalizationService;
+
+namespace FGTools.HarmonyPatches
+{
+    public class LockerHarmony : FGTBase
+    {
+        [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.DoExitSubMenu)), HarmonyPostfix]
+        static void DoExitSubMenu(CustomiserScreenViewModel __instance, bool keepChanges)
+        {
+            switch (__instance.CurrentScreen)
+            {
+                case CustomiserScreens.Outfits:
+                    CosmeticsService.ResolveFavIds(__instance._outfitMenuViewModel);
+                    break;
+                case CustomiserScreens.Theatrics:
+                    CosmeticsService.ResolveFavIds(__instance._theatricsMenuViewModel);
+                    break;
+                case CustomiserScreens.Interface:
+                    CosmeticsService.ResolveFavIds(__instance._interfaceMenuViewModel);
+                    break;
+            }
+
+            File.WriteAllText(Launcher.CustomFavList, JsonSerializer.Serialize(CosmeticsService.FavList));
+            FGTServiceManager.GetService<CosmeticsService>().SearchPanel.Reset();
+        }
+
+        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
+        static void MoveToPage(CustomiserMenuViewModel __instance, int pageIndex)
+        {
+            if (pageIndex != 0)
+                FGTServiceManager.GetService<CosmeticsService>().SearchEnd(true);
+
+            FGTServiceManager.GetService<CosmeticsService>().SearchPanel.ChangeTitle($"{LocalizedStr("gui_cosmetics_search")} | {LocalizedStr("gui_cosmetics_search_for")}: {__instance.CurrentSectionText.ToUpper()}");
+        }
+
+        [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
+        static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Exception error, CustomisationSelections previousSelections, bool isEmotes)
+        {
+            __instance.HideSpinner();
+
+            if (!AllCosmeticsAlert.Value)
+                return false;
+
+            FLZ_Extensions.DoModal(LocalizedStr("request_error_2"), LocalizedStr("request_error_save_config_2"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.CallToAction, new Action<bool>(wasok =>
+            {
+                if (wasok)
+                    __instance.DoExitSubMenu(true);
+            }));
+
+            return false;
+        }
+    }
+}

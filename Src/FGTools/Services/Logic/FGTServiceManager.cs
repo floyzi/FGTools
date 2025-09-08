@@ -13,6 +13,7 @@ namespace FGTools.Services.Logic
         bool errorCatch = false;
         string latestError = "";
         float timeSinceLastErrror = 0;
+
         public static FGTServiceManager Instance
         {
             get

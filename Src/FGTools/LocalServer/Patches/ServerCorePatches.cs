@@ -1,45 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿extern alias wle;
 using FG.Common;
 using FG.Common.Character;
+using FG.Common.LODs;
 using FGClient;
 using FGTools.Internal;
+using FGTools.Internal.Behaviours;
 using FGTools.LocalServer.Implementations;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
+using Levels.Obstacles;
 using Levels.WallGuys;
 using Mediatonic.Networking;
 using MPG.Utility;
+using SRF;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.LocalServer
 {
+    /// <summary>
+    /// General patches for local server
+    /// </summary>
     public class ServerCorePatches : FGTBase
     {
-        //[HarmonyPatch(typeof(ClientPlayerManager), nameof(ClientPlayerManager.RegisterLocalPlayer)), HarmonyPrefix]
-        //static bool RegisterLocalPlayer(ClientPlayerManager __instance, uint playerID, string accountID, string nameKey, bool isParticipant)
-        //{
-        //    if (!LocalServerService.ServerInOperation)
-        //        return true;
-
-
-        //    return false;
-        //}
-
         [HarmonyPatch(typeof(MotorFunctionBeingGrabbedStateInactive), nameof(MotorFunctionBeingGrabbedStateInactive.Begin)), HarmonyPostfix]
         static void Begin(MotorFunctionBeingGrabbedStateInactive __instance, int prevState)
         {
             __instance._motorFunctionBeingGrabbed = __instance.GetMotorFunction<MotorFunctionBeingGrabbed>();
         }
 
-            [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
+        [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
         static bool OnPlayerSpawned(StateGameLoading __instance, MPGNetObject pNetObject, uint playerID, FG_NetworkID playerNetworkID, string accountId, string platformId, string playerName, string playerGeneratedName, uint squadId, int teamId, string partyId, int vsGroupId, bool tailEnabled, CustomisationSelections customisationSelections)
         {
             ServerManager.OnPlayerSpawned?.Invoke(pNetObject, playerID, playerNetworkID, accountId, platformId, playerName, playerGeneratedName, squadId, teamId, partyId, vsGroupId, tailEnabled, customisationSelections);
@@ -81,12 +79,6 @@ namespace FGTools.LocalServer
                     playerInput.AcceptInput = false;
                 }
             }
-            return false;
-        }
-
-        [HarmonyPatch(typeof(MPGNetObjectPossessable), nameof(MPGNetObjectPossessable.PossessObject)), HarmonyPrefix]
-        static bool OnPlayerSpawned(MPGNetObjectPossessable __instance)
-        {
             return false;
         }
 

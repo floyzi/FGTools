@@ -79,7 +79,7 @@ namespace FGTools.HarmonyPatches
         [HarmonyPrefix]
         static bool SetModeToBuild(FraggleCommonManager __instance, LevelEditorEnteredBuildModeFromExploreModeEvent evt)
         {
-            Commands.OnFGCPlaymodeExit?.Invoke();
+            GameActions.OnFGCPlaymodeExit?.Invoke();
             if (StateManager.FGCurrentState == PlayerState.FreeCam)
               StateManager.HandleFGState(PlayerState.Despawned);
             return true;
@@ -89,7 +89,7 @@ namespace FGTools.HarmonyPatches
         [HarmonyPrefix]
         static bool SetModeToExplore(FraggleCommonManager __instance, LevelEditorEnteredExploreModeEvent evt)
         {
-            Commands.OnFGCPlaymodeEnter?.Invoke();
+            GameActions.OnFGCPlaymodeEnter?.Invoke();
             Resources.FindObjectsOfTypeAll<FallGuysCharacterController>().FirstOrDefault().gameObject.AddComponent<FreeCameraController>();
             return true;
         }

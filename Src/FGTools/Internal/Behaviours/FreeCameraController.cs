@@ -30,7 +30,7 @@ namespace FGTools.Internal.Behaviours
         bool displayUI = false;
         void Update()
         {
-            if (StateManager.FGTCurrentState == FGTStateManager.FGTState.GameActive || StateManager.FGTCurrentState == FGTStateManager.FGTState.FGCGameActive)
+            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.GameActive || StateManager.FGTCurrentState == FGTStateManager.ToolsState.FGCGameActive)
             {
                 if (Input.GetKeyDown(PauseFreeCamHotkey.Value) && StateManager.FGCurrentState == PlayerState.FreeCam)
                 {
@@ -69,7 +69,7 @@ namespace FGTools.Internal.Behaviours
                         lastCamPos = transform.position + new Vector3(0f, 10f, 0f);
                     if (lastCamRot == Quaternion.identity)
                         lastCamRot = transform.rotation;
-                    if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
+                    if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                         CAM = Resources.FindObjectsOfTypeAll<CinemachineBrain>().Last().gameObject;
                     else
                         CAM = GameObject.Find("Main Camera Brain");
@@ -139,7 +139,7 @@ namespace FGTools.Internal.Behaviours
                 GPCams._maxDistance = maxDistDef;
                 GPCams._minDistance = maxDistDef;
                 GPCams.CurrentDistance = currentDist;
-                if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
+                if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                     foreach (FallGuysCameraAvoidence fgca in Resources.FindObjectsOfTypeAll<FallGuysCameraAvoidence>())
                         fgca.gameObject.SetActive(true);
                 else
@@ -147,7 +147,7 @@ namespace FGTools.Internal.Behaviours
                 GPCams.gameObject.SetActive(true);
                 CAM = null;
                 enterFreeCam = false;
-                if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
+                if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                 {
                     if (FreeCamAudioEffect.Value)
                         AudioMixing.Instance.ResetTimeAttackParams();
@@ -162,7 +162,7 @@ namespace FGTools.Internal.Behaviours
         {
             if (GPCams == null)
             {
-                if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
+                if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                     GPCams = Resources.FindObjectsOfTypeAll<FallGuysCameraAvoidence>().FirstOrDefault();
                 else
                     GPCams = Resources.FindObjectsOfTypeAll<wle.LevelEditorCameraAvoidance>().FirstOrDefault().Cast<FallGuysCameraAvoidence>();
@@ -179,7 +179,7 @@ namespace FGTools.Internal.Behaviours
             }
             if (CAM != null)
                 CAM.transform.position = lastCamPos;
-            if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative)
+            if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
             {
                 UIM.SwitchToState(InGameUiManager.InGameState.Banners);
                 RewiredManager.Instance.DisableMap(0, 0);

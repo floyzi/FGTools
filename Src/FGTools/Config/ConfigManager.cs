@@ -14,7 +14,7 @@ using KeyCode = UnityEngine.KeyCode;
 
 namespace FGTools.Config
 {
-    [Obsolete("Will be rewrited soon (i hope)")]
+    //TODO: rework this
     public class ConfigManager : FGTBase
     {
         public static ConfigFile CFG;

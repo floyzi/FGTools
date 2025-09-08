@@ -9,6 +9,7 @@ using FG.Common.Definition;
 using FGClient.CatapultServices;
 using FGClient.Customiser;
 using FGClient.UI;
+using FGTools.Internal.Extensions;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using FGTools.UI;
@@ -91,9 +92,8 @@ namespace FGTools.Services
         InterfaceMenuFocusableViewModel InterfaceMenuFocusable;
         TheatricsMenuFocusableViewModel TheatricsMenuFocusable;
 
-        public static CustomFavList FavList = new();
-
-        SearchPanel SearchPanel;
+        internal static HashSet<string> FavList { get; set; }
+        internal SearchPanel SearchPanel;
 
         bool Loaded;
         bool SearchLoaded;
@@ -109,10 +109,7 @@ namespace FGTools.Services
             if (File.Exists(Launcher.CustomFavList))
                 File.Delete(Launcher.CustomFavList);
 
-            FavList = new CustomFavList()
-            {
-                Id = [],
-            };
+            FavList = [];
             var stats = JsonSerializer.Serialize(FavList);
             File.WriteAllText(Launcher.CustomFavList, stats);
         }
@@ -133,9 +130,7 @@ namespace FGTools.Services
                             File.WriteAllText(Launcher.CustomFavList, stats);
                         }
                         else
-                            FavList = JsonSerializer.Deserialize<CustomFavList>(File.ReadAllText(Launcher.CustomFavList));
-
-                        FavList.Id ??= new();
+                            FavList = JsonSerializer.Deserialize<HashSet<string>>(File.ReadAllText(Launcher.CustomFavList));
                     }
                     catch
                     {
@@ -143,9 +138,7 @@ namespace FGTools.Services
                     }
 
                     if (FavList == null)
-                    {
                         ResetFavList();
-                    }  
 
                     var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
@@ -208,7 +201,7 @@ namespace FGTools.Services
                         foreach (var pair in so.Nicknames)
                             list.Add(pair.Value);
                         return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToNicknameDto(itemDto), favIds, FavList.Id);
+                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToNicknameDto(itemDto), favIds, FavList);
 
                     //emoticons
                     UserEmoticons = cos.Emoticons;
@@ -219,7 +212,7 @@ namespace FGTools.Services
                         foreach (var pair in so.Emoticons)
                             list.Add(pair.Value);
                         return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToEmoticonDto(itemDto), favIds, FavList.Id);
+                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToEmoticonDto(itemDto), favIds, FavList);
 
                     //phrases
                     UserPhrases = cos.Phrases;
@@ -230,7 +223,7 @@ namespace FGTools.Services
                         foreach (var pair in so.Phrases)
                             list.Add(pair.Value);
                         return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToPhraseDto(itemDto), favIds, FavList.Id);
+                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToPhraseDto(itemDto), favIds, FavList);
 
                     EndLoad();
 
@@ -303,7 +296,7 @@ namespace FGTools.Services
 
         public override void UpdateService()
         {
-            if (StateManager.FGTCurrentState == FGTStateManager.FGTState.Menu)
+            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
             {
                 IsSomeScreenActive();
                 if (searchActive)
@@ -439,6 +432,10 @@ namespace FGTools.Services
                         DoSearch<NameplateDto, NameplateOption>(term, reqType, allCosmetics, AllNameplates, UserNameplates, Resources.FindObjectsOfTypeAll<NameplateOption>(), dto => dto.Item, targ => targ, itemDto => ItemDtoToNameplateDto(itemDto), res => cos.Nameplates = res, ref finalRes, ref listedRes);
                         break;
                     case "nickname":
+                        //it's broken and im way too lazy to fix it rn
+                        if (reqType != RequestType.List)
+                            break;
+
                         var nicknames = Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault().Nicknames.Values;
                         Il2CppSystem.Collections.Generic.List<NicknameDto> nickname_targetList = AllNicknames;
                         if (!allCosmetics)
@@ -462,7 +459,7 @@ namespace FGTools.Services
                         foreach (NicknameDto item in nickname_targetList)
                         {
                             var a = item.Item.Id.Split('.')[1].ToLower();
-                            if ((item.IsFavourite || FavList.Id.Contains(item.Item.Id)) && foundIds.Contains(a))
+                            if ((item.IsFavourite || FavList.Contains(item.Item.Id)) && foundIds.Contains(a))
                             {
                                 nickname_result.Add(item);
                                 fav_ids.Add(a);
@@ -510,7 +507,7 @@ namespace FGTools.Services
                         foreach (EmoticonDto item in emoticons_targetList)
                         {
                             var a = item.Item.Id.Split('.')[1].ToLower();
-                            if ((item.IsFavourite || FavList.Id.Contains(item.Item.Id)) && foundIds.Contains(a))
+                            if ((item.IsFavourite || FavList.Contains(item.Item.Id)) && foundIds.Contains(a))
                             {
                                 emoticons_result.Add(item);
                                 fav_ids.Add(a);
@@ -559,7 +556,7 @@ namespace FGTools.Services
                         foreach (PhraseDto item in phrases_targetList)
                         {
                             var a = item.Item.Id.Split('.')[1].ToLower();
-                            if ((item.IsFavourite || FavList.Id.Contains(item.Item.Id)) && foundIds.Contains(a))
+                            if ((item.IsFavourite || FavList.Contains(item.Item.Id)) && foundIds.Contains(a))
                             {
                                 phrases_result.Add(item);
                                 fav_ids.Add(a);
@@ -674,11 +671,6 @@ namespace FGTools.Services
             NicknameSect.RefreshSectionData();
             EmoticonsSect.RefreshSectionData();
             PhrasesSect.RefreshSectionData();
-        }
-
-        public class CustomFavList
-        {
-            public HashSet<string> Id { get; set; }
         }
 
         static ItemDto CMSDefinitionToItemDto(CMSItemDefinition itemDefinition)
@@ -875,7 +867,7 @@ namespace FGTools.Services
                 var a = getItmDto(item).Id.Split('.')[1].ToLower();
                 dynamic dItm = item;
 
-                if ((dItm.IsFavourite || FavList.Id.Contains(getItmDto(item).Id)) && foundIds.Contains(a))
+                if ((dItm.IsFavourite || FavList.Contains(getItmDto(item).Id)) && foundIds.Contains(a))
                 {
                     r.Add(item);
                     fav_ids.Add(a);
@@ -921,7 +913,7 @@ namespace FGTools.Services
             return
             [
                 .. blank
-                                .Where(item => favGetter(item) || FavList.Id.Contains(getItem(item).Id) || favIds.Contains(getItem(item).Id))
+                                .Where(item => favGetter(item) || FavList.Contains(getItem(item).Id) || favIds.Contains(getItem(item).Id))
                                 .Select(item =>
                                 {
                                     favSetter(item, true);
@@ -975,109 +967,23 @@ namespace FGTools.Services
             }
         }
 
-        public override void DrawGUI()
+        internal static void ResolveFavIds(CustomiserMenuViewModel screen)
         {
+            foreach (var id in screen._favouriteIdsAdded)
+            {
+                if (!FavList.Contains(id))
+                    FavList.Add(id);
+            }
+
+            foreach (var id in screen._favouriteIdsRemoved)
+            {
+                if (FavList.Contains(id))
+                    FavList.Remove(id);
+            }
         }
 
-        public class LockerHarmony : FGTBase
+        public override void DrawGUI()
         {
-            [HarmonyPatch(typeof(CustomiserScreenViewModel), "DoExitSubMenu")]
-            [HarmonyPrefix]
-            static bool MoveToPage(CustomiserScreenViewModel __instance, bool keepChanges)
-            {
-                switch (__instance.CurrentScreen)
-                {
-                    case CustomiserScreens.Outfits:
-                        foreach (string id in __instance._outfitMenuViewModel._favouriteIdsAdded)
-                            if (!FavList.Id.Contains(id))
-                                FavList.Id.Add(id);
-                        foreach (string id in __instance._outfitMenuViewModel._favouriteIdsRemoved)
-                            if (FavList.Id.Contains(id))
-                                FavList.Id.Remove(id);
-                        __instance._outfitMenuViewModel.HandleExitScreen(keepChanges);
-                        break;
-                    case CustomiserScreens.Theatrics:
-                        foreach (string id in __instance._theatricsMenuViewModel._favouriteIdsAdded)
-                            if (!FavList.Id.Contains(id))
-                                FavList.Id.Add(id);
-                        foreach (string id in __instance._theatricsMenuViewModel._favouriteIdsRemoved)
-                            if (FavList.Id.Contains(id))
-                                FavList.Id.Remove(id);
-                        __instance._theatricsMenuViewModel.HandleExitScreen(keepChanges);
-                        break;
-                    case CustomiserScreens.Interface:
-                        foreach (string id in __instance._interfaceMenuViewModel._favouriteIdsAdded)
-                            if (!FavList.Id.Contains(id))
-                                FavList.Id.Add(id);
-                        foreach (string id in __instance._interfaceMenuViewModel._favouriteIdsRemoved)
-                            if (FavList.Id.Contains(id))
-                                FavList.Id.Remove(id);
-                        __instance._interfaceMenuViewModel.HandleExitScreen(keepChanges);
-                        break;
-                }
-                //__instance.OpenCustomiserOption(CustomiserScreens.SelectButtons);
-                __instance.OnEnable(); //i don't want to talk about this one
-                AudioManager.SetGlobalParam(AudioManager.EventMasterData.MainMenuMusicParam, 1f);
-                var json = JsonSerializer.Serialize(FavList);
-                File.WriteAllText(Launcher.CustomFavList, json);
-                return false;
-            }
-
-            [HarmonyPatch(typeof(CustomiserMenuViewModel), "MoveToPage")]
-            [HarmonyPrefix]
-            static bool MoveToPage(CustomiserMenuViewModel __instance, int pageIndex)
-            {
-                if (pageIndex != 0)
-                    FGTServiceManager.GetService<CosmeticsService>().SearchEnd(true);
-                if (!(__instance._switchableView.CurrentViewIndex == pageIndex || __instance._switchableView.IsBeingAnimated))
-                    __instance._switchableView.SetView(pageIndex, true, false, false);
-
-                FGTServiceManager.GetService<CosmeticsService>().SearchPanel.ChangeTitle($"{LocalizedStr("gui_cosmetics_search")} | {LocalizedStr("gui_cosmetics_search_for")}: {__instance.CurrentSectionText.ToUpper()}");
-                return false;
-            }
-
-            [HarmonyPatch(typeof(CustomiserScreenViewModel), "HandleConfigureRequestFailed")]
-            [HarmonyPrefix]
-            static bool StupidPopup(CustomiserScreenViewModel __instance, Exception error, CustomisationSelections previousSelections, bool isEmotes)
-            {
-                __instance.HideSpinner(null);
-                if (AllCosmeticsAlert.Value && !StateManager.HaveActivePopup)
-                {
-                    AddCMSString("request_error_2", $"{LocalizedStr("request_error_2")}");
-                    AddCMSString("request_error_save_config_2", $"{LocalizedStr("request_error_save_config_2")}");
-                    AddCMSString("revert_changes", $"{LocalizedStr("revert_changes")}");
-
-
-                    void OnClickedPopUp(bool wasOk)
-                    {
-                        StateManager.HaveActivePopup = false;
-                        if (wasOk)
-                        {
-                            __instance.DoExitSubMenu(true);
-                        }
-                        else
-                        {
-                        }
-                    }
-                    Il2CppSystem.Action<bool> OnClickedPopUpAction = new Action<bool>(OnClickedPopUp);
-
-
-                    var ModalMessageDataDisclaimer = new ModalMessageData
-                    {
-                        Title = "request_error_2",
-                        Message = "request_error_save_config_2",
-                        ModalType = UIModalMessage.ModalType.MT_OK,
-                        OkButtonType = UIModalMessage.OKButtonType.Default,
-                        OnCloseButtonPressed = OnClickedPopUpAction,
-                        CancelTextOverrideId = "save_selections"
-                    };
-
-                    PopupManager.Instance.Show(PopupInteractionType.Error, ModalMessageDataDisclaimer);
-                    AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
-                    StateManager.HaveActivePopup = true;
-                }
-                return false;
-            }
         }
     }
 }

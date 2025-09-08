@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace FGTools.Internal.Behaviours
 {
-    internal class SimpleTrigger : MonoBehaviour
+    internal class SimpleTrigger : ToolsBehaviour
     {
         internal Action<Collider> TriggerEnter;
         internal Action<Collision> CollisionEnter;

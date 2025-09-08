@@ -117,36 +117,33 @@ namespace FGTools.UI
 
         public static void ConfigAction(bool quit = false)
         {
-            if (!StateManager.HaveActivePopup)
+
+            string title = LocalizedStr("gui_restart_title");
+            string desc = LocalizedStr("gui_restart_desc");
+
+            if (!quit)
             {
-                string title = LocalizedStr("gui_restart_title");
-                string desc = LocalizedStr("gui_restart_desc");
-
-                if (!quit)
-                {
-                    title = LocalizedStr("gui_reload_title");
-                    desc = LocalizedStr("gui_reload_desc");
-                }
-
-                void OnClickedPopUp(bool wasok)
-                {
-                    if (wasok)
-                    {
-                        if (quit)
-                            Application.Quit();
-                        else if (StateManager.FGTCurrentState != FGTStateManager.FGTState.Menu)
-                        {
-                            if (StateManager.CurrentRound != null)
-                                FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);
-                            else
-                                FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
-                        }
-                    }
-                    StateManager.HaveActivePopup = false;
-                }
-
-                DoModal(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideGUI: ModalHideGUIType.ShowOnCancel);
+                title = LocalizedStr("gui_reload_title");
+                desc = LocalizedStr("gui_reload_desc");
             }
+
+            void OnClickedPopUp(bool wasok)
+            {
+                if (wasok)
+                {
+                    if (quit)
+                        Application.Quit();
+                    else if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.Menu)
+                    {
+                        if (StateManager.CurrentRound != null)
+                            FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);
+                        else
+                            FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
+                    }
+                }
+            }
+
+            DoModal(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideGUI: ModalHideGUIType.ShowOnCancel);
         }
 
         public static void SpeedrunContinePopup(float bestTime, bool fromWinScreen = false, VictoryScreenViewModel player = null)
@@ -199,7 +196,6 @@ namespace FGTools.UI
                     AudioMixing.Instance.ResetAllSnapshotParams();
                 }
             }), hideGUI: ModalHideGUIType.KeepHidden);
-            StateManager.HaveActivePopup = true;
         }
 
         public static void SpeedrunRestart()
@@ -210,9 +206,8 @@ namespace FGTools.UI
             {
                 if (WasOk)
                 {
-                    if (!StateManager.IsFGC && SceneManager.GetActiveScene().name == CGM._round.GetSceneName() && !OldSPContinue.Value)
-                        FGBehaviour.ReturnToStart();
-                    else if (StateManager.IsFGC)
+                    FGTServiceManager.GetService<SpeedrunService>().EndCurrentRun();
+                    if (SceneManager.GetActiveScene().name == CGM._round.GetSceneName() && !OldSPContinue.Value)
                         FGBehaviour.ReturnToStart();
                     else
                         FGTServiceManager.GetService<RoundLoaderService>().LoadCMSRound(StateManager.CurrentRound.Id, LoadSceneMode.Single);
@@ -261,9 +256,6 @@ namespace FGTools.UI
                 }
                 CoroutineRunner.Instance.StartCoroutine(returnBtns().WrapToIl2Cpp());
             }
-
-
-            StateManager.HaveActivePopup = true;
         }
     }
 }

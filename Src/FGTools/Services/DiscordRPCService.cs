@@ -42,33 +42,33 @@ namespace FGTools.Services
 
             FGTLog(LogLevel.Info, GetType(), $"Initializing...");
 
-            Commands.OnFGCPlaymodeEnter = new(() =>
+            GameActions.OnFGCPlaymodeEnter = new(() =>
             {
                 HandleRPCState(RpcState.FGCTest);
             });
 
-            Commands.OnFGCPlaymodeExit = new(() =>
+            GameActions.OnFGCPlaymodeExit = new(() =>
             {
                 HandleRPCState(RpcState.FGCBuild);
             });
 
-            Commands.OnStateChange = new((FGTState res) =>
+            GameActions.OnStateChange = new((ToolsState res) =>
             {
                 switch (res)
                 {
-                    case FGTState.BeforeMenu:
+                    case ToolsState.BeforeMenu:
                         HandleRPCState(RpcState.MenuLoading);
                         break;
-                    case FGTState.Menu:
+                    case ToolsState.Menu:
                         HandleRPCState(RpcState.Menu);
                         break;
-                    case FGTState.RoundLoading:
+                    case ToolsState.RoundLoading:
                         HandleRPCState(RpcState.LevelLoading);
                         break;
-                    case FGTState.GameActive:
+                    case ToolsState.GameActive:
                         HandleRPCState(RpcState.LevelPlaying);
                         break;
-                    case FGTState.InCreative:
+                    case ToolsState.InCreative:
                         HandleRPCState(RpcState.FGCBuild);
                         break;
                     default:

@@ -1,4 +1,5 @@
-﻿using FG.Common;
+﻿using BepInEx.Logging;
+using FG.Common;
 using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
 using FG.Common.LODs;
@@ -15,6 +16,7 @@ using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
+using Levels.Obstacles;
 using Levels.Rollout;
 using LiveOps.Challenges;
 using SRF;
@@ -47,15 +49,24 @@ namespace FGTools.LocalServer.Implementations
             if (LocalServerService.CGM.GameRules.IsTimeAttackGameMode)
                 return;
 
-            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "MarkPlayerAsSuccessful", $"Trying to qualify NetObject {playerNetObject.name} with ID {playerNetObject.NetID}");
+            FLZ_Extensions.FGTLog(LogLevel.Warning, "MarkPlayerAsSuccessful", $"Trying to qualify NetObject {playerNetObject.name} with ID {playerNetObject.NetID}");
 
             if (LocalServerService.IsUserAloneAndHost && ConfigManager.QualLevel.Value == ConfigManager.QualType.None)
+            {
+                FLZ_Extensions.FGTLog(LogLevel.Info, "MarkPlayerAsSuccessful", $"Qualifications disabled.");
                 return;
+            }
 
             var playerInQuestion = LocalServerService.ServerManager.GetNetPlayer(playerNetObject);
             var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
             bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
             var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
+
+            if (playerData.completedLevel)
+            {
+                FLZ_Extensions.FGTLog(LogLevel.Info, "MarkPlayerAsSuccessful", $"Player already qualified.");
+                return;
+            }
 
             ServerManager.CGM._roundResults.Add(new RoundResult()
             {
@@ -182,51 +193,36 @@ namespace FGTools.LocalServer.Implementations
 
         void SetupNetworkObject(MPGNetObjectBase netObjectBase, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 spawnScale, Il2CppSystem.Action<MPGNetID, GameObject> PostSpawnAction)
         {
-            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object {netObjectBase.name} {PostSpawnAction != null}");
-
-            if (!netObjectBase.gameObject.TryGetComponent<MPGNetObject>(out var result))
-                result = netObjectBase.gameObject.AddComponent<MPGNetObject>();
-
-            if (!netObjectBase.gameObject.TryGetComponent<ServerControlledObject>(out var servControl))
-                servControl = netObjectBase.gameObject.AddComponent<ServerControlledObject>();
+            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object \"{netObjectBase.name}\"");
 
             var hash = (uint)netObjectBase.IdentifyingHash();
             var unified = ServerManager.ShouldUseUnifiedSetup(netObjectBase);
 
             FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Debug, "SetupNetworkObject", $"IsUnified={unified}");
 
-            result.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
-            result.UniqueId = hash;
-            result.SpawnObjectType = netObjectBase.SpawnObjectType();
-            result.CreationMode = netObjectBase.CreationMode();
-            result.SyncScale = netObjectBase.SyncScale;
-            result.SyncTransform = netObjectBase.SyncTransform;
-            result.LodControllerBehaviour = netObjectBase.LodControllerBehaviour;
-            result.AreAnimationsNetworkControlled = netObjectBase.AreAnimationsNetworkControlled;
-            result._postSpawnAction = PostSpawnAction;
-            result.UseUnifiedSetup = unified;
-
-            var objSpawnData = new GameObjectSpawnData();
-            objSpawnData.FromGameObject(result.CachedGameObject, false);
-
             var spawnData = new NetObjectSpawnData()
             {
                 Position = spawnPosition,
                 Rotation = spawnRotation,
                 Scale = spawnScale,
-                _additionalSpawnData = objSpawnData,
                 _spawnObjectType = netObjectBase.SpawnObjectType(),
                 _creationMode = netObjectBase.CreationMode(),
-                _prefabHash = result.GenerateGameObjectHash(netObjectBase.CreationMode()),
+                _prefabHash = (int)hash,
                 _useUnifiedSetup = false,
                 _lodControllerBehaviour = netObjectBase.LodControllerBehaviour,
-                _netID = result.NetID,
+                _netID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID(),
                 _rmiIdentifier = RMIBehaviourManager.GetNextID(),
-                _postSpawnAction = result._postSpawnAction,
+                //_postSpawnAction = PostSpawnAction,
+                _syncScale = netObjectBase.SyncScale,
+                _syncTransform = netObjectBase.SyncTransform,
             };
 
+            var spd = spawnData.InitialiseAdditionalSpawnData().Cast<GameObjectSpawnData>();
+            spd.FromGameObject(netObjectBase.gameObject, netObjectBase.AreAnimationsNetworkControlled);
+            spawnData.AdditionalSpawnData = spd;
+
             if (unified)
-                SetupNetworkedObject((result._creationMode == NetObjectCreationMode.Possess) ? result.CachedGameObject : null, spawnData);
+                SetupNetworkedObject((spawnData._creationMode == NetObjectCreationMode.Possess) ? netObjectBase.gameObject : null, spawnData);
         }
 
         void SetupNetworkedObject(GameObject gameObject, NetObjectSpawnData spawnData)
@@ -236,6 +232,8 @@ namespace FGTools.LocalServer.Implementations
 
             if (spawnData.RmiIdentifier == default)
                 spawnData._rmiIdentifier = RMIBehaviourManager.GetNextID();
+
+            spawnData._postSpawnAction = null;
 
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerSpawnObject()
             {
@@ -317,7 +315,10 @@ namespace FGTools.LocalServer.Implementations
                 return;
 
             var currentScore = ServerManager.CGM._soloScoreManager.GetSoloScore(playerNetObj.NetID);
-            var scoreAfter = Mathf.Max(0, currentScore + amount);
+            var scoreAfter = Mathf.Min(ServerManager.CGM.GameRules.ScoreTarget, Mathf.Max(0, currentScore + amount));
+
+            if (currentScore == scoreAfter)
+                return;
 
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerEventGeneric()
             {

@@ -7,6 +7,8 @@ using FGClient.UI;
 using FGTools.Config;
 using FGTools.HarmonyPatches;
 using FGTools.Internal;
+using FGTools.Internal.Extensions;
+using FGTools.LocalServer;
 using FGTools.Services.Logic;
 using FGTools.UI;
 using FMOD.Studio;
@@ -89,23 +91,23 @@ namespace FGTools.Services
         public override void RegisterService()
         {
             LoadData();
-            Commands.OnLapComplete += new System.Action(() => { SaveRunTimer(SpeedrunProgressionType.Lap); });
-            Commands.OnCheckpointReached += new System.Action<MPGNetObject, CheckpointZone>((MPGNetObject obj, CheckpointZone zone) => 
+            GameActions.OnLapComplete += new System.Action(() => { SaveRunTimer(SpeedrunProgressionType.Lap); });
+            GameActions.OnCheckpointReached += new System.Action<MPGNetObject, CheckpointZone>((MPGNetObject obj, CheckpointZone zone) => 
             {
                 if (SpeedrunState != RunState.Running)
                     return;
 
                 SaveRunTimer(SpeedrunProgressionType.Checkpt, zone);
             });
-            Commands.OnQualified += new System.Action(() => 
+            GameActions.OnQualified += new System.Action(() => 
             { 
                 SaveRunTimer(SpeedrunProgressionType.Qual); 
             });
-            Commands.OnEliminated += new System.Action(() => 
+            GameActions.OnEliminated += new System.Action(() => 
             { 
                 SaveRunTimer(SpeedrunProgressionType.Elim); 
             });
-            Commands.OnWon += new System.Action(() => 
+            GameActions.OnWon += new System.Action(() => 
             { 
                 SaveRunTimer(SpeedrunProgressionType.Win); 
             });
@@ -117,7 +119,7 @@ namespace FGTools.Services
             return time == 0 ? CurrentRun.RunningTime : time;
         }
 
-        void EndCurrentRun()
+        internal void EndCurrentRun()
         {
             if (CurrentRun == null)
                 return;
@@ -228,6 +230,8 @@ namespace FGTools.Services
         {
             if (QualLevel.Value == QualType.LoadRandomRoundAfter)
                 SpeedrunRestart();
+            else
+                FLZ_Extensions.ForceExit();
         }
 
         public string CreateSplitTimeText(float splitTime, bool isPositive)
@@ -302,19 +306,14 @@ namespace FGTools.Services
                 }
                 else
                 {
-                    //if (useIngameObjective.Value)
-                    //{
                     _timerObject.transform.localPosition = CGM.GameRules.TeamCount switch
                     {
                         1 => new Vector3(-250f, 0, 0),
                         2 => new Vector3(-400f, 0, 0),
                         3 => new Vector3(-450f, 0, 0),
                         4 => new Vector3(-490f, 0, 0),
-                        _ => new Vector3(-400f, 0, 0),
+                        _ => new Vector3(-300f, 0, 0),
                     };
-                    //}
-                    //else
-                    //    _timerObject.transform.localPosition = new Vector3(-750, 0, 0);
                 }
             }
 
@@ -363,11 +362,14 @@ namespace FGTools.Services
             if (IsSepeedrunsDisabled && (newState == RunState.TempDisabled || newState == RunState.TimeAttack || newState == RunState.Inactive))
                 return;
 
+            var prevState = SpeedrunState;
             SpeedrunState = newState;
+
             switch (newState)
             {
                 case RunState.Respawned:
-                    EndCurrentRun();
+                    if (prevState == RunState.Running)
+                        EndCurrentRun();
                     AmountOfSpawns++;
                     TriggerTimer(true);
                     if (SnapshotEvent.hasHandle())
@@ -428,6 +430,8 @@ namespace FGTools.Services
                     }
                     break;
                 case RunState.Inactive:
+                    RunsHistory.Clear();
+
                     TriggerTimer(false);
 
                     if (_timerObject != null)
@@ -437,9 +441,11 @@ namespace FGTools.Services
                     _restartButton = null;
                     break;
                 case RunState.TimeAttack:
+                    RunsHistory.Clear();
                     TriggerTimer(false);
                     break;
                 case RunState.TempDisabled:
+                    RunsHistory.Clear();
                     _timerObject.gameObject.SetActive(false);
                     _restartButton?.gameObject.SetActive(false);
                     TriggerTimer(false);
@@ -563,6 +569,8 @@ namespace FGTools.Services
 
             var ez = Resources.FindObjectsOfTypeAll<COMMON_ObjectiveReachEndZone>().FirstOrDefault();
             ez?._charactersAchievingObjective.Clear();
+
+            CGM.GetPlayerData(FGBehaviour.FGMPG.NetID).completedLevel = false;
 
             if (SPResetPoints.Value && CGM.GameRules.IsScoringGame)
                 ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGMPG, CGM._soloScoreManager.GetSoloScore(FGBehaviour.FGMPG.NetID) * -1);

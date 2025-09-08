@@ -10,8 +10,10 @@ using FGTools.States.Logic;
 using FGTools.UI;
 using FMODUnity;
 using HarmonyLib;
+using Levels.Obstacles;
 using System;
 using System.IO;
+using UnityEngine;
 using static FGTools.Internal.Behaviours.FallGuyBehaviour;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
@@ -86,7 +88,7 @@ namespace FGTools.HarmonyPatches
         {
             __instance.ClearViewModel();
             __instance.CheckToShowLinkedProgressPopup();
-            StateManager.HandleFGTState(FGTStateManager.FGTState.CMSParsed);
+            StateManager.HandleFGTState(FGTStateManager.ToolsState.CMSParsed);
             FGTServiceManager.GetService<OnlineCheckService>().Run();
             return false;
         }
@@ -136,7 +138,7 @@ namespace FGTools.HarmonyPatches
                 Transition = ScreenTransitionType.FadeInAndOut,
                 Data = new CelebrationPreviewFullscreenPopupData
                 {
-                    MuteAnimation = false
+                    MuteAnimation = false,
                 }
             });
 

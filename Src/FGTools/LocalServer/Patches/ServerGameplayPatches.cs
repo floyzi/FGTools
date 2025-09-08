@@ -1,10 +1,11 @@
 ﻿extern alias wle;
 using FG.Common;
 using FG.Common.Character;
-using FG.Common.Character.MotorSystem;
 using FG.Common.LODs;
 using FG.Common.Network;
 using FGClient;
+using FGTools.Internal;
+using FGTools.Internal.Behaviours;
 using FGTools.Services;
 using FGTools.States.Logic;
 using HarmonyLib;
@@ -12,19 +13,20 @@ using Levels;
 using Levels.DoorDash;
 using Levels.Obstacles;
 using Levels.Progression;
-using Levels.Rollout;
 using Levels.ScoreZone;
 using Levels.TipToe;
 using Levels.WallGuys;
-using Mediatonic.Strings;
 using SRF;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
-using static wle::LevelEditorRespawnerController;
 
 namespace FGTools.LocalServer.Patches
 {
+    /// <summary>
+    /// Patches that should run only on server side
+    /// </summary>
     internal class ServerGameplayPatches : FGTBase
     {
         //list of classes that should think they're running on server side (wait, they ACTUALLY running on server side :rofl:)
@@ -140,7 +142,9 @@ namespace FGTools.LocalServer.Patches
             "CollectableZoneTrigger",
             "LodController",
             "LodManager",
-            "COMMON_ObjectiveBase"
+            "COMMON_ObjectiveBase",
+            "COMMON_ScaleWhileMoving",
+            "FollowTheLeaderZone"
         ];
 
 
@@ -150,7 +154,7 @@ namespace FGTools.LocalServer.Patches
             __result = /*LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.GameStateView.IsGamePlaying*/ false;
         }
 
-        [HarmonyPatch(typeof(FG.Common.FGBehaviour), nameof(FG.Common.FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
+        [HarmonyPatch(typeof(FGBehaviour), nameof(FG.Common.FGBehaviour.GameState), MethodType.Getter), HarmonyPostfix]
         static void GameState(FGBehaviour __instance, ref IGameStateView __result)
         {
             if (LocalServerService.IsServerInOperation && IsGameServerList.Contains(__instance.GetIl2CppType().Name) && LocalServerService.GameStateView != null)
@@ -247,8 +251,8 @@ namespace FGTools.LocalServer.Patches
         static bool InstantiateRowGameObjects(WallGuysSegmentGenerator __instance, Il2CppSystem.Collections.Generic.List<GameObject> gameObjects, int rowIndex)
         {
             int rowObjectCount = gameObjects.Count;
-            float cellWidth = __instance._areaDimensions.x / (float)rowObjectCount;
-            Vector3 initialCellPosition = __instance._areaBounds.min + new Vector3(cellWidth * 0.5f, 0f, ((float)rowIndex + 0.5f) * __instance._cellHeight);
+            float cellWidth = __instance._areaDimensions.x / rowObjectCount;
+            Vector3 initialCellPosition = __instance._areaBounds.min + new Vector3(cellWidth * 0.5f, 0f, (rowIndex + 0.5f) * __instance._cellHeight);
             Vector3 cellExtents = new Vector3(cellWidth / 2f, 0f, __instance._cellHeight / 2f);
             Vector3 currentCellPosition = initialCellPosition;
             foreach (GameObject go in gameObjects)
@@ -308,8 +312,41 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(wle.LevelEditorSlimeVolume), nameof(wle.LevelEditorSlimeVolume.OnTriggerEnter)), HarmonyPostfix]
         static void OnTriggerEnter(COMMON_PlayerEliminationVolume __instance, Collider other)
         {
-            if (other.TryGetComponent<MPGNetObject>(out var net) && net.IsFallGuy && ServerManager.CGM.GameRules.IsSurvivalRound)
+            if (other.TryGetComponent<MPGNetObject>(out var net) && net.IsFallGuy && CGM.GameRules.IsSurvivalRound)
                 __instance.GameStateServerActioner.EliminateParticipant(net, false, LiveOps.Challenges.EliminationReason.Slime);
+        }
+
+        [HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.InstantiateObject)), HarmonyPostfix]
+        static void InstantiateObject(COMMON_PrefabSpawnerBase __instance, COMMON_PrefabSpawnerBase.SpawnerEntry entry, Vector3 spawnPosition)
+        {
+            var control = __instance.GetComponent<PrefabSpawnerController>();
+            //slop
+            control.SpawnRequests.Add(new(GlobalGameStateClient.Instance.NetObjectManager._nextNetID - 1));
+        }
+
+        [HarmonyPatch(typeof(COMMON_PrefabSpawnerBase), nameof(COMMON_PrefabSpawnerBase.Awake)), HarmonyPostfix]
+        static void Awake(COMMON_PrefabSpawnerBase __instance)
+        {
+            __instance.gameObject.AddComponent<PrefabSpawnerController>();
+            foreach (var entry in __instance._spawnObjects)
+            {
+                entry.value.RemoveComponentIfExists<LodController>();
+
+                if (!entry.value.TryGetComponent<ServerControlledObject>(out var serv))
+                    serv = entry.value.AddComponent<ServerControlledObject>();
+            }
+        }
+
+        [HarmonyPatch(typeof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase), nameof(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase.Awake)), HarmonyPostfix]
+        static void Awake(wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase __instance)
+        {
+            foreach (var entry in __instance._spawnObjects)
+            {
+                entry.value.RemoveComponentIfExists<LodController>();
+
+                if (!entry.value.TryGetComponent<ServerControlledObject>(out var serv))
+                    serv = entry.value.AddComponent<ServerControlledObject>();
+            }
         }
     }
 }

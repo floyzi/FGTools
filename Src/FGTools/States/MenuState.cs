@@ -47,7 +47,7 @@ namespace FGTools.States
         const float IntroTimeout = 30f;
         public override void OnStateExit()
         {
-            Commands.OnMenuEnter -= OnMenuEnter;
+            GameActions.OnMenuEnter -= OnMenuEnter;
             Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault()?.StopMusic();
         }
 
@@ -182,7 +182,7 @@ namespace FGTools.States
         public override void OnStateSet()
         {
             TheIntro = Launcher.FGToolsBundle.LoadAssetAsync<GameObject>("CoolGamingIntro");
-            Commands.OnMenuEnter += OnMenuEnter;
+            GameActions.OnMenuEnter += OnMenuEnter;
         }
 
         void OnMenuEnter()
@@ -234,7 +234,7 @@ namespace FGTools.States
                     evtS.SetEventValue("MenuEntranceVersion", targetVer.ToString());
                 }
 
-                StateManager.HandleFGTState(FGTStateManager.FGTState.Menu);
+                StateManager.HandleFGTState(FGTStateManager.ToolsState.Menu);
                 FinishLoginAct = null;
             });
 

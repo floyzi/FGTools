@@ -71,7 +71,7 @@ namespace FGTools.Services
         List<string> RealRoundList = [];
         public override void RegisterService()
         {
-            Commands.OnIntroStarts += OnIntroStart;
+            GameActions.OnIntroStarts += OnIntroStart;
         }
 
         void SearchForRound(string request)
@@ -391,7 +391,7 @@ namespace FGTools.Services
                 else
                 {
                     Resources.FindObjectsOfTypeAll<UICanvas>().FirstOrDefault().RemoveAllScreens();
-                    StateManager.HandleFGTState(FGTStateManager.FGTState.RoundLoading);
+                    StateManager.HandleFGTState(FGTStateManager.ToolsState.RoundLoading);
 
                     if (!StateManager.CurrentRound.IsUGC())
                     {

@@ -41,7 +41,7 @@ namespace FGTools.Services
         public override void RegisterService()
         {
             Broadcaster.Instance.Register<OnMainMenuDisplayed>(new Action<OnMainMenuDisplayed>(OnEnterMenu));
-            Commands.OnIntroStarts += OnIntroStarts;
+            GameActions.OnIntroStarts += OnIntroStarts;
 
             if (File.Exists(Launcher.ControllerDatasList))
                 ControllerDatas = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object>>>(File.ReadAllText(Launcher.ControllerDatasList));

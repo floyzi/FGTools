@@ -5,8 +5,10 @@ using FG.Common.CMS;
 using FGClient;
 using FGClient.UI;
 using FGClient.UI.Notifications;
+using FGTools.LocalServer.Implementations;
 using FGTools.States.Logic;
 using FGTools.UI;
+using Il2CppInterop.Runtime.Injection;
 using System;
 using System.Collections;
 using System.Globalization;
@@ -111,8 +113,6 @@ namespace FGTools.Internal.Extensions
                     FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
                     FGTStateManager._stateManager.InternalState.LoaderUIToggle = true;
                 }
-
-                FGTBase.StateManager.HaveActivePopup = false;
             });
 
             if (btnOkStr != null)
@@ -332,5 +332,15 @@ namespace FGTools.Internal.Extensions
             header.GetComponent<Image>().color = color;
         }
 
+        internal static bool TryRegisterTypeInIl2cpp<T>() where T : class
+        {
+            if (!ClassInjector.IsTypeRegisteredInIl2Cpp<T>())
+            {
+                ClassInjector.RegisterTypeInIl2Cpp<T>();
+                return true;
+            }
+
+            return false;
+        }
     }
 }

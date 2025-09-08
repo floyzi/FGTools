@@ -54,8 +54,8 @@ namespace FGTools.States
             var controller = new GameObject($"{Launcher.DisplayName}_Controller");
             Controller = controller.AddComponent<FGTController>();
 
-            Commands.OnRoundStarts += OnGameplayBegins;
-            Commands.OnCheckpointReached += OnCheckpoint;
+            GameActions.OnRoundStarts += OnGameplayBegins;
+            GameActions.OnCheckpointReached += OnCheckpoint;
         }
 
         void OnCheckpoint(MPGNetObject mpg, CheckpointZone zone)
@@ -82,9 +82,9 @@ namespace FGTools.States
         {
             StateManager.RoundLoadingAllowed = true;
             if (!StateManager.IsFGC)
-                StateManager.HandleFGTState(FGTStateManager.FGTState.GameActive);
+                StateManager.HandleFGTState(FGTStateManager.ToolsState.GameActive);
             else
-                StateManager.HandleFGTState(FGTStateManager.FGTState.FGCGameActive);
+                StateManager.HandleFGTState(FGTStateManager.ToolsState.FGCGameActive);
 
             StateManager.HandleFGState(PlayerState.Active);
 
@@ -107,7 +107,7 @@ namespace FGTools.States
                     FGTServiceManager.GetService<SpeedrunService>().PrepareForGameplay();
             }
 
-            if (StateManager.FGTCurrentState != FGTStateManager.FGTState.FGCGameActive)
+            if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.FGCGameActive)
             {
                 //foreach (ScoreZoneManager zoneManager in Resources.FindObjectsOfTypeAll<ScoreZoneManager>())
                 //    zoneManager.ActivateInitialZones();
@@ -142,8 +142,8 @@ namespace FGTools.States
 
         public override void OnStateExit()
         {
-            Commands.OnRoundStarts -= OnGameplayBegins;
-            Commands.OnCheckpointReached -= OnCheckpoint;
+            GameActions.OnRoundStarts -= OnGameplayBegins;
+            GameActions.OnCheckpointReached -= OnCheckpoint;
         }
 
         public void FinishGameplay()
@@ -179,7 +179,7 @@ namespace FGTools.States
             float offsetX = Screen.width - 210f;
             float offsetY = 25f;
 
-            if (StateManager.FGTCurrentState == FGTStateManager.FGTState.RoundIntro && StateManager.InternalState.LoaderUIToggle)
+            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.RoundIntro && StateManager.InternalState.LoaderUIToggle)
             {
                 string label = $"{LocalizedStr("intro_skip_msg", [SkipIntroHotkey.Value, SkipIntroTime.Value])}";
                 if (holdingSkipIntro)
@@ -199,7 +199,7 @@ namespace FGTools.States
 
         public override void UpdateState()
         {
-            if (StateManager.FGTCurrentState == FGTStateManager.FGTState.RoundIntro)
+            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.RoundIntro)
             {
                 if (Input.GetKey(SkipIntroHotkey.Value))
                 {

@@ -158,9 +158,8 @@ namespace FGTools.States
                         FGTServiceManager.GetService<SpeedrunService>().SpeedrunState = RunState.Inactive;
                     }
                     try { AudioMixing.Instance.ResetAllSnapshotParams(); } catch { }
-                    StateManager.HaveActivePopup = false;
                     StateManager.FGCurrentState = PlayerState.Despawned;
-                    StateManager.FGTCurrentState = FGTStateManager.FGTState.SceneLoaded;
+                    StateManager.FGTCurrentState = FGTStateManager.ToolsState.SceneLoaded;
 
                     if (CGM != null && CGM._musicInstance != null)
                         FMODTool.EndFmod(CGM._musicInstance._eventInstance, FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
@@ -178,7 +177,7 @@ namespace FGTools.States
                     StateManager.SetState(new MenuState());
 
                 if (activeScene.Contains("Reward_Screen"))
-                    StateManager.HandleFGTState(FGTStateManager.FGTState.Results);
+                    StateManager.HandleFGTState(FGTStateManager.ToolsState.Results);
 
                 if (activeScene != "MainMenu" && !activeScene.StartsWith("FallGuy_Fraggle"))
                 {
@@ -188,15 +187,15 @@ namespace FGTools.States
                 }
                 if (activeScene.StartsWith("FallGuy_Fraggle"))
                 {
-                    if (StateManager.FGTCurrentState != FGTStateManager.FGTState.InCreative && !StateManager.IsFGC)
+                    if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative && !StateManager.IsFGC)
                     {
                         FGTLog(LogLevel.Info, base.GetType(), "Loading into FGC");
-                        StateManager.HandleFGTState(FGTStateManager.FGTState.InCreative);
+                        StateManager.HandleFGTState(FGTStateManager.ToolsState.InCreative);
                     }
-                    else if (StateManager.IsFGC && StateManager.FGTCurrentState != FGTStateManager.FGTState.GPFGCLoading)
+                    else if (StateManager.IsFGC && StateManager.FGTCurrentState != FGTStateManager.ToolsState.GPFGCLoading)
                     {
                         FGTLog(LogLevel.Info, base.GetType(), "FGC Gameplay loading");
-                        StateManager.HandleFGTState(FGTStateManager.FGTState.GPFGCLoading);
+                        StateManager.HandleFGTState(FGTStateManager.ToolsState.GPFGCLoading);
                     }
                 }
             }

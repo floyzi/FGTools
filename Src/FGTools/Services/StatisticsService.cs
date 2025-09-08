@@ -214,14 +214,14 @@ namespace FGTools.Services
             {
                 currentStats.TimeInGame += Time.unscaledDeltaTime;
 
-                if (StateManager.FGTCurrentState == FGTState.InCreative)
+                if (StateManager.FGTCurrentState == ToolsState.InCreative)
                     currentStats.TimeInFGC += Time.unscaledDeltaTime;
 
                 if (SceneManager.GetActiveScene().name == "MainMenu")
                     currentStats.TimeInMenu += Time.unscaledDeltaTime;
 
 
-                if (StateManager.FGTCurrentState == FGTState.GameActive)
+                if (StateManager.FGTCurrentState == ToolsState.GameActive)
                     roundLength += Time.unscaledDeltaTime;
 
                 timeElapsed += Time.unscaledDeltaTime;

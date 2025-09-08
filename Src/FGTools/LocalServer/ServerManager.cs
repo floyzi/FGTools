@@ -21,6 +21,7 @@ using FGTools.Services;
 using FGTools.States.Logic;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSystem.Linq;
 using Levels.HexARing;
 using Levels.HexSnake;
 using Levels.Obstacles;
@@ -36,6 +37,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms.Impl;
 using UniverseLib;
 using static FG.Common.COMMON_ObjectiveBase;
 using static FG.Common.FG_NetworkManager;
@@ -89,13 +92,12 @@ namespace FGTools.LocalServer
 
         int SpawnedPlayers = 0, ReadyPlayers = 0, LoadedPlayers = 0;
 
-        readonly Action<MPGNetObject> OnSpawnNetObj;
-        readonly Action OnRoundLoaded;
-
         internal static Action<MPGNetObject> TimeAttackStart;
         internal static Action<MPGNetObject> TimeAttackFinish;
         internal static Action<MPGNetObject, uint, FG_NetworkID, string, string, string, string, uint, int, string, int, bool, CustomisationSelections> OnPlayerSpawned;
         internal static Action<NetworkMessage> OnServerReceivedMessage;
+
+        public delegate void SpawnDelegate(MPGNetObject obj);
 
         public ServerManager(LocalServerService service, NetworkRequest startTicket, FG_NetworkManager netManager, object gameInfo, int lobbySize = 1)
         {
@@ -108,11 +110,7 @@ namespace FGTools.LocalServer
             if (GameMessageFactory._messagePool == null)
                 GameMessageFactory.Initialize(true);
 
-            OnSpawnNetObj = new Action<MPGNetObject>(OnNetObjSpawned);
-            GlobalGameStateClient.Instance.NetObjectManager.OnSpawnNetObject += OnSpawnNetObj;
-
             OnPlayerSpawned += OnPlayerSpawnedServer;
-            OnRoundLoaded += PrepareForNetworkedGame;
 
             ServerDespatcher.OnPing += OnPing;
             ServerDespatcher.OnClientConnectInitial += AuthPlayer;
@@ -128,9 +126,9 @@ namespace FGTools.LocalServer
             CustomMessageDespatcher.OnServerConnectRequest += CustomMessageDespatcher_ClientConnectRequest;
             CustomMessageDespatcher.OnServerUserInfo += CustomMessageDespatcher_OnClientUserInfo;
 
-            Commands.OnCheckpointReached += OnCheckpointReached;
-            Commands.OnIntroEnds += OnIntroEnd;
-            Commands.OnRoundStarts += OnRoundStart;
+            GameActions.OnCheckpointReached += OnCheckpointReached;
+            GameActions.OnIntroEnds += OnIntroEnd;
+            GameActions.OnRoundStarts += OnRoundStart;
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = DelegateSupport.ConvertDelegate<HandleObjectiveSatisfied>(ObjectiveAchived);
 
@@ -143,7 +141,7 @@ namespace FGTools.LocalServer
             foreach (var fgcc in Resources.FindObjectsOfTypeAll<FallGuysCharacterController>())
                 fgcc.MotorAgent._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Offline;
 
-            Commands.OnRoundLoaded += OnRoundLoaded;
+            GameActions.OnRoundLoaded += PrepareForNetworkedGame;
 
             HandleServerState(ServerState.Open);
         }
@@ -158,13 +156,32 @@ namespace FGTools.LocalServer
             ppm?.Init();
             ppm?.BeginGame();
 
-            var score = Resources.FindObjectsOfTypeAll<ScoreZoneManager>().FirstOrDefault();
-            if (score != null && !score._gameStarted)
+            ScoreZoneManager.NumPlayers = FGTServiceManager.GetService<RoundOptionsService>().GetPlayers();
+            foreach (var zone in Resources.FindObjectsOfTypeAll<ScoreZoneManager>())
             {
-                ScoreZoneManager.NumPlayers = FGTServiceManager.GetService<RoundOptionsService>().GetPlayers();
-                score?.InitZones();
-                score?.ActivateInitialZones();
-                score?.OnGameStart();
+                //slop
+                if (SceneManager.GetActiveScene().name.EndsWith("FollowTheLeader"))
+                {
+                    zone._scoreZones = new(Resources.FindObjectsOfTypeAll<ScoreZone>());
+                    Resources.FindObjectsOfTypeAll<VolumeZoneTrigger>().FirstOrDefault()._volumeZone = Resources.FindObjectsOfTypeAll<VolumeZone>().FirstOrDefault();
+                    zone?.OnGameStart();
+                    continue;
+                }
+
+                foreach (var z in zone._scoreZones)
+                {
+                    if (z.GetIl2CppType() != Il2CppType.Of<CollectionZone>())
+                        continue;
+
+                    foreach (var c in z.Cast<CollectionZone>()._collectables)
+                    {
+                        c.Hide();
+                    }
+                }
+
+                zone?.InitZones();
+                zone?.ActivateInitialZones();
+                zone?.OnGameStart();
             }
         }
 
@@ -337,6 +354,7 @@ namespace FGTools.LocalServer
                 }
 
                 rl.SetSelectedPrefabIndexes(res);
+                ServerGameStateActions.Instance.SetupNetworkObject(rl.GetComponent<MPGNetObjectPossessable>(), rl.transform.position, rl.transform.rotation, rl.transform.localScale, null);
             }
 
             foreach (var hm in Resources.FindObjectsOfTypeAll<HexARingManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
@@ -408,36 +426,6 @@ namespace FGTools.LocalServer
                 }
             }
 
-            foreach (var spawner in Resources.FindObjectsOfTypeAll<COMMON_PrefabSpawnerBase>())
-            {
-                foreach (var entry in spawner._spawnObjects)
-                {
-                    entry.value.RemoveComponentIfExists<LodController>();
-                    if (!entry.value.TryGetComponent<ServerControlledObject>(out var serv))
-                        serv = entry.value.AddComponent<ServerControlledObject>();
-
-                    serv.LifeTime = 15f;
-                }    
-            }
-
-            foreach (var spawner in Resources.FindObjectsOfTypeAll<wle.Levels.Obstacles.LevelEditorCommonPrefabSpawnerBase>())
-            {
-                foreach (var entry in spawner._spawnObjects)
-                {
-                    entry.value.RemoveComponentIfExists<LodController>();
-                    if (!entry.value.TryGetComponent<ServerControlledObject>(out var serv))
-                        serv = entry.value.AddComponent<ServerControlledObject>();
-
-                    serv.LifeTime = 15f;
-                }
-            }
-
-            foreach (var netObj in Resources.FindObjectsOfTypeAll<MPGNetObject>())
-            {
-                if (netObj.TryGetComponent<Animation>(out var anim))
-                    anim.enabled = true;
-            }
-
             if (StateManager.IsFGC)
             {
                 foreach (var kz in Resources.FindObjectsOfTypeAll<COMMON_PlayerEliminationVolume>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
@@ -467,12 +455,12 @@ namespace FGTools.LocalServer
 
         void ObjectiveAchived(MPGNetID playerObjectNetID, COMMON_ObjectiveBase pObjective)
         {
+            ServerLog("ObjectiveAchived", $"Objective achived by object {playerObjectNetID} (objective {pObjective.GetIl2CppType().Name}");
             ServerGameStateActions.Instance.MarkPlayerAsSuccessful(CGM.GetNetObjectByID(playerObjectNetID), pObjective.GetIl2CppType() != Il2CppType.Of<COMMON_GrabToQualify>());
         }
 
         readonly static List<Il2CppSystem.Type> NotForUnifiedSetup = 
         [
-            Il2CppType.Of<RolloutManager>(),
             Il2CppType.Of<HexARingManager>()
         ];
 
@@ -779,7 +767,6 @@ namespace FGTools.LocalServer
 
                 if (CGM.IsUGCRound)
                 {
-
                     //better to be temp
                     FraggleCommonManager.Instance.IsInLevelEditor = true;
                     FraggleCommonManager.Instance.SetModeToExplore(new());
@@ -1280,7 +1267,6 @@ namespace FGTools.LocalServer
             ConnectedPlayers.Clear();
             PlayerSpawnQueue.Clear();
 
-            GlobalGameStateClient.Instance.NetObjectManager.OnSpawnNetObject -= OnSpawnNetObj;
             OnPlayerSpawned -= OnPlayerSpawnedServer;
 
             ServerDespatcher.OnPing -= OnPing;
@@ -1297,9 +1283,9 @@ namespace FGTools.LocalServer
             CustomMessageDespatcher.OnServerConnectRequest -= CustomMessageDespatcher_ClientConnectRequest;
             CustomMessageDespatcher.OnServerUserInfo -= CustomMessageDespatcher_OnClientUserInfo;
 
-            Commands.OnRoundLoaded -= OnRoundLoaded;
-            Commands.OnCheckpointReached -= OnCheckpointReached;
-            Commands.OnIntroEnds -= OnIntroEnd;
+            GameActions.OnRoundLoaded -= PrepareForNetworkedGame;
+            GameActions.OnCheckpointReached -= OnCheckpointReached;
+            GameActions.OnIntroEnds -= OnIntroEnd;
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = null;
 

@@ -7,10 +7,15 @@ static class Definitions
     internal const string NewsfeedImgsURL = $"{URLBase}images/newsfeed/";
     internal const string DiscordUrl = "https://discord.gg/PEysxvSE3x";
     internal const string FG_ExploreAPI = "https://level-gateway.fallguys.oncatapult.com/api/v1/round_pools";
+    internal const string FGAnalyst_ExploreAPI = "https://cloudseeker.xyz/api/cv2/creative-explore/?only_list=1";
     #endregion
 
     #region META
+#if DEV
+    internal const string DefaultName = "SlopTools";
+#else
     internal const string DefaultName = "FGTools";
+#endif
     internal const string BirthdayName = "It's My Birthday Tools";
     internal const string FoolsName = "FGStool";
     internal const string Description = "Fall Guys level loader by @floyzi102 on Twitter";
@@ -22,7 +27,7 @@ static class Definitions
     internal readonly static string[] TargetFGVersions = ["20.0.2"];
     internal const long DiscordAppID = 1138469244430979143;
     internal const string CurrentFGBackground = "Generic_UI_SeasonS11Background_Canvas_Variant";
-    #endregion
+#endregion
 
     #region COLORS
     internal const string FGT_Error_Color = "#d13434";
