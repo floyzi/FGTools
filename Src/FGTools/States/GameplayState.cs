@@ -120,12 +120,10 @@ namespace FGTools.States
 
             if (SpeedrunMode.Value && QualLevel.Value == QualType.None)
             {
-                DoModal(LocalizedStr("sp_qual_disabled_title"), LocalizedStr("sp_qual_disabled_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, act: new Action<bool>(act));
-                static void act(bool wasok)
-                {
+                DoModal(new(LocalizedStr("sp_qual_disabled_title"), LocalizedStr("sp_qual_disabled_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, onClick: new Action<bool>(wasok => {
                     if (wasok)
                         QualLevel.Value = QualType.LoadRandomRoundAfter;
-                }
+                })));
             }
 
             string currVer = Launcher.BuildInfo.UI_Version;

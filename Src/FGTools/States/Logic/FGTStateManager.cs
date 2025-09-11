@@ -197,11 +197,14 @@ namespace FGTools.States.Logic
             GameProcess = Process.GetCurrentProcess();
             _memoryThread = new(() =>
             {
-                var proc = Process.GetCurrentProcess();
                 while (true)
                 {
-                    proc.Refresh();
-                    MemUsage = proc.WorkingSet64 / 1024.0 / 1024.0;
+#if !DEV
+                    if (!DebugDisplayService.UIToggle)
+                        continue;
+#endif
+                    GameProcess.Refresh();
+                    MemUsage = GameProcess.WorkingSet64 / 1024.0 / 1024.0;
                     if (MemUsage > PeakMemUsage)
                         PeakMemUsage = MemUsage;
 
@@ -452,7 +455,7 @@ namespace FGTools.States.Logic
                     }
                     if (!FGTServiceManager.GetService<EventService>().ReturnBoolEventValue("RpcFGCAlert"))
                     {
-                        DoModal(LocalizedStr("rpc_fgc_alert_title"), LocalizedStr("rpc_fgc_alert_desc"), ModalType.MT_OK, OKButtonType.Default);
+                        DoModal(new(LocalizedStr("rpc_fgc_alert_title"), LocalizedStr("rpc_fgc_alert_desc"), ModalType.MT_OK, OKButtonType.Default));
                         FGTServiceManager.GetService<EventService>().SetEventValue("RpcFGCAlert", true);
                     }
                     break;

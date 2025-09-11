@@ -170,7 +170,6 @@ namespace FGTools.UI
             public bool shouldDeleteWhitePixels = false;
             public bool shouldDeleteBlackPixels = false;
             public bool isDigital = false;
-            public bool haveGeneratedLevel;
             string ExploreRoundsCount = "0";
 
             string selectedLang = null;
@@ -268,7 +267,7 @@ namespace FGTools.UI
             void OnUIFail(Exception e, int lvl)
             {
                 FGTLog(LogLevel.Fatal, GetType(), $"Unable to init UI (failed on {lvl}) due to an error {e.Message} | {e.StackTrace}");
-                DoModal(LocalizedStr("new_gui_err_title"), LocalizedStr("new_gui_err_desc", [e.Message]), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive);
+                DoModal(new(LocalizedStr("new_gui_err_title"), LocalizedStr("new_gui_err_desc", [e.Message]), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive));
             }
 
 
@@ -586,11 +585,11 @@ namespace FGTools.UI
 
                     EndlessExploreBtn.OnClick += () =>
                     {
-                        DoModal(LocalizedStr("gui_explore_endless_title"), LocalizedStr("gui_explore_endless_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
+                        DoModal(new(LocalizedStr("gui_explore_endless_title"), LocalizedStr("gui_explore_endless_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
                         {
                             if (wasok)
                                 StateManager.TryJoinExplore(UltimatePartyState.JoinPolicy.Endless);
-                        }), hideGUI: ModalHideGUIType.ShowOnCancel);
+                        }), hideLvl: ModalHideGUIType.ShowOnCancel));
                     };
                     UIFactory.SetLayoutElement(EndlessExploreBtn.GameObject, 30, 20, null, 0, null, null, null);
 
@@ -845,15 +844,14 @@ namespace FGTools.UI
                     {
                         if (OnlineCheck != null && OnlineCheck.ExploreCodes != null && OnlineCheck.ExploreCodes.Count > 0)
                         {
-                            DoModal(LocalizedStr("explore_start_title"), LocalizedStr("explore_start_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(OnClick), hideGUI: ModalHideGUIType.ShowOnCancel);
-                            void OnClick(bool wasok)
+                            DoModal(new(LocalizedStr("explore_start_title"), LocalizedStr("explore_start_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasok =>
                             {
                                 if (wasok)
                                     _stateManager.TryJoinExplore(UltimatePartyState.JoinPolicy.FGC);
-                            }
+                            }), hideLvl: ModalHideGUIType.ShowOnCancel));
                         }
                         else
-                            DoModal(LocalizedStr("gui_explore_error_title"), LocalizedStr("gui_explore_error_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+                            DoModal(new(LocalizedStr("gui_explore_error_title"), LocalizedStr("gui_explore_error_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
                     };
 
                     GameObject levelInfoZone = UIFactory.CreateHorizontalGroup(basicGroup, "levelInfoZone", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
@@ -1060,7 +1058,7 @@ namespace FGTools.UI
                 {
                     if (SceneManager.GetActiveScene().name == "MainMenu" && StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
                     {
-                        DoModal(LocalizedStr("gui_localization_act0"), LocalizedStr("gui_localization_act1"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
+                        DoModal(new(LocalizedStr("gui_localization_act0"), LocalizedStr("gui_localization_act1"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
                         {
                             if (wasok)
                             {
@@ -1077,10 +1075,10 @@ namespace FGTools.UI
                                     GlobalGameStateClient.Instance._mainMenuManager.ShowMainMenu(true, true, false);
                                 }));
                             }
-                        }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+                        }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
                     }
                     else
-                        DoModal(LocalizedStr("gui_unavailable"), LocalizedStr("gui_localization_act2"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideGUI: ModalHideGUIType.KeepHidden);
+                        DoModal(new(LocalizedStr("gui_unavailable"), LocalizedStr("gui_localization_act2"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideLvl: ModalHideGUIType.KeepHidden));
 
                 }
             }
@@ -1472,16 +1470,28 @@ namespace FGTools.UI
                     ButtonRef repAll = UIFactory.CreateButton(img2fgc_actions, "repAll", $"{LocalizedStr("gui_img2fgc_replace")}", GUIRed);
                     repAll.OnClick += () =>
                     {
-                        if (haveGeneratedLevel)
+
+                        var tiles = Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>();
+                        var lvl = Path.Combine(Application.persistentDataPath, "Img2FGC.json");
+
+                        if (!File.Exists(lvl))
                         {
-                            foreach (LevelBrowserTileViewModel LBTDVM in Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>())
-                            {
-                                if (LBTDVM != null && LBTDVM.TileData != null && LBTDVM.TileData.level != null && LBTDVM.TileData.level._levelJSON != null && LBTDVM.TileData.level._levelJSON._url != null)
-                                    LBTDVM.TileData.level._levelJSON._url = "file://" + Path.Combine(Application.persistentDataPath, "Img2FGC.json");
-                            }
-                        }
-                        else
                             ErrorPopup($"{LocalizedStr("img2fgc_uhh")}");
+                            return;
+                        }
+
+                        if (tiles == null || tiles.Length == 0)
+                        {
+                            ErrorPopup($"{LocalizedStr("img2fgc_no_levels")}");
+                            return;
+                        }
+
+                        foreach (var tile in tiles)
+                        {
+                            if (tile != null && tile.TileData != null && tile.TileData.level != null && tile.TileData.level._levelJSON != null && tile.TileData.level._levelJSON._url != null)
+                                tile.TileData.level._levelJSON._url = $"file://{lvl}";
+                        }
+
                     };
                     UIFactory.SetLayoutElement(repAll.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
                     GameObject imageViewport = UIFactory.CreateVerticalGroup(FGTImg2FGCGUI, "ImageViewport", false, false, true, true, bgColor: new(1, 1, 1, 0), childAlignment: TextAnchor.MiddleCenter);
@@ -1652,7 +1662,7 @@ namespace FGTools.UI
 
                     ButtonRef catalogueHelp = UIFactory.CreateButton(selectionRow, "Help", "?");
                     UIFactory.SetLayoutElement(catalogueHelp.Component.gameObject, 30, 25, 30, 0, 30);
-                    catalogueHelp.OnClick = () => { DoModal(LocalizedStr("gui_themes_catalogue_faq_title"), LocalizedStr("gui_themes_catalogue_faq_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, btnOkStr: LocalizedStr("gui_btn_got_it"), hideGUI: ModalHideGUIType.KeepHiddenForThisModal); };
+                    catalogueHelp.OnClick = () => { DoModal(new(LocalizedStr("gui_themes_catalogue_faq_title"), LocalizedStr("gui_themes_catalogue_faq_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, okStrOverride: LocalizedStr("gui_btn_got_it"), hideLvl: ModalHideGUIType.KeepHiddenForThisModal)); };
 
                     selectButton.OnClick += () => { FGTServiceManager.GetService<MenuThemeService>().SelectTheme(true); };
                     selectWebTheme.OnClick += tS.startDownloading;
@@ -1830,7 +1840,7 @@ namespace FGTools.UI
 
                     ButtonRef localizationHelp = UIFactory.CreateButton(langRow, "Help", "?");
                     UIFactory.SetLayoutElement(localizationHelp.Component.gameObject, 30, 25, 30, 0, 30);
-                    localizationHelp.OnClick = () => { DoModal(LocalizedStr("gui_localization_faq_title"), LocalizedStr("gui_localization_faq_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, btnOkStr: LocalizedStr("gui_btn_got_it"), hideGUI: ModalHideGUIType.KeepHiddenForThisModal); };
+                    localizationHelp.OnClick = () => { DoModal(new(LocalizedStr("gui_localization_faq_title"), LocalizedStr("gui_localization_faq_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, okStrOverride: LocalizedStr("gui_btn_got_it"), hideLvl: ModalHideGUIType.KeepHiddenForThisModal)); };
 
                     GameObject langDir = UIFactory.CreateHorizontalGroup(MiscContent, "Lang Dir Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                     ButtonRef langDirBtn = UIFactory.CreateButton(langDir, "Dir Button", LocalizedStr("gui_localization_lang_dir"));
@@ -1905,12 +1915,11 @@ namespace FGTools.UI
                     UIFactory.SetLayoutElement(clearStats.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
                     clearStats.OnClick += () =>
                     {
-                        void pop(bool wasok)
+                        DoModal(new(LocalizedStr("stats_del_title"), LocalizedStr("stats_del_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
                         {
                             if (wasok)
                                 FGTServiceManager.GetService<StatisticsService>().Init(true);
-                        }
-                        DoModal(LocalizedStr("stats_del_title"), LocalizedStr("stats_del_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(pop), hideGUI: ModalHideGUIType.ShowOnCancel);
+                        }), hideLvl: ModalHideGUIType.ShowOnCancel));
                     };
                     Text statsDisclaimer = UIFactory.CreateLabel(MiscContent, "statsDisclaimer", $"{LocalizedStr("gui_stats_info_01")}\n{LocalizedStr("gui_stats_info_02")}\n", TextAnchor.MiddleLeft);
                     autosaveInfo = UIFactory.CreateLabel(MiscContent, "autosaveInfo", $"0", TextAnchor.MiddleLeft);

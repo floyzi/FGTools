@@ -236,7 +236,7 @@ namespace FGTools.Services
                     else
                         RemoveAllCosmetics();
                 }
-                catch (Exception e) { DoModal("fatal", e.Message + " " + e.StackTrace, UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default); };
+                catch (Exception e) { FGTLog(LogLevel.Error, GetType(), e); };
             }
             else
             {
@@ -479,9 +479,12 @@ namespace FGTools.Services
                         foreach (var itm in nickname_result)
                             finalRes.Add(itm.Item.Id);
 
-                        cos.Nicknames = nickname_result;
-                        if (nickname_result.Count < 0)
-                            cos.Nicknames = AllNicknames;
+                        if (reqType != RequestType.List)
+                        {
+                            cos.Nicknames = nickname_result;
+                            if (nickname_result.Count < 0)
+                                cos.Nicknames = AllNicknames;
+                        }
                         break;
                     case "emoticons":
                         var emoticons = Resources.FindObjectsOfTypeAll<CosmeticsEmoticonsSO>().FirstOrDefault().Emoticons.Values;

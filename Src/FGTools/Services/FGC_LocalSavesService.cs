@@ -13,6 +13,7 @@ using FGClient;
 using FGClient.UI;
 using FGTools.Config;
 using FGTools.Content;
+using FGTools.Internal.Extensions;
 using FGTools.Services.Logic;
 using FGTools.UI;
 using UnityEngine;
@@ -131,7 +132,7 @@ namespace FGTools.Services
                 return;
 
             string modalMessage = $"{LocalizedStr("gui_deletion_generic_warning")}\n{LocalizedStr("gui_local_save_del_level_desc", [SelectedAutosave.LevelName, SavedMetadata.FindAll(x => x.LevelName == SelectedAutosave.LevelName).Count.ToString()])}\n\n{LocalizedStr("gui_space_after_deletion", [CalculateSizeString(CalculateDirSize(LevelPath))])}";
-            DoModal(LocalizedStr("gui_local_save_del_level_title", [SelectedAutosave.LevelName]), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val => 
+            DoModal(new(LocalizedStr("gui_local_save_del_level_title", [SelectedAutosave.LevelName]), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val => 
             {
                 if (val)
                 {
@@ -145,7 +146,7 @@ namespace FGTools.Services
                     WriteSave();
                     RefreshLevelsDropdown();
                 }
-            }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
         }
 
         public void TryDeleteSave()
@@ -154,7 +155,7 @@ namespace FGTools.Services
                 return;
 
             string modalMessage = $"{LocalizedStr("gui_deletion_generic_warning")}\n{LocalizedStr("gui_local_save_del_save_desc", [SelectedAutosave.SaveName, SelectedAutosave.LevelName])}\n\n{LocalizedStr("gui_space_after_deletion", [CalculateSizeString(CalculateDirSize(Path.Combine(SavePath)))])}";
-            DoModal(LocalizedStr("gui_local_save_del_save_title", [SelectedAutosave.SaveName]), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val =>
+            DoModal(new(LocalizedStr("gui_local_save_del_save_title", [SelectedAutosave.SaveName]), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val =>
             {
                 if (val)
                 {
@@ -163,20 +164,26 @@ namespace FGTools.Services
                     WriteSave();
                     RefreshLevelsDropdown();
                 }
-            }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
         }
 
         public void TryDeleteEverything()
         {
+            if (MetadatasOfLevel.Count == 0)
+            {
+                FLZ_Extensions.CreateNotification(LocalizedStr("gui_local_save_no_levels_title"), LocalizedStr("gui_local_save_no_levels_desc"));
+                return;
+            }
+
             string modalMessage = $"{LocalizedStr("gui_deletion_generic_warning")}\n{LocalizedStr("gui_delete_local_saves_desc")}\n\n{LocalizedStr("gui_space_after_deletion", [CalculateSizeString(CalculateDirSize(Launcher.FGCAutosavesDir))])}";
-            DoModal(LocalizedStr("gui_delete_local_saves_title"), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val =>
+            DoModal(new(LocalizedStr("gui_delete_local_saves_title"), modalMessage, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(val =>
             {
                 if (val)
                 {
                     Directory.Delete(Launcher.FGCAutosavesDir, true);
                     Application.Quit();
                 }
-            }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
         }
 
         void RefreshLevelsDropdown()
@@ -219,13 +226,13 @@ namespace FGTools.Services
         {
             if (SelectedAutosave == null)
             {
-                DoModal(LocalizedStr("gui_local_save_metadata_error_title"), LocalizedStr("gui_local_save_metadata_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive);
+                DoModal(new(LocalizedStr("gui_local_save_metadata_error_title"), LocalizedStr("gui_local_save_metadata_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive));
                 return;
             }
 
             if (SceneManager.GetActiveScene().name != "MainMenu")
             {
-                DoModal(LocalizedStr("gui_local_save_menu_error_title"), LocalizedStr("gui_local_save_menu_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default);
+                DoModal(new(LocalizedStr("gui_local_save_menu_error_title"), LocalizedStr("gui_local_save_menu_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default));
                 return;
             }    
 
@@ -252,7 +259,7 @@ namespace FGTools.Services
 
             if (!File.Exists(lvl) || !File.Exists(dto))
             {
-                DoModal(LocalizedStr("gui_local_save_missing_error_title"), LocalizedStr("gui_local_save_missing_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive);
+                DoModal(new(LocalizedStr("gui_local_save_missing_error_title"), LocalizedStr("gui_local_save_missing_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive));
                 return false;
             }
 
@@ -264,7 +271,7 @@ namespace FGTools.Services
                 if (!IsChecksumValid(metadata.LevelChecksum, CalculateChecksum(lvl)) || !IsChecksumValid(metadata.DTOChecksum, CalculateChecksum(dto)))
                 {
                     FGTLog(BepInEx.Logging.LogLevel.Info, base.GetType(), "Autosave failed checksum check!");
-                    DoModal(LocalizedStr("gui_local_save_checksum_fail_title"), LocalizedStr("gui_local_save_checksum_fail_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive);
+                    DoModal(new(LocalizedStr("gui_local_save_checksum_fail_title"), LocalizedStr("gui_local_save_checksum_fail_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive));
                     return false;
                 }
 

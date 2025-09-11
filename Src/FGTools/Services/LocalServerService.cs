@@ -151,10 +151,10 @@ namespace FGTools.Services
 
             FGTLog(LogLevel.Error, GetType(), $"TERMINATING SERVER DUE TO EXCEPTION\n\n{ex}");
             FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);
-            DoModal(LocalizationService.LocalizedStr("server_fatal_error_title"), LocalizationService.LocalizedStr("server_fatal_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
+            DoModal(new(LocalizationService.LocalizedStr("server_fatal_error_title"), LocalizationService.LocalizedStr("server_fatal_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
             {
                 ForceExit();
-            }));
+            })));
         }
         internal void ShutdownSerer(Action onShutdown)
         {
@@ -249,26 +249,26 @@ namespace FGTools.Services
 
         static void HostVersionOutdated()
         {
-            DoModal("server_host_update_title", "server_host_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, act: new Action<bool>(wasok =>
+            DoModal(new("server_host_update_title", "server_host_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, onClick: new Action<bool>(wasok =>
             {
                 GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
-            })); 
+            }))); 
         }
 
         static void ClientVersionOutdated()
         {
-            DoModal("server_join_update_title", "server_join_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, act: new Action<bool>(wasok =>
+            DoModal(new("server_join_update_title", "server_join_update_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, onClick: new Action<bool>(wasok =>
             {
                 GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
-            }));
+            })));
         }
 
         static void VersionDifference()
         {
-            DoModal("server_join_version_difference_title", "server_join_version_difference_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, act: new Action<bool>(wasok =>
+            DoModal(new("server_join_version_difference_title", "server_join_version_difference_desc", FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, onClick: new Action<bool>(wasok =>
             {
                 GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
-            }));
+            })));
         }
 
         static void SendAuthRequest() => CustomMessageManager.SendMessageToServer(new GMC_ClientConnectRequest());

@@ -496,7 +496,7 @@ namespace FGTools.Services
 
             if (FGCRateLimit)
             {
-                DoModal(LocalizedStr("ratelimited_title"), $"{LocalizedStr("fgc_temp_request_ban")}: {FGCRateLimitUntil}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+                DoModal(new(LocalizedStr("ratelimited_title"), $"{LocalizedStr("fgc_temp_request_ban")}: {FGCRateLimitUntil}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
                 return;
             }
 

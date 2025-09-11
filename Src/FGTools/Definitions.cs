@@ -47,4 +47,12 @@ static class Definitions
     internal const string ServerHarmonyGUID = $"{GUID}.harmony.server";
     internal const string PermanentHarmonyGUID = $"{GUID}.harmony.permanent";
     #endregion
+
+    #region ASSEMBLIES
+#if !DEV
+    internal const string UniverseLib = $"UniverseLib.IL2CPP.Interop";
+#else
+    internal const string UniverseLib = $"UniverseLib.BIE.IL2CPP.Interop";
+#endif
+    #endregion
 }

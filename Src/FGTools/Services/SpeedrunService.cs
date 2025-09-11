@@ -567,7 +567,7 @@ namespace FGTools.Services
             var cm = Resources.FindObjectsOfTypeAll<CheckpointManager>().FirstOrDefault();
             cm?._netIDToCheckpointMap.Clear();
 
-            var ez = Resources.FindObjectsOfTypeAll<COMMON_ObjectiveReachEndZone>().FirstOrDefault();
+            var ez = Resources.FindObjectsOfTypeAll<COMMON_ObjectiveBase>().FirstOrDefault();
             ez?._charactersAchievingObjective.Clear();
 
             CGM.GetPlayerData(FGBehaviour.FGMPG.NetID).completedLevel = false;

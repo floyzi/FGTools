@@ -104,7 +104,7 @@ namespace FGTools.States
                 TriggerNoRoundsModal();
         }
 
-        void TriggerNoRoundsModal() => DoModal(LocalizedStr("gui_show_no_rounds_title"), LocalizedStr("gui_show_no_rounds_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, new Action<bool>(Quit), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+        void TriggerNoRoundsModal() => DoModal(new(LocalizedStr("gui_show_no_rounds_title"), LocalizedStr("gui_show_no_rounds_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Default, new Action<bool>(Quit), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
 
         void Quit(bool wasok = true)
         {

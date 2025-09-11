@@ -67,10 +67,12 @@ namespace FGTools.Services
             public Color GradientColor;
             public bool Was3d;
 
-            public void Load()
+            public void LoadForObject(GameObject target)
             {
-                var currentBG = GameObject.Find(CurrentFGBackground);
-                var mask = currentBG.transform.GetChild(1);
+                if (target == null)
+                    return;
+
+                var mask = target.transform.GetChild(1);
 
                 Image backdrop = mask.GetChild(0).GetComponent<Image>();
                 backdrop.sprite = BackdropImage;
@@ -208,7 +210,8 @@ namespace FGTools.Services
                 }
 
                 GameObject.Destroy(AudioProvider);
-                DefaultTheme.Load();
+                DefaultTheme.LoadForObject(GameObject.Find(CurrentFGBackground));
+                LoadTheme_LoadingScreens(true);
                 var a = Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault();
                 a?.ResumeMusic();
             }
@@ -361,6 +364,7 @@ namespace FGTools.Services
                 if (CurrentThemePath == ThemeOnPreviewPath)
                     delThemeDirBtn.Component.interactable = false;
             }
+
             SetThemeForLoadingScreens();
         }
 
@@ -437,25 +441,35 @@ namespace FGTools.Services
             pattern.material = new(BackgroudMaterial);
         }
 
+        void LoadTheme_LoadingScreens(bool isDef)
+        {
+            foreach (LoadingGameScreenViewModel loadingGameScreen in Resources.FindObjectsOfTypeAll<LoadingGameScreenViewModel>())
+            {
+                if (loadingGameScreen.name == "Prime_UI_RoundSelected_Prefab_Canvas")
+                {
+                    if (!isDef)
+                        SetTheme(CurrentTheme, loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
+                    else
+                        DefaultTheme.LoadForObject(loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
+                }
+            }
+            foreach (LoadingUGCGameScreenViewModel loadingGameScreen in Resources.FindObjectsOfTypeAll<LoadingUGCGameScreenViewModel>())
+            {
+                if (loadingGameScreen.name == "Prime_UI_RoundSelected_UGC_Prefab_Canvas")
+                {
+                    if (!isDef)
+                        SetTheme(CurrentTheme, loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
+                     else
+                        DefaultTheme.LoadForObject(loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
+                }
+            }
+        }
+
         public void SetThemeForLoadingScreens()
         {
             if (File.Exists($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}") && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default"))
             {
-                foreach (LoadingGameScreenViewModel loadingGameScreen in Resources.FindObjectsOfTypeAll<LoadingGameScreenViewModel>())
-                {
-                    if (loadingGameScreen.name == "Prime_UI_RoundSelected_Prefab_Canvas")
-                    {
-                        SetTheme(CurrentTheme, loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
-                    }
-                }
-                foreach (LoadingUGCGameScreenViewModel loadingGameScreen in Resources.FindObjectsOfTypeAll<LoadingUGCGameScreenViewModel>())
-                {
-                    if (loadingGameScreen.name == "Prime_UI_RoundSelected_UGC_Prefab_Canvas")
-                    {
-                        SetTheme(CurrentTheme, loadingGameScreen.transform.GetChild(1).GetChild(0).gameObject);
-                    }
-                }
-
+                LoadTheme_LoadingScreens(false);
             }
             else if (ConfigManager.InGameTheme.Value == LocalizedStr("gui_default"))
             {
@@ -502,7 +516,7 @@ namespace FGTools.Services
 
         public void DeleteThemeAction()
         {
-            DoModal(LocalizedStr("gui_theme_delete_title", [ThemeOnPreview.DisplayName]), LocalizedStr("gui_theme_delete_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>((bool wasok) =>
+            DoModal(new(LocalizedStr("gui_theme_delete_title", [ThemeOnPreview.DisplayName]), LocalizedStr("gui_theme_delete_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>((bool wasok) =>
             {
                 if (wasok)
                 {
@@ -513,7 +527,7 @@ namespace FGTools.Services
                     PreviewTheme(0);
                     RefreshThemesDropdown();
                 }
-            }), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
         }
 
         public void PickOnlineTheme(int index)

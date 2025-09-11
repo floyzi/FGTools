@@ -34,7 +34,7 @@ namespace FGTools.UI
     {
         public static void IMG2FGCAlert()
         {
-            DoModal(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(LaunchIMG2FGC), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
+            DoModal(new(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(LaunchIMG2FGC), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
             static void LaunchIMG2FGC(bool wasok)
             {
                 if (wasok)
@@ -52,30 +52,13 @@ namespace FGTools.UI
                     writeInfo.Add("isDigital" + " = " + NewGUI.Instance.isDigital);
                     File.WriteAllLines(outputfile, writeInfo);
                     Application.OpenURL(Launcher.IMG2FGCExe);
-                    NewGUI.Instance.haveGeneratedLevel = true;
                 }
             }
         }
 
         public static void AreYouSurePopup(string action, Action<bool> popAct = null)
         {
-            DoModal(LocalizedStr("confirm_title"), $"{LocalizedStr("confirm_desc")} {action}", UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Default, new Action<bool>(popAct), hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
-        }
-
-        public static void TryTriggerChangelogPopup()
-        {
-            DoModal(string.Format($"V{Launcher.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), string.Format($"{OnlineCheck.ReturnChangelog(Launcher.BuildInfo.UI_Version, 12)}"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, al: TextAlignmentOptions.Left, hideGUI: ModalHideGUIType.KeepHiddenForThisModal);
-        }
-
-        public static void MenuPopup()
-        {
-            DoModal(LocalizedStr("menuenter_title"), $"{LocalizedStr("menuenter_desc")}\n\n{LocalizedStr("gui_hotkeys", [ToggleCusorHotkey.Value, ToggleUIHotkey.Value, DebugUIHotkey.Value, EnterFFM.Value, RespawnHotkey.Value, CheckpointHotkey.Value, ToggleFreeCamHotkey.Value, ResetCheckpointHotkey.Value])}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, new Action<bool>((wasOk) =>
-            {
-                TryTriggerChangelogPopup();
-                if (!wasOk)
-                    Application.OpenURL(DiscordUrl);
-
-            }), hideGUI: ModalHideGUIType.KeepHidden);
+            DoModal(new(LocalizedStr("confirm_title"), $"{LocalizedStr("confirm_desc")} {action}", UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Default, new Action<bool>(popAct), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
         }
 
         public static void ErrorPopup(object err, Action<bool> onClick = null, bool forceLeaveToMenu = false, bool displayOnlyError = true, string title = "failed_title", string desc = "failed_desc_new")
@@ -88,7 +71,7 @@ namespace FGTools.UI
                 msgAsStr = fail_str;
             else
             {
-                FGTLog(LogLevel.Error, "FailedPopup()", "Not valid type = " + err.GetType().FullName);
+                FGTLog(LogLevel.Error, "ErrorPopup()", "Not valid type = " + err.GetType().FullName);
                 return;
             }
 
@@ -104,7 +87,7 @@ namespace FGTools.UI
                 });
             }
 
-            FGTLog(LogLevel.Error, "FailedPopup()", $"Called popup with reason: {msgAsStr}");
+            FGTLog(LogLevel.Error, "ErrorPopup()", $"Called popup with reason: {msgAsStr}");
             StateManager.InternalState.LatestError = msgAsStr;
 
             string output = $"{LocalizedStr(desc)}\n\n<size=45%>{msgAsStr}</size>\n\n{LocalizedStr("gui_error_msg_v2", [DebugUIHotkey.Value.ToString()])}";
@@ -112,7 +95,7 @@ namespace FGTools.UI
             if (displayOnlyError)
                 output = $"<size=45%>{msgAsStr}</size>";
 
-            DoModal(LocalizedStr(title), output, UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive, onClick, hideGUI: ModalHideGUIType.KeepHidden);
+            DoModal(new(LocalizedStr(title), output, UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive, onClick, hideLvl: ModalHideGUIType.KeepHidden));
         }
 
         public static void ConfigAction(bool quit = false)
@@ -143,7 +126,7 @@ namespace FGTools.UI
                 }
             }
 
-            DoModal(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideGUI: ModalHideGUIType.ShowOnCancel);
+            DoModal(new(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideLvl: ModalHideGUIType.ShowOnCancel));
         }
 
         public static void SpeedrunContinePopup(float bestTime, bool fromWinScreen = false, VictoryScreenViewModel player = null)
@@ -176,7 +159,7 @@ namespace FGTools.UI
 
             var msg = $"{LocalizedStr("spqual_desc")}\n\n{LocalizedStr("gui_best_time")}: {latest} | {LocalizedStr("gui_run_info")}: {sps.ReturnTimeAsString(FGTServiceManager.GetService<SpeedrunService>().ReturnCurrentTime(), false, true, true)} ({FGTServiceManager.GetService<SpeedrunService>().CreateSplitTimeText(diff, diff > 0)})";
 
-            DoModal(LocalizedStr("spqual_title"), msg, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
+            DoModal(new(LocalizedStr("spqual_title"), msg, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
             {
                 if (wasok)
                     FGTServiceManager.GetService<SpeedrunService>().DoRunSave();
@@ -195,16 +178,14 @@ namespace FGTools.UI
                     FGTServiceManager.GetService<SpeedrunService>().HandleState(SpeedrunService.RunState.Inactive);
                     AudioMixing.Instance.ResetAllSnapshotParams();
                 }
-            }), hideGUI: ModalHideGUIType.KeepHidden);
+            }), hideLvl: ModalHideGUIType.KeepHidden));
         }
 
         public static void SpeedrunRestart()
         {
-            DoModal(LocalizedStr("spqual_title2"), LocalizedStr("spqual_desc3"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(Pop), hideGUI: ModalHideGUIType.KeepHidden);
-
-            static void Pop(bool WasOk)
+            DoModal(new(LocalizedStr("spqual_title2"), LocalizedStr("spqual_desc3"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasok =>
             {
-                if (WasOk)
+                if (wasok)
                 {
                     FGTServiceManager.GetService<SpeedrunService>().EndCurrentRun();
                     if (SceneManager.GetActiveScene().name == CGM._round.GetSceneName() && !OldSPContinue.Value)
@@ -214,8 +195,7 @@ namespace FGTools.UI
                 }
                 else
                     FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
-
-            }
+            }), hideLvl: ModalHideGUIType.KeepHidden));
         }
 
         public static void AlertSpeedrunner()

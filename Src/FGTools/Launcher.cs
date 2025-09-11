@@ -6,10 +6,7 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Internal.Extensions;
 using FGTools.LocalServer;
-using FGTools.LocalServer.Implementations;
-using FGTools.Services;
 using HarmonyLib;
-using Il2CppInterop.Runtime.Injection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +21,7 @@ using static FGTools.Config.ConfigManager;
 namespace FGTools
 {
     [BepInPlugin(GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+    [BepInIncompatibility("flz.fg.desktop.cheats")]
     public class Launcher : BasePlugin
     {
         public readonly struct BuildDetails
@@ -154,6 +152,7 @@ namespace FGTools
         public static string ControllerDatasList => Path.Combine(AssetsDir, "controller_presets.json");
         public static string ExploreBackupV2 => Path.Combine(AssetsDir, "explore-codes_V2.json");
         public static string Splash => Path.Combine(AssetsDir, "splash.png");
+        public static string LibDir => Path.Combine(AssetsDir, "Lib");
         #endregion
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -217,6 +216,14 @@ namespace FGTools
                     if (!File.Exists(VariantData))
                         File.Create(VariantData);
 
+                    if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, Definitions.UniverseLib, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        FLZ_Extensions.QuitWithMessage(
+                            $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
+                            $"Unable to find UniverseLib ({Definitions.UniverseLib}.dll). Please install UniverseLib to use {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
+                        return;
+                    }
+
                     StartUp();
                 }
                 else
@@ -251,16 +258,16 @@ namespace FGTools
         {
             Log.LogInfo("[Launcher] Validating...");
 
-            string[] importantDirs = [CommonDir, AssetsDir, LocalizationDir, Path.Combine(AssetsDir, "Lib")];
-            string[] importantFiles = [Launcher.BundlePath, StaticConfigDescs];
+            string[] dirs = [CommonDir, AssetsDir, LocalizationDir, LibDir];
+            string[] files = [BundlePath, StaticConfigDescs, Path.Combine(LibDir, "discord_game_sdk.dll"), Path.Combine(LibDir, "discord_api.dll"), Path.Combine(LibDir, "NAudio.Core.dll")];
 
-            foreach (string folder in importantDirs)
+            foreach (var folder in dirs)
             {
                 if (!Directory.Exists(folder))
                     MissingData.Add(folder);
             }
 
-            foreach (string file in importantFiles)
+            foreach (var file in files)
             {
                 if (!File.Exists(file))
                     MissingData.Add(file);

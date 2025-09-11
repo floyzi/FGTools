@@ -1,9 +1,12 @@
 ﻿using BepInEx.Logging;
+using Catapult.Network.Eula;
+using Catapult.Network.RemoteServices.HttpRequests.Eula;
 using Events;
 using FG.Common;
 using FG.Common.CMS;
 using FGClient;
 using FGClient.UI;
+using FGClient.UI.Core;
 using FGClient.UI.Notifications;
 using FGTools.LocalServer.Implementations;
 using FGTools.States.Logic;
@@ -17,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TMPro;
+using UniRx;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -86,28 +90,72 @@ namespace FGTools.Internal.Extensions
 
         internal static void ForceExit() => GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
 
-        internal static void DoModal(string title, string msg, ModalType type, OKButtonType btnType, Il2CppSystem.Action<bool> act = null, bool doSfx = true, string btnOkStr = null, TextAlignmentOptions al = TextAlignmentOptions.Center, float closeDelay = 0f, ModalHideGUIType hideGUI = ModalHideGUIType.None)
+        internal struct FLZ_ModalData
         {
-            if (hideGUI > 0)
+            public string Title;
+            public string Message;
+            public ModalType Type;
+            public OKButtonType OKButton;
+            public Action<bool> OnClick;
+            public Action<bool> OnClosed;
+            public Il2CppSystem.IObservable<Unit> CloseDelay;
+            public string OKStrOverride;
+            public TextAlignmentOptions TextAlignment;
+            public ModalHideGUIType HideGUIType;
+            public int Priority;
+
+            public FLZ_ModalData(string title, string message, ModalHideGUIType hideLvl, int priority = 200)
+            {
+                Title = title;
+                Message = message;
+                Type = ModalType.MT_OK;
+                OKButton = OKButtonType.Default;
+                HideGUIType = hideLvl;
+                Priority = priority;
+            }
+
+            public FLZ_ModalData(string title, string message, ModalType type, OKButtonType okType, Action<bool> onClick = null, Action<bool> onClosed = null, string okStrOverride = null, TextAlignmentOptions alignment = TextAlignmentOptions.Center, float closeDelay = -1, ModalHideGUIType hideLvl = ModalHideGUIType.None, int priority = 200)
+            {
+                Title = title;
+                Message = message;
+                Type = type;
+                OKButton = okType;
+                OnClick = onClick;
+                OnClosed = onClosed;
+                OKStrOverride = okStrOverride;
+                TextAlignment = alignment;
+
+                if (closeDelay > 0)
+                    CloseDelay = ModalMessageBaseData.CreateTimerObservable(closeDelay);
+
+                HideGUIType = hideLvl;
+                Priority = priority;
+            }
+        }
+
+        internal static void DoModal(FLZ_ModalData data)
+        {
+            if (PopupManager.Instance.HasActivePopup)
+                PopupManager.Instance.ClearActivePopup();
+
+            if (data.HideGUIType > 0)
             {
                 if (FGToolsUI.NewGUI.Instance != null && FGToolsUI.NewGUI.Instance.UIRoot != null)
                     FGToolsUI.NewGUI.Instance.ToggleUI(false);
             }
 
-            act += new Action<bool>(wasok =>
+            data.OnClick += new Action<bool>(wasok =>
             {
-                if (hideGUI == ModalHideGUIType.ShowOnCancel)
+                if (data.HideGUIType == ModalHideGUIType.ShowOnCancel)
                 {
                     if (!wasok)
                     {
-                        UniversalUI.SetUIActive(UniverseGUID, true);
-                        FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
-                        FGTStateManager._stateManager.InternalState.LoaderUIToggle = true;
+                        FGToolsUI.NewGUI.Instance.ToggleUI(true);
                     }
                     return;
                 }
 
-                if (hideGUI != ModalHideGUIType.KeepHidden)
+                if (data.HideGUIType != ModalHideGUIType.KeepHidden)
                 {
                     UniversalUI.SetUIActive(UniverseGUID, true);
                     FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
@@ -115,29 +163,28 @@ namespace FGTools.Internal.Extensions
                 }
             });
 
-            if (btnOkStr != null)
-                AddCMSString("latest_btn_ok", btnOkStr);
+            if (!string.IsNullOrEmpty(data.OKStrOverride))
+                AddCMSString("latest_btn_ok", data.OKStrOverride);
 
-            string okStr = btnOkStr == null ? null : $"latest_btn_ok";
+            string okStr = string.IsNullOrEmpty(data.OKStrOverride) ? null : $"latest_btn_ok";
             var ModalMessageDataDisclaimer = new ModalMessageData
             {
-                Title = title,
-                Message = $"<size=80%>{msg}</size>",
+                Title = data.Title,
+                Message = data.Message,
                 LocaliseTitle = LocaliseOption.NotLocalised,
                 LocaliseMessage = LocaliseOption.NotLocalised,
-                ModalType = type,
-                OkButtonType = btnType,
-                OnCloseButtonPressed = act,
+                ModalType = data.Type,
+                OkButtonType = data.OKButton,
+                OnCloseButtonPressed = data.OnClick,
                 OkTextOverrideId = okStr,
-                MessageTextAlignment = al,
-                AcceptWaitObservable = ModalMessageBaseData.CreateTimerObservable(closeDelay),
-                Priority = PopupMessagePriority.Default,
+                MessageTextAlignment = data.TextAlignment,
+                AcceptWaitObservable = data.CloseDelay,
+                OnClosed = data.OnClosed,
+                Priority = (PopupMessagePriority)data.Priority,
 
             };
 
             PopupManager.Instance.Show(PopupInteractionType.Error, ModalMessageDataDisclaimer);
-            if (doSfx)
-                AudioManager.PlayOneShot(AudioManager.EventMasterData.GenericPopUpAppears);
         }
 
         internal static Sprite GetSpriteFromFile(string path, int Width, int Height)
@@ -322,8 +369,11 @@ namespace FGTools.Internal.Extensions
             var text = target.transform.GetChild(3);
             var header = target.transform.GetChild(1).GetChild(0);
 
-            text.localScale = new Vector3(0.95f, 1, 1);
-            text.GetComponent<TextMeshProUGUI>().m_minFontSize = 6;
+            text.localScale = new Vector3(0.90f, 0.90f, 0.90f);
+
+            var tmp = text.GetComponent<TextMeshProUGUI>();
+            tmp.fontSizeMax = 25;
+            tmp.fontSizeMin = 14;
 
             if (string.IsNullOrEmpty(headerCol))
                 return;
@@ -341,6 +391,58 @@ namespace FGTools.Internal.Extensions
             }
 
             return false;
+        }
+
+        public static void CreateEULAModal(string title, string content, Action<bool> onClick, bool oneBtn = false)
+        {
+            if (UIManager.Instance.GetScreen<EULAPopupViewModel>(ScreenStackType.Popup) != null)
+                return;
+
+            var localisedBckp = new Il2CppSystem.Collections.Generic.Dictionary<string, string>();
+
+            foreach (var str in CMSLoader.Instance._localisedStrings._localisedStrings)
+            {
+                localisedBckp.Add(str.key, str.value);
+            }
+
+            UIManager.Instance.ShowScreen<EULAPopupViewModel>(new()
+            {
+                Data = new EulaDetails(new HttpGetNewEulaResponse()
+                {
+                    Title = title,
+                    Body = content,
+                    Version = 1,
+                    Key = "fallguys",
+                    Locale = "en",
+                }),
+                ScreenStack = ScreenStackType.Popup,
+                UseScrim = true,
+                OnClosedAction = new Action(() =>
+                {
+                    //it just removes specific strings for no reason at all, not wasting my time to figure it out
+                    CMSLoader.Instance._localisedStrings._localisedStrings = localisedBckp;
+                })
+            });
+
+            var inst = UIManager.Instance.GetScreen<EULAPopupViewModel>(ScreenStackType.Popup);
+            inst.gameObject.transform.GetChild(3).gameObject.SetActive(false);
+            inst.gameObject.transform.GetChild(4).gameObject.SetActive(false);
+
+            foreach (var btn in inst.gameObject.transform.GetChild(2).transform.GetComponentsInChildren<UIButtonSolo>())
+            {
+                bool isAccept = btn.name.Contains("GlyphTextCalltoActionButton");
+
+                btn._onClick.AddListener(new Action(() =>
+                {
+                    onClick?.Invoke(isAccept);
+                    inst.OnAgreementAccepted();
+                }));
+
+                if (!isAccept && oneBtn)
+                    btn.gameObject.SetActive(false);
+            }
+
+            inst.UpdateText(false);
         }
     }
 }

@@ -61,6 +61,7 @@ namespace FGTools.LocalServer.Implementations
             var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
             bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
             var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
+            var actualFinal = ServerManager.CGM._round.GameRules.IsFinalRound && isNotInSpeedrun;
 
             if (playerData.completedLevel)
             {
@@ -90,18 +91,19 @@ namespace FGTools.LocalServer.Implementations
 
             var roundEndCondition = ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded;
             
-            if (roundEndCondition && ServerManager.CGM._round.GameRules.IsFinalRound)
+            if (roundEndCondition && actualFinal)
                 LocalServerService.ServerManager.EndRound(true);
-            else if (!ServerManager.CGM._round.GameRules.IsFinalRound)
+            else if (!actualFinal)
             {
                 LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
                 {
-                    isFinal = ServerManager.CGM._round.GameRules.IsFinalRound,
+                    isFinal = actualFinal,
                     playerId = playerNetObject.NetID.m_NetworkID,
                     progressCause = GameMessageServerPlayerProgress.ProgressCause.Individual,
                     succeeded = true,
                 });
             }
+
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerQualificationProgressUpdated()
             {
                 NumQualifiedPlayers = (uint)ServerManager.CGM._qualifiedPlayerCount,
@@ -196,7 +198,7 @@ namespace FGTools.LocalServer.Implementations
             FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "SetupNetworkObject", $"Possessing net object \"{netObjectBase.name}\"");
 
             var hash = (uint)netObjectBase.IdentifyingHash();
-            var unified = ServerManager.ShouldUseUnifiedSetup(netObjectBase);
+            var unified = ServerManager.UseUnifiedSetup(netObjectBase);
 
             FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Debug, "SetupNetworkObject", $"IsUnified={unified}");
 
@@ -204,7 +206,7 @@ namespace FGTools.LocalServer.Implementations
             {
                 Position = spawnPosition,
                 Rotation = spawnRotation,
-                Scale = spawnScale,
+                Scale = spawnScale, 
                 _spawnObjectType = netObjectBase.SpawnObjectType(),
                 _creationMode = netObjectBase.CreationMode(),
                 _prefabHash = (int)hash,
@@ -212,7 +214,11 @@ namespace FGTools.LocalServer.Implementations
                 _lodControllerBehaviour = netObjectBase.LodControllerBehaviour,
                 _netID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID(),
                 _rmiIdentifier = RMIBehaviourManager.GetNextID(),
-                //_postSpawnAction = PostSpawnAction,
+                _postSpawnAction = new Action<MPGNetID, GameObject>((MPGNetID netid, GameObject obj) =>
+                {
+                    LocalServerService.ServerManager.OnServerSpawnedObject(obj, netid);
+                    //PostSpawnAction?.Invoke(netid, obj);
+                }),
                 _syncScale = netObjectBase.SyncScale,
                 _syncTransform = netObjectBase.SyncTransform,
             };

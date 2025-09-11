@@ -25,6 +25,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using UnityEngine;
+using UnityEngine.Localization.SmartFormat.Core.Output;
 using UnityEngine.Networking;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
@@ -393,13 +394,13 @@ namespace FGTools.Services
             catch (Exception ex)
             {
                 ResetAll();
-                DoModal(LocalizedStr("content_err_title"), LocalizedStr("content_err_desc", [ex.Message]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasOk) =>
+                DoModal(new(LocalizedStr("content_err_title"), LocalizedStr("content_err_desc", [ex.Message]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
                 {
                     if (!wasOk)
                         Application.Quit();
                     else
                         Run();
-                }), btnOkStr: LocalizedStr("content_err_ok"));
+                }), okStrOverride: LocalizedStr("content_err_ok")));
 
                 CoroutineRunner.End(DownloadCoroutine);
                 DownloadCoroutine = null;
@@ -413,7 +414,7 @@ namespace FGTools.Services
         IEnumerator StartDownloading(string ver, bool trackChecksInfo)
         {
             ResetAll();
-            DoModal(LocalizedStr("gui_downloading_title"), LocalizedStr("gui_downloading_desc"), FGClient.UI.UIModalMessage.ModalType.MT_NO_BUTTONS, FGClient.UI.UIModalMessage.OKButtonType.Default);
+            DoModal(new(LocalizedStr("gui_downloading_title"), LocalizedStr("gui_downloading_desc"), FGClient.UI.UIModalMessage.ModalType.MT_NO_BUTTONS, FGClient.UI.UIModalMessage.OKButtonType.Default, priority: 9999));
 
             //content
 #if !LOCAL_CONTENT
@@ -571,39 +572,36 @@ namespace FGTools.Services
                 Broadcaster.Instance.Broadcast(new LoginSuccessfulEvent(accountId, TitleScreenViewModel.CameFromSplashScreen));
         }
 
-        public string ReturnChangelog(string ver, int linesPerSection)
+        public bool TryBuildChangelog(string ver, out string changelog)
         {
-            string output = string.Empty;
-            int i = 1;
-            int sectionLines = 0;
+            var builder = new StringBuilder();
 
-            if (FGTContent.Changelog.TryGetValue(ver, out ChangelogEntry log))
+            if (!FGTContent.Changelog.TryGetValue(ver, out var log))
             {
-                var linesLeft = log.Data.Count;
-                foreach (string str in log.Data)
-                {
-                    if (!str.Contains('[') && sectionLines < linesPerSection)
-                    {
-                        output += $"{i++}. {str}\n";
-                        sectionLines++;
-                        linesLeft--;
-                    }
-                    else if (str.Contains('['))
-                    {
-                        output += $"\n<size=50%><b>{str.ToUpper().Replace("[", "").Replace("]", "")}</b></size>\n";
-                        sectionLines = 0;
-                        linesLeft--;
-                    }
-                }
-
-                if (linesLeft > 0)
-                    output += $"\n{LocalizedStr("changelog_limit_new", [linesLeft.ToString()])}";
-                
+                builder.AppendLine("This version doesn't have attached changelog.");
+                changelog = builder.ToString();
+                return false;
             }
-            else
-                output = "This version doesn't have attached changelog.";
 
-            return $"<size=40%>{output}</size>";
+            foreach (var raw in log.Data)
+            {
+                var str = raw?.Trim();
+
+                if (string.IsNullOrWhiteSpace(str))
+                    continue;
+
+                if (str.StartsWith("[") && str.EndsWith("]"))
+                {
+                    builder.AppendLine($"\n• {str.Trim('[', ']', ' ').ToUpperInvariant()}");
+                }
+                else
+                {
+                    builder.AppendLine($"  - {str}");
+                }
+            }
+
+            changelog = builder.ToString();
+            return true;
         }
 
         public override void UpdateService()

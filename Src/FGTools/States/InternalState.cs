@@ -226,8 +226,12 @@ namespace FGTools.States
         {
             var guiInst = FGToolsUI.NewGUI.Instance;
 
+#if !PROD
             if (!StaticWatermark)
                 TargetTime += Time.unscaledDeltaTime;
+#endif
+            if (guiInst == null)
+                return;
 
             guiInst?.GUIController();
             if (StateManager.CanUseHotkeys)

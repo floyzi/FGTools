@@ -24,7 +24,7 @@ namespace FGTools.Content
         public static bool LocalMultiplayer { get; private set; }
         public static bool FGTNewsfeed { get; private set; }
         public static bool RoundRules { get; private set; }
-        public static bool VersionWarning { get; private set; }
+        public static bool VersionWarning { get; private set; } = true;
 
         public static void Load(FGTTargetSettingsData data)
         {
@@ -44,7 +44,11 @@ namespace FGTools.Content
             UpdateNotification = data.GetBool("update_notification", false);
             FGCLocalSaves = data.GetBool("fgc_local_saves", false);
             FGCAutosaves = data.GetBool("fgc_autosaves", false);
+#if !DEV
             LocalMultiplayer = data.GetBool("local_multiplayer", false);
+#else
+            LocalMultiplayer = true;
+#endif
             FGTNewsfeed = data.GetBool("fgt_newsfeed", false);
             RoundRules = data.GetBool("round_rules", false);
             VersionWarning = data.GetBool("version_warning", false);

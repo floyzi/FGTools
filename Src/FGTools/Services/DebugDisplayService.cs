@@ -22,7 +22,7 @@ namespace FGTools.Services
         const float PendingTime = 3f;
         KeyCode ExpandToggle = KeyCode.LeftArrow;
         readonly string[] DebugContent = new string[5];
-        bool UIToggle = false;
+        internal static bool UIToggle = false;
         readonly float FontSize = 0.0123f;
 
         bool _displaySaveResult = false;

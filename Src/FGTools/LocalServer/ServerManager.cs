@@ -86,9 +86,9 @@ namespace FGTools.LocalServer
         int NextSeed;
         internal ServerState State = ServerState.Disconnected;
 
-        readonly Queue<GameMessageServerSpawnObject> PlayerSpawnQueue = [];
-        readonly Dictionary<FG_NetworkID, NetworkedPlayer> ConnectedPlayers = [];
-        readonly Dictionary<FG_NetworkID, GameConnection> PendingConnections = [];
+        readonly Queue<GameMessageServerSpawnObject> PlayerSpawnQueue;
+        readonly Dictionary<FG_NetworkID, NetworkedPlayer> ConnectedPlayers;
+        readonly Dictionary<FG_NetworkID, GameConnection> PendingConnections;
 
         int SpawnedPlayers = 0, ReadyPlayers = 0, LoadedPlayers = 0;
 
@@ -96,8 +96,6 @@ namespace FGTools.LocalServer
         internal static Action<MPGNetObject> TimeAttackFinish;
         internal static Action<MPGNetObject, uint, FG_NetworkID, string, string, string, string, uint, int, string, int, bool, CustomisationSelections> OnPlayerSpawned;
         internal static Action<NetworkMessage> OnServerReceivedMessage;
-
-        public delegate void SpawnDelegate(MPGNetObject obj);
 
         public ServerManager(LocalServerService service, NetworkRequest startTicket, FG_NetworkManager netManager, object gameInfo, int lobbySize = 1)
         {
@@ -129,6 +127,10 @@ namespace FGTools.LocalServer
             GameActions.OnCheckpointReached += OnCheckpointReached;
             GameActions.OnIntroEnds += OnIntroEnd;
             GameActions.OnRoundStarts += OnRoundStart;
+            GameActions.OnIntroStarts += OnIntroStarts;
+            GameActions.OnNetObjSpawned += OnNetObjSpawned;
+            GameActions.OnRoundEnds += OnRoundEnds;
+
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = DelegateSupport.ConvertDelegate<HandleObjectiveSatisfied>(ObjectiveAchived);
 
@@ -136,8 +138,10 @@ namespace FGTools.LocalServer
             TimeAttackFinish += OnTimeAttackEnd;
 
             GameInfo = gameInfo;
+            PlayerSpawnQueue = [];
+            ConnectedPlayers = [];
+            PendingConnections = [];
 
-            //TEMP
             foreach (var fgcc in Resources.FindObjectsOfTypeAll<FallGuysCharacterController>())
                 fgcc.MotorAgent._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Offline;
 
@@ -152,6 +156,22 @@ namespace FGTools.LocalServer
 
         void OnRoundStart()
         {
+            GameObject[] possibleTargets;
+            var netObjects = Resources.FindObjectsOfTypeAll<MPGNetObjectBase>().Select(obj => obj.gameObject);
+            var movableObjects = Resources.FindObjectsOfTypeAll<wle.LevelEditorMovableObject>().Select(obj => obj.gameObject);
+            possibleTargets = [.. netObjects, .. movableObjects];
+
+            foreach (GameObject obj in possibleTargets)
+            {
+                if (obj.GetComponent<OfflineGrabTargetID>() == null)
+                {
+                    var targ = obj.gameObject.AddComponent<OfflineGrabTargetID>();
+                    targ._hashID = (uint)Random.Range(10000, 99999);
+                    targ.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+                }
+            }
+
+
             var ppm = Resources.FindObjectsOfTypeAll<PixelPerfectManager>().FirstOrDefault();
             ppm?.Init();
             ppm?.BeginGame();
@@ -318,24 +338,9 @@ namespace FGTools.LocalServer
            
         }
 
+
         void PrepareForNetworkedGame()
         {
-            GameObject[] possibleTargets;
-
-            var netObjects = Resources.FindObjectsOfTypeAll<MPGNetObjectBase>().Select(obj => obj.gameObject);
-            var movableObjects = Resources.FindObjectsOfTypeAll<wle.LevelEditorMovableObject>().Select(obj => obj.gameObject);
-            possibleTargets = [.. netObjects, .. movableObjects];
-
-            foreach (GameObject obj in possibleTargets)
-            {
-                if (obj.GetComponent<OfflineGrabTargetID>() == null)
-                {
-                    var targ = obj.gameObject.AddComponent<OfflineGrabTargetID>();
-                    targ._hashID = (uint)Random.Range(10000, 99999);
-                    targ.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
-                }
-            }
-
             foreach (var rl in Resources.FindObjectsOfTypeAll<RolloutManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
             {
                 var res = new Il2CppSystem.Collections.Generic.List<int>();
@@ -360,22 +365,16 @@ namespace FGTools.LocalServer
             foreach (var hm in Resources.FindObjectsOfTypeAll<HexARingManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
             {
                 hm.SetPlayerCount(FGTServiceManager.GetService<RoundOptionsService>().GetPlayers());
-
-                if (hm.TryGetComponent<MPGNetObjectPossessable>(out var poss))
-                    poss.PossessObject();
             }
 
             foreach (var hm in Resources.FindObjectsOfTypeAll<HexSnakeManager>().ToList().FindAll(x => x.gameObject.activeInHierarchy))
             {
                 hm.UpdatePlayerCount(FGTServiceManager.GetService<RoundOptionsService>().GetPlayers());
-
-                if (hm.TryGetComponent<MPGNetObjectPossessable>(out var poss))
-                    poss.PossessObject();
             }
 
             foreach (PlayerRatioedBulkItemSpawner spawner in Resources.FindObjectsOfTypeAll<PlayerRatioedBulkItemSpawner>())
             {
-                var itmCount = Mathf.Clamp(Mathf.RoundToInt(LobbySize * spawner._numberOfItemsPerPlayer), spawner._minItems, spawner._maxItems);
+                var itmCount = Mathf.Clamp(Mathf.RoundToInt(FGTServiceManager.GetService<RoundOptionsService>().GetPlayers() * spawner._numberOfItemsPerPlayer), spawner._minItems, spawner._maxItems);
 
                 Dictionary<GameObject, List<Transform>> spawns = [];
 
@@ -397,19 +396,23 @@ namespace FGTools.LocalServer
                         var spawn = new List<Transform>();
 
                         var child = spawner.ItemParent.GetChild(i);
-                        for (int j = 0; j < child.childCount; j++)
-                            spawn.Add(child.GetChild(j));
+                        var c = child.childCount;
+                        if (child.childCount > 0)
+                        {
+                            for (int j = 0; j < c; j++)
+                                spawn.Add(child.GetChild(j));
+                        }
+                        else
+                            spawn.Add(child);
 
                         spawns.Add(child.gameObject, spawn);
                     }
                 }
 
-                itmCount = Mathf.Min(itmCount, spawns.Sum(pair => pair.Value.Count));
-                itmCount = itmCount / spawns.Count * spawns.Count;
-
                 foreach (var pair in spawns)
                 {
-                    for (int j = 0; j < itmCount / spawns.Count && j < pair.Value.Count; j++)
+                    //for (int j = 0; j < itmCount / spawns.Count && j < pair.Value.Count; j++)
+                    for (int j = 0; j < pair.Value.Count && itmCount > 0; j++)
                     {
                         var targetObject = spawner.ItemPrefab.GetComponent<NetworkAwareGeneric>().SpawnObject;
 
@@ -422,8 +425,11 @@ namespace FGTools.LocalServer
 
                         var spawn = pair.Value[j];
                         netObj.SpawnPrefab(spawn.position, spawn.rotation, spawn.localScale);
+
+                        itmCount--;
                     }
                 }
+
             }
 
             if (StateManager.IsFGC)
@@ -456,6 +462,10 @@ namespace FGTools.LocalServer
         void ObjectiveAchived(MPGNetID playerObjectNetID, COMMON_ObjectiveBase pObjective)
         {
             ServerLog("ObjectiveAchived", $"Objective achived by object {playerObjectNetID} (objective {pObjective.GetIl2CppType().Name}");
+
+            if (pObjective.TryGetComponent<Animation>(out var anim))
+                anim.enabled = false;
+
             ServerGameStateActions.Instance.MarkPlayerAsSuccessful(CGM.GetNetObjectByID(playerObjectNetID), pObjective.GetIl2CppType() != Il2CppType.Of<COMMON_GrabToQualify>());
         }
 
@@ -464,7 +474,7 @@ namespace FGTools.LocalServer
             Il2CppType.Of<HexARingManager>()
         ];
 
-        internal static bool ShouldUseUnifiedSetup(MPGNetObjectBase based)
+        internal static bool UseUnifiedSetup(MPGNetObjectBase based)
         {
             foreach (var p in NotForUnifiedSetup)
             {
@@ -473,6 +483,19 @@ namespace FGTools.LocalServer
             }    
 
             return true;
+        }
+
+        internal void OnServerSpawnedObject(GameObject obj, MPGNetID net)
+        {
+            Debug.Log("spawned " + obj.name);
+            if (obj.TryGetComponent<COMMON_GrabToQualify>(out var gtq))
+            {
+                gtq.GetComponent<Animation>().enabled = true;
+
+                var ogt = gtq.gameObject.AddComponent<OfflineGrabTargetID>();
+                ogt._hashID = (uint)Random.Range(10000, 99999);
+                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+            }
         }
 
         void OnPing(GameMessagePing msg, GameConnection playerConn)
@@ -622,8 +645,8 @@ namespace FGTools.LocalServer
 
             nextRound.GameRules.StartGameMessage = new()
             {
-                Title = FLZ_Extensions.AddCMSString("gameplay_warn_title", "REMINDER"),
-                Body = FLZ_Extensions.AddCMSString("gameplay_warn_desc", "Version you're playing on in the PRE-RELEASE state, if something goes wrong report about it")
+                Title = FLZ_Extensions.AddCMSString("gameplay_warn_title", LocalizationService.LocalizedStr("pre_release_warn_title")),
+                Body = FLZ_Extensions.AddCMSString("gameplay_warn_desc", LocalizationService.LocalizedStr("pre_release_warn_desc"))
             };
             nextRound.GameRules.StartGameMessageTrigger = StartGameMessageTrigger.Intro;
             nextRound.GameRules.StartGameMessageFormat = UIOverlayMessageFormat.Popup;
@@ -1145,7 +1168,7 @@ namespace FGTools.LocalServer
 
                 if (resNormalList.Find(x => x.accountID == player.accountID) != null)
                 {
-                    ServerLog("EndRound", $"Skipping player with account id {player.accountID} as it was already been added");
+                    ServerLog("EndRound`", $"Skipping player with account id {player.accountID} as it was already been added");
 
                     playersState.Add(new()
                     {
@@ -1286,6 +1309,9 @@ namespace FGTools.LocalServer
             GameActions.OnRoundLoaded -= PrepareForNetworkedGame;
             GameActions.OnCheckpointReached -= OnCheckpointReached;
             GameActions.OnIntroEnds -= OnIntroEnd;
+            GameActions.OnIntroStarts -= OnIntroStarts;
+            GameActions.OnNetObjSpawned -= OnNetObjSpawned;
+            GameActions.OnRoundEnds -= OnRoundEnds;
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = null;
 
@@ -1295,9 +1321,28 @@ namespace FGTools.LocalServer
             ServerLog("Shutdown", "Shutdown completed!");
         }
 
-        internal void OnNetObjSpawned(MPGNetObject mpg)
+        void OnIntroStarts()
+        {
+        }
+
+        void OnRoundEnds()
+        {
+        }
+
+        internal void OnNetObjSpawned(MPGNetID netId, GameObject mpg, int hash)
         {
             ServerLog("OnNetObjSpawned", $"spawned {mpg.name}");
+
+            if (mpg.TryGetComponent<COMMON_GrabToQualify>(out var gtq))
+            {
+                if (gtq.TryGetComponent<Animation>(out var anim))
+                    anim.enabled = true;
+
+                var ogt = gtq.gameObject.AddComponent<OfflineGrabTargetID>();
+                ogt._hashID = (uint)Random.Range(10000, 99999);
+                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+                gtq.enabled = true;
+            }
         }
 
         void ServerLog(string method, string msg) => FGTLog(LogLevel.Info, $"{typeof(ServerManager).Name} - {method}", msg);

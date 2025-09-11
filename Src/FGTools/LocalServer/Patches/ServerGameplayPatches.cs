@@ -144,7 +144,10 @@ namespace FGTools.LocalServer.Patches
             "LodManager",
             "COMMON_ObjectiveBase",
             "COMMON_ScaleWhileMoving",
-            "FollowTheLeaderZone"
+            "FollowTheLeaderZone",
+            "AIPath",
+            "ChickenController",
+            "ChickenChaseController"
         ];
 
 
@@ -247,19 +250,12 @@ namespace FGTools.LocalServer.Patches
             }
         }
 
-        [HarmonyPatch(typeof(WallGuysSegmentGenerator), nameof(WallGuysSegmentGenerator.InstantiateRowGameObjects)), HarmonyPrefix]
-        static bool InstantiateRowGameObjects(WallGuysSegmentGenerator __instance, Il2CppSystem.Collections.Generic.List<GameObject> gameObjects, int rowIndex)
+        [HarmonyPatch(typeof(WallGuysSegmentGenerator), nameof(WallGuysSegmentGenerator.InstantiateRowGameObjects)), HarmonyPostfix]
+        static void InstantiateRowGameObjects(WallGuysSegmentGenerator __instance, Il2CppSystem.Collections.Generic.List<GameObject> gameObjects, int rowIndex)
         {
-            int rowObjectCount = gameObjects.Count;
-            float cellWidth = __instance._areaDimensions.x / rowObjectCount;
-            Vector3 initialCellPosition = __instance._areaBounds.min + new Vector3(cellWidth * 0.5f, 0f, (rowIndex + 0.5f) * __instance._cellHeight);
-            Vector3 cellExtents = new Vector3(cellWidth / 2f, 0f, __instance._cellHeight / 2f);
-            Vector3 currentCellPosition = initialCellPosition;
-            foreach (GameObject go in gameObjects)
+            foreach (var spawned in __instance.GetComponentsInChildren<NetworkAwareGeneric>())
             {
-                var targetObject = go.GetComponent<NetworkAwareGeneric>().SpawnObject;
-                targetObject.transform.position = currentCellPosition;
-                targetObject.transform.rotation = __instance.RandomRotationAroundY();
+                var targetObject = spawned.GetComponent<NetworkAwareGeneric>().SpawnObject;
 
                 if (!targetObject.TryGetComponent<MPGNetObject>(out var netObj))
                     netObj = targetObject.AddComponent<MPGNetObject>();
@@ -267,24 +263,16 @@ namespace FGTools.LocalServer.Patches
                 netObj.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
                 netObj.GameObjectHash = netObj.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
 
-                Collider collider = netObj.GetComponent<Collider>();
-                Bounds objectBounds = collider.bounds;
-                Vector3 cellMinWorld = currentCellPosition - cellExtents;
-                Vector3 cellMaxWorld = currentCellPosition + cellExtents;
-                Vector3 deviationMin = cellMinWorld - objectBounds.min;
-                Vector3 deviationMax = cellMaxWorld - objectBounds.max;
-                currentCellPosition += new Vector3(cellWidth, 0f, 0f);
+                netObj.SpawnPrefab(spawned.transform.position, spawned.transform.rotation, spawned.transform.localScale);
 
-                netObj.SpawnPrefab(netObj.transform.position += new Vector3(UnityEngine.Random.Range(deviationMin.x, deviationMax.x), objectBounds.extents.y + (currentCellPosition.y - objectBounds.center.y), UnityEngine.Random.Range(deviationMin.z, deviationMax.z)), netObj.transform.rotation, netObj.transform.localScale);
+                if (!netObj.gameObject.TryGetComponent<OfflineGrabTargetID>(out var ogt))
+                    ogt = netObj.gameObject.AddComponent<OfflineGrabTargetID>();
+
+                ogt._hashID = (uint)UnityEngine.Random.Range(10000, 99999);
+                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+
+                spawned.gameObject.SetActive(false);
             }
-            return false;
-        }
-
-        [HarmonyPatch(typeof(MPGNetObjectPossessable), nameof(MPGNetObjectPossessable.PossessObject)), HarmonyPostfix]
-        static void PossessObject(MPGNetObjectPossessable __instance)
-        {
-            Debug.Log($"[MPGNetObjectPossessable] Generating Possession Request for scene object {__instance.name} with hash {__instance.PossessionId}, SpawnObjectType={__instance.SpawnObjectType()}, Unity instance id {__instance.CachedGameObject.GetInstanceID()}");
-            __instance.GameStateServerActioner.SetupNetworkObject(__instance, __instance.CachedTransform.position, __instance.CachedTransform.rotation, __instance.CachedTransform.localScale, null);
         }
 
         [HarmonyPatch(typeof(COMMON_FakeDoorRandomiser), nameof(COMMON_FakeDoorRandomiser.Awake)), HarmonyPostfix]

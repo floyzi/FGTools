@@ -134,16 +134,6 @@ namespace FGTools.LocalServer.Patches
             return false;
         }
 
-        [HarmonyPatch(typeof(SkipRoundButton), nameof(SkipRoundButton.OnDisable)), HarmonyPrefix]
-        static bool OnDisable(SkipRoundButton __instance)
-        {
-            if (!StateManager.IsPlayingExplore)
-                return true;
-
-            __instance.gameObject.SetActive(true);
-            return false;
-        }
-
         [HarmonyPatch(typeof(GameplayInstructionsViewModel), nameof(GameplayInstructionsViewModel.ButtonResetTimeAttackLap)), HarmonyPrefix]
         static bool ButtonResetTimeAttackLap(GameplayInstructionsViewModel __instance)
         {
@@ -303,7 +293,7 @@ namespace FGTools.LocalServer.Patches
             return false;
         }
 
-        [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageWonEpisode)), HarmonyPrefix]
+        [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.HandleWonEpisode)), HarmonyPrefix]
         static bool CreateMessageWonEpisode(BannersDefault __instance)
         {
             AudioManager.PlayGameplayEndAudio(true);
@@ -332,7 +322,7 @@ namespace FGTools.LocalServer.Patches
                     else
                     {
                         if (StateManager.ExploreState == null)
-                            FLZ_Extensions.ForceExit(); //TEMP
+                            CGM.ShowResultsScreen();
                         else
                             StateManager.ExploreState.RequestNewRound();
                     }
@@ -345,6 +335,7 @@ namespace FGTools.LocalServer.Patches
 
             return false;
         }
+        
 
         //TEMP
         [HarmonyPatch(typeof(HexSnakeManager), nameof(HexSnakeManager.ManagePlayingParticipantCount)), HarmonyPrefix]

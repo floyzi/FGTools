@@ -53,43 +53,50 @@ namespace FGTools.States
 
         void MakeTooltips()
         {
-            Dictionary<string, object> formats = new() 
+            try
             {
-                { "fgt_tooltip_01", SkipIntroHotkey.Value },
-                { "fgt_tooltip_03", ToggleUIHotkey.Value }
-            };
-
-            var currData = CMSLoader.Instance.CMSData.ToolTipsData["singleton"];
-
-            if (currData != null)
-            {
-                var tooltips = LocalizedStrings.Where(pair => pair.Key.StartsWith("fgt_tooltip_")).Select(pair =>
+                Dictionary<string, object> formats = new()
                 {
-                    var actualVal = pair.Value;
+                    { "fgt_tooltip_01", SkipIntroHotkey.Value },
+                    { "fgt_tooltip_03", ToggleUIHotkey.Value }
+                };
 
-                    if (formats.ContainsKey(pair.Key))
-                        actualVal = string.Format(actualVal, formats[pair.Key]);
+                var currData = CMSLoader.Instance.CMSData.ToolTipsData["singleton"];
 
-                    return new ToolTip
+                if (currData != null)
+                {
+                    var tooltips = LocalizedStrings.Where(pair => pair.Key.StartsWith("fgt_tooltip_")).Select(pair =>
                     {
-                        _platform = ToolTip.TipPlatform.All,
-                        _localisedStringtext = new LocalisedString { Text = actualVal }
-                    };
-                }).ToArray();
+                        var actualVal = pair.Value;
 
-                FGTLog(LogLevel.Info, base.GetType(), $"Got {tooltips.Length} possible tooltips");
+                        if (formats.ContainsKey(pair.Key))
+                            actualVal = string.Format(actualVal, formats[pair.Key]);
 
-                currData._tips = new Il2CppReferenceArray<ToolTip>(tooltips);
+                        return new ToolTip
+                        {
+                            _platform = ToolTip.TipPlatform.All,
+                            _localisedStringtext = new LocalisedString { Text = actualVal }
+                        };
+                    }).ToArray();
+
+                    FGTLog(LogLevel.Info, base.GetType(), $"Got {tooltips.Length} possible tooltips");
+
+                    currData._tips = new Il2CppReferenceArray<ToolTip>(tooltips);
+                }
+                else
+                    FGTLog(LogLevel.Info, base.GetType(), "fuck.");
             }
-            else
-                FGTLog(LogLevel.Info, base.GetType(), "fuck.");
+            catch
+            {
+
+            }
         }
 
         IEnumerator PlayIntroAndContinue()
         {
             if (FinishLoginAct == null)
             {
-                FLZ_Extensions.QuitWithMessage("Error", "Tried to play intro without finish action, this is not intended");
+                FLZ_Extensions.QuitWithMessage("Error", "Tried to play intro without finish action, this is not intended and will cause a softlock");
                 yield break;
             }
 
@@ -197,43 +204,38 @@ namespace FGTools.States
 
             FinishLoginAct = new(() =>
             {
-                if (!StateManager.LoggedInBefore)
+                Action firstLaunch = () =>
                 {
-                    Launcher.UniverseUIBase ??= UniversalUI.RegisterUI(UniverseGUID, null);
+                    if (!StateManager.LoggedInBefore)
+                    {
+                        Launcher.UniverseUIBase ??= UniversalUI.RegisterUI(UniverseGUID, null);
+
+                        if (FGToolsUI.NewGUI.Instance == null)
+                            StateManager.InternalState.ToolsUI = new(Launcher.UniverseUIBase);
+                    }
 #if DEV
                     Broadcaster.Instance.Broadcast<GlobalDebug.DebugToggleFPSCounter>(new());
 #endif
-                    if (FGToolsUI.NewGUI.Instance == null)
-                        StateManager.InternalState.ToolsUI = new(Launcher.UniverseUIBase);
 
                     StateManager.InternalState.ToolsUI.ToggleUI(true);
                     Launcher.UniverseUIBase.SetOnTop();
 
                     StateManager.LoggedInBefore = true;
-                }
+
+                    FGTServiceManager.GetService<RoundLoaderService>().SetupCMSRoundList();
+                    FGTServiceManager.GetService<StatisticsService>().ValidateStats(GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName);
+                    FGTServiceManager.GetService<CosmeticsService>().Load();
+                };
 
                 StateManager.CanUseHotkeys = true;
                 StateManager.ExploreState = null;
                 StateManager.ShowState = null;
                 StateManager.RoundLoadingAllowed = true;
 
-                FGTServiceManager.GetService<RoundLoaderService>().SetupCMSRoundList();
-                FGTServiceManager.GetService<StatisticsService>().ValidateStats(GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName);
-                FGTServiceManager.GetService<CosmeticsService>().Load();
-
                 MakeTooltips();
 
-                var evtS = FGTServiceManager.GetService<EventService>();
-
-                var targetVer = Launcher.BuildInfo.UI_Version;
-                var eventVer = evtS.ReturnStringEventValue("MenuEntranceVersion");
-
-                if (eventVer != null && targetVer != eventVer)
-                {
-                    MenuPopup();
-                    evtS.SetEventValue("MenuEntranceVersion", targetVer.ToString());
-                }
-
+                CheckFirstLaunchFlow(firstLaunch);
+               
                 StateManager.HandleFGTState(FGTStateManager.ToolsState.Menu);
                 FinishLoginAct = null;
             });
@@ -245,6 +247,36 @@ namespace FGTools.States
                 CoroutineRunner.Instance.StartCoroutine(PlayIntroAndContinue().WrapToIl2Cpp());
             else
                 FinishLoginAct();
+        }
+
+        void CheckFirstLaunchFlow(Action onOver)
+        {
+            var evtS = FGTServiceManager.GetService<EventService>();
+
+            var targetVer = Launcher.BuildInfo.UI_Version;
+            var eventVer = evtS.ReturnStringEventValue("MenuEntranceVersion");
+
+            if (string.IsNullOrEmpty(eventVer) || targetVer != eventVer)
+            {
+                DoModal(new(LocalizedStr("menuenter_title"), $"{LocalizedStr("menuenter_desc")}\n\n{LocalizedStr("gui_hotkeys", [ToggleCusorHotkey.Value, ToggleUIHotkey.Value, DebugUIHotkey.Value, EnterFFM.Value, RespawnHotkey.Value, CheckpointHotkey.Value, ToggleFreeCamHotkey.Value, ResetCheckpointHotkey.Value])}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, onClosed: new Action<bool>((wasOk) =>
+                {
+                    if (OnlineCheck.TryBuildChangelog(Launcher.BuildInfo.UI_Version, out var log))
+                    {
+                        CreateEULAModal(string.Format($"V{Launcher.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), log, new Action<bool>(wasok =>
+                        {
+                            onOver();
+                        }), true);
+                    }
+                    else
+                    {
+                        FGTLog(LogLevel.Warning, GetType(), $"No changelog were found for version {Launcher.BuildInfo.UI_Version}");
+                        onOver();
+                    }
+                }), hideLvl: ModalHideGUIType.KeepHidden, priority: 1000));
+                evtS.SetEventValue("MenuEntranceVersion", targetVer.ToString());
+            }
+            else
+                onOver();
         }
 
         public override void UpdateState()
@@ -264,7 +296,7 @@ namespace FGTools.States
 
             if (!TargetFGVersions.Contains(Application.version) && !verAlert && activeScene == "MainMenu" && FGTTargetSettings.VersionWarning)
             {
-                DoModal(LocalizedStr("version_warning_title"), $"{LocalizedStr("version_warning")}\n\nTarget versions: {string.Join(", ", TargetFGVersions)} | FallGuys version: {Application.version}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.CallToAction, closeDelay: 10f);
+                CreateNotification(LocalizedStr("version_warning_title"), LocalizedStr("version_warning"), FGT_Warning_Color, 20f);
                 verAlert = true;
             }
         }

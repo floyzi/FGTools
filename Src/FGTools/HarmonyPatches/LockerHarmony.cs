@@ -11,9 +11,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using UnityEngine;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Services.LocalizationService;
 
@@ -24,6 +26,7 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.DoExitSubMenu)), HarmonyPostfix]
         static void DoExitSubMenu(CustomiserScreenViewModel __instance, bool keepChanges)
         {
+            Debug.Log("ext");
             switch (__instance.CurrentScreen)
             {
                 case CustomiserScreens.Outfits:
@@ -51,19 +54,26 @@ namespace FGTools.HarmonyPatches
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
-        static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Exception error, CustomisationSelections previousSelections, bool isEmotes)
+        static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Il2CppSystem.Exception error, CustomisationSelections previousSelections, bool isEmotes)
         {
             __instance.HideSpinner();
 
             if (!AllCosmeticsAlert.Value)
                 return false;
 
-            FLZ_Extensions.DoModal(LocalizedStr("request_error_2"), LocalizedStr("request_error_save_config_2"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.CallToAction, new Action<bool>(wasok =>
+            FLZ_Extensions.DoModal(new(LocalizedStr("request_error_2"), LocalizedStr("request_error_save_config_2"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.CallToAction, new Action<bool>(wasok =>
             {
                 if (wasok)
                     __instance.DoExitSubMenu(true);
-            }));
+            })));
 
+            return false;
+        }
+
+        [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleFavouriteError)), HarmonyPrefix]
+        static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Il2CppSystem.Exception error, [DefaultParameterValue(null)] OnSendFavouritesRequest favouriteRequest)
+        {
+            __instance.HideSpinner();
             return false;
         }
     }
