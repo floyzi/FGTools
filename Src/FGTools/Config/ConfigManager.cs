@@ -160,7 +160,7 @@ namespace FGTools.Config
         public static ConfigEntry<string> objectiveText { get; set; }
 
         //PHYSICS
-        public static ConfigEntry<int> DiveSens { get; set; }
+        public static ConfigEntry<float> DiveSens { get; set; }
         public static ConfigEntry<bool> OldPhysics { get; set; }
 
         //SPEEDRUN MODE
@@ -388,7 +388,7 @@ namespace FGTools.Config
             #endregion
 
             #region PHYSICS
-            DiveSens = CFG.Bind(CPSect, "Dive Sensivity", 70, GetDesc("dive_sens"));
+            DiveSens = CFG.Bind(CPSect, "Dive Sensivity", 70f, GetDesc("dive_sens"));
             DiveSens.SettingChanged += (sender, args) => {
                 ConfigAction();
             };

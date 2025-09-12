@@ -144,51 +144,22 @@ namespace FGTools.States
             GameActions.OnCheckpointReached -= OnCheckpoint;
         }
 
-        public void FinishGameplay()
-        {
-            //TryToDespawnFallGuy();
-            //if (GlobalGameStateClient.Instance.IsInGameplay)
-            //    GlobalGameStateClient.Instance._gameStateMachine.CurrentState.Cast<StateGameInProgress>().Teardown();
-        }
-
-        public void TryToDespawnFallGuy()
-        {
-            //if (StateManager.CGM != null && FGBehaviour.FGMPG != null)
-            //{
-            //    try
-            //    {
-            //        StateManager.CGM._untrackPlayerSpawn(FGBehaviour.FGMPG);
-            //        StateManager.CGM._netObjectManager.UnspawnNetObject(FGBehaviour.FGMPG.NetID, MPGNetObjectManager.UnspawnGameObjectPolicy.LeaveInScene);
-            //        FGBehaviour.FGMPG.ClearNetID();
-            //        FGBehaviour.FallGuy.SetActive(false);
-            //        FGBehaviour.FGMPG = null;
-            //        GlobalGameStateClient.Instance.ResetGame();
-            //        NetworkGameData.ClearCurrentGameOptions();
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        FGTLog(LogLevel.Error, base.GetType(), $"Despawn failed. {e.Message}");
-            //    }
-            //}
-        }
-   
         public void RoundIntroGUI()
         {
-            float offsetX = Screen.width - 210f;
-            float offsetY = 25f;
+            if (!StateManager.InternalState.LoaderUIToggle || !LocalServerService.IsUserAloneAndHost || !StateManager.IsIntroPlaying)
+                return;
 
-            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.RoundIntro && StateManager.InternalState.LoaderUIToggle)
-            {
-                string label = $"{LocalizedStr("intro_skip_msg", [SkipIntroHotkey.Value, SkipIntroTime.Value])}";
-                if (holdingSkipIntro)
-                    label = $"{skipIntroHold:F1} / {SkipIntroTime.Value}";
+            var label = $"{LocalizedStr("intro_skip_msg", [SkipIntroHotkey.Value, SkipIntroTime.Value])}";
+            if (holdingSkipIntro)
+                label = $"{skipIntroHold:F1} / {SkipIntroTime.Value}";
 
-                var labelSize = GUI.skin.label.CalcSize(new(label)).x + 2000;
+            var disp = $"<b>{label}</b>".ToUpper();
 
-                GUI.Box(new Rect(offsetX + 10, offsetY - 30, labelSize, 30f), "");
+            var lbSize = GUI.skin.label.CalcSize(new GUIContent(disp));
+            var boxWidth = lbSize.x + 20f;
 
-                GUI.Label(new Rect(offsetX + 15, offsetY - 25, labelSize, 30f), label);
-            }
+            GUI.Box(new Rect(Screen.width - boxWidth + 5f, 0f, boxWidth, 30f), "");
+            GUI.Label(new Rect(Screen.width - boxWidth + 10f, 5f, lbSize.x, lbSize.y), disp);
         }
 
         public override void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -197,37 +168,35 @@ namespace FGTools.States
 
         public override void UpdateState()
         {
-            if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.RoundIntro)
+            if (!StateManager.IsIntroPlaying || !LocalServerService.IsUserAloneAndHost)
+                return;
+
+            if (Input.GetKey(SkipIntroHotkey.Value))
             {
-                if (Input.GetKey(SkipIntroHotkey.Value))
+                skipIntroHold += Time.deltaTime;
+
+                if (!holdingSkipIntro)
                 {
-                    skipIntroHold += Time.deltaTime;
-
-                    if (!holdingSkipIntro)
-                    {
-                        holdingSkipIntro = true;
-                        skipIntroHold = 0f;
-                    }
-
-                    if (Input.GetKeyUp(SkipIntroHotkey.Value))
-                    {
-                        holdingSkipIntro = false;
-                        skipIntroHold = 0f;
-                    }
-
-                    else if (skipIntroHold >= SkipIntroTime.Value)
-                    {
-                        FGTServiceManager.GetService<RoundLoaderService>().RoundCamera.StopIntroCameras();
-                        CGM.FinishPreparationPhase();
-                        holdingSkipIntro = false;
-                        skipIntroHold = 0f;
-                    }
+                    holdingSkipIntro = true;
+                    skipIntroHold = 0f;
                 }
-                else
+
+                if (Input.GetKeyUp(SkipIntroHotkey.Value))
                 {
                     holdingSkipIntro = false;
                     skipIntroHold = 0f;
                 }
+
+                else if (skipIntroHold >= SkipIntroTime.Value)
+                {
+                    CGM.SetReady(PlayerReadinessState.ReadyToPlay);
+                    StateManager.HandleFGTState(ToolsState.IntroComplete);
+                }
+            }
+            else
+            {
+                holdingSkipIntro = false;
+                skipIntroHold = 0f;
             }
         }
 

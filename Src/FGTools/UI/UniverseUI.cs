@@ -1471,7 +1471,7 @@ namespace FGTools.UI
                     repAll.OnClick += () =>
                     {
 
-                        var tiles = Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>();
+                        var tiles = Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>().ToList().FindAll(x => x.name.Contains("Clone"));
                         var lvl = Path.Combine(Application.persistentDataPath, "Img2FGC.json");
 
                         if (!File.Exists(lvl))
@@ -1480,7 +1480,7 @@ namespace FGTools.UI
                             return;
                         }
 
-                        if (tiles == null || tiles.Length == 0)
+                        if (tiles == null || tiles.Count == 0)
                         {
                             ErrorPopup($"{LocalizedStr("img2fgc_no_levels")}");
                             return;

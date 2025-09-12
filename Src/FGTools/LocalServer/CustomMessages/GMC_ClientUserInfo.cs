@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using UnityEngine.InputSystem;
 using static FGTools.LocalServer.CustomMessages.Logic.CustomMessageManager;
 using static UnityEngine.ResourceManagement.Util.BinaryStorageBuffer;
 
@@ -21,6 +22,12 @@ namespace FGTools.LocalServer.CustomMessages
     {
         public GMC_ClientUserInfo() : base(FLZ_CustomMessage.FLZ_GENERIC_USER_INFO)
         {
+        }
+
+        public struct WheelElement
+        {
+            public uint Id;
+            public string Type;
         }
 
         public string Username { get; set; }
@@ -36,14 +43,30 @@ namespace FGTools.LocalServer.CustomMessages
         public uint Nameplate { get; set; }
         public uint Nickname { get; set; }
         public uint VictoryPose { get; set; }
-        public Dictionary<uint, string> FirstWheel { get; set; }
-        public Dictionary<uint, string> SecondWheel { get; set; }
+        public Dictionary<int, WheelElement> FirstWheel { get; set; }
+        public Dictionary<int, WheelElement> SecondWheel { get; set; }
 
         internal override Il2CppSystem.ArraySegment<byte> Serialize(NetworkWriter netWriter)
         {
             var s = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections;
-            FirstWheel = s.FirstWheelOptions.Take(8).ToDictionary(opt => Crc32.Calc(opt.ItemId), opt => opt.CMSGroupID.ToString());
-            SecondWheel = s.SecondWheelOptions.Take(8).ToDictionary(opt => Crc32.Calc(opt.ItemId), opt => opt.CMSGroupID.ToString());
+
+            FirstWheel = s.FirstWheelOptions.Take(8).Select((opt, indx) => new { 
+                indx, 
+                element = new WheelElement
+                {
+                    Id = Crc32.Calc(opt.ItemId),
+                    Type = opt.CMSGroupID.ToString()
+                }
+            }).ToDictionary(x => x.indx, x => x.element);
+
+            SecondWheel = s.SecondWheelOptions.Take(8).Select((opt, indx) => new {
+                indx,
+                element = new WheelElement
+                {
+                    Id = Crc32.Calc(opt.ItemId),
+                    Type = opt.CMSGroupID.ToString()
+                }
+            }).ToDictionary(x => x.indx, x => x.element);
 
             netWriter ??= new();
 
@@ -70,9 +93,11 @@ namespace FGTools.LocalServer.CustomMessages
                 foreach (var kvp in FirstWheel)
                 {
                     netWriter.Write(kvp.Key);
-                    netWriter.Write(kvp.Value);
+                    netWriter.Write(kvp.Value.Id);
+                    netWriter.Write(kvp.Value.Type);
                 }
             }
+
 
             if (SecondWheel == null)
                 netWriter.Write((ushort)0);
@@ -82,7 +107,8 @@ namespace FGTools.LocalServer.CustomMessages
                 foreach (var kvp in SecondWheel)
                 {
                     netWriter.Write(kvp.Key);
-                    netWriter.Write(kvp.Value);
+                    netWriter.Write(kvp.Value.Id);
+                    netWriter.Write(kvp.Value.Type);
                 }
             }
 
@@ -112,14 +138,14 @@ namespace FGTools.LocalServer.CustomMessages
             VictoryPose = netReader.ReadUInt32();
 
             ushort firstWheel = netReader.ReadUInt16();
-            FirstWheel = new Dictionary<uint, string>(firstWheel);
+            FirstWheel = new Dictionary<int, WheelElement>(firstWheel);
             for (int i = 0; i < firstWheel; i++)
-                FirstWheel[netReader.ReadUInt32()] = netReader.ReadString();
+                FirstWheel[netReader.ReadInt32()] = new WheelElement { Id = netReader.ReadUInt32(), Type = netReader.ReadString() };
 
             ushort secondWheel = netReader.ReadUInt16();
-            SecondWheel = new Dictionary<uint, string>(secondWheel);
+            SecondWheel = new Dictionary<int, WheelElement>(secondWheel);
             for (int i = 0; i < secondWheel; i++)
-                SecondWheel[netReader.ReadUInt32()] = netReader.ReadString();
+                SecondWheel[netReader.ReadInt32()] = new WheelElement { Id = netReader.ReadUInt32(), Type = netReader.ReadString() };
         }
 
         internal CustomisationSelections CreateSelections()
@@ -146,16 +172,16 @@ namespace FGTools.LocalServer.CustomMessages
                     var elem = FirstWheel.ElementAt(i);
                     ItemDefinitionSO itmRes = null;
 
-                    switch (elem.Value?.ToString())
+                    switch (elem.Value.Type?.ToString())
                     {
                         case "cosmetics_emotes":
-                            itmRes = m.GetEmoteOptionsWithId(elem.Key, true);
+                            itmRes = m.GetEmoteOptionsWithId(elem.Value.Id, true);
                             break;
                         case "cosmetics_emoticons":
-                            itmRes = m.GetEmoticonOptionWithId(elem.Key, true);
+                            itmRes = m.GetEmoticonOptionWithId(elem.Value.Id, true);
                             break;
                         case "cosmetics_phrases":
-                            itmRes = m.GetPhraseOptionWithId(elem.Key, true);
+                            itmRes = m.GetPhraseOptionWithId(elem.Value.Id, true);
                             break;
                     }
 
@@ -170,16 +196,16 @@ namespace FGTools.LocalServer.CustomMessages
                     var elem = SecondWheel.ElementAt(i);
                     ItemDefinitionSO itmRes = null;
 
-                    switch (elem.Value?.ToString())
+                    switch (elem.Value.Type?.ToString())
                     {
                         case "cosmetics_emotes":
-                            itmRes = m.GetEmoteOptionsWithId(elem.Key, true);
+                            itmRes = m.GetEmoteOptionsWithId(elem.Value.Id, true);
                             break;
                         case "cosmetics_emoticons":
-                            itmRes = m.GetEmoticonOptionWithId(elem.Key, true);
+                            itmRes = m.GetEmoticonOptionWithId(elem.Value.Id, true);
                             break;
                         case "cosmetics_phrases":
-                            itmRes = m.GetPhraseOptionWithId(elem.Key, true);
+                            itmRes = m.GetPhraseOptionWithId(elem.Value.Id, true);
                             break;
                     }
 

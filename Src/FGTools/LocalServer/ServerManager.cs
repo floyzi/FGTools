@@ -275,7 +275,7 @@ namespace FGTools.LocalServer
             if (playerData.GetCurrentLap.LapState != TimeAttackLapState.InProgress)
                 return;
 
-            playerData.GetCurrentLap.ElapsedTime.Add(playerData.GetCurrentLap.CurrentLapTime);
+            //playerData.GetCurrentLap.ElapsedTime.Add(playerData.GetCurrentLap.CurrentLapTimeUpToSplit(0));
 
             BroadcastMessage(new GameMessageServerTimeAttackRegistered()
             {

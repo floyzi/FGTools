@@ -72,6 +72,12 @@ namespace FGTools.Services
         public override void RegisterService()
         {
             GameActions.OnIntroStarts += OnIntroStart;
+            GameActions.OnIntroEnds += OnIntroEnd;
+        }
+
+        void OnIntroEnd()
+        {
+            StateManager.HandleFGTState(ToolsState.IntroComplete);
         }
 
         void SearchForRound(string request)
@@ -240,6 +246,7 @@ namespace FGTools.Services
         void OnIntroStart()
         {
             StateManager.ForceSetState(new GameplayState());
+            StateManager.HandleFGTState(ToolsState.RoundIntro);
 
             if (CGM._round.Archetype.Id.Contains("attack"))
                 FGTServiceManager.GetService<SpeedrunService>().SpeedrunState = RunState.TimeAttack;
@@ -505,7 +512,6 @@ namespace FGTools.Services
             try
             {
                 var gp = StateManager.GetState<GameplayState>();
-                gp?.FinishGameplay();
 
                 LevelInfoDto lvl = null;
                 Round templateRound = null;

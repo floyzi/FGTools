@@ -47,23 +47,43 @@ namespace FGTools.LocalServer.CustomMessages.Logic
 
         static T DeserealizeMessage<T>(NetworkReader netReader) where T : FLZMessage, new()
         {
+    
             var msg = new T();
-            msg.Deserealize(netReader);
+            try
+            {
+                msg.Deserealize(netReader);
+            }
+            catch (Exception ex)
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, typeof(CustomMessageManager), $"Unable to deserealize message of type {msg.GetType().Name}. Bytes {netReader._buf.Length}\n\n{ex}");
+            }
             return msg;
+        }
+
+        static Il2CppSystem.ArraySegment<byte> SerializeMessage(FLZMessage msg, out NetworkWriter writer)
+        {
+            writer = new NetworkWriter();
+            try
+            {
+                return msg.Serialize(writer);
+            }
+            catch (Exception ex)
+            {
+                FGTLog(BepInEx.Logging.LogLevel.Error, typeof(CustomMessageManager), $"Unable to serialize message of type {msg.GetType().Name}. Bytes {writer._buffer.Length}\n\n{ex}");
+                return new();
+            }
         }
 
         public void SendMessageToClient<T>(T msg, GameConnection conn) where T : FLZMessage
         {
-            var netWriter = new NetworkWriter();
-            conn.SendReliable(msg.Serialize(netWriter));
-            FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Sent message \"{msg.GetType().Name}\" (id {(byte)msg.lvl}) to \"{conn.RemoteNetworkID}\". Sent bytes {netWriter._buffer._count}");
+            conn.SendReliable(SerializeMessage(msg, out var writer));
+            FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Sent message \"{msg.GetType().Name}\" (id {(byte)msg.lvl}) to \"{conn.RemoteNetworkID}\". Sent bytes {writer._buffer._count}");
         }
 
         public void SendMessageToServer<T>(T msg) where T : FLZMessage
         {
-            var netWriter = new NetworkWriter();
-            GlobalGameStateClient.Instance.NetworkManager.ConnectionToServer.SendReliable(msg.Serialize(netWriter));
-            FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Sent message \"{msg.GetType().Name}\" (id {(byte)msg.lvl}) to the server. Sent bytes {netWriter._buffer._count}");
+            GlobalGameStateClient.Instance.NetworkManager.ConnectionToServer.SendReliable(SerializeMessage(msg, out var writer));
+            FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Sent message \"{msg.GetType().Name}\" (id {(byte)msg.lvl}) to the server. Sent bytes {writer._buffer._count}");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿extern alias wle;
+﻿#if INCLUDE_FGC_CUSTOM_COLORS
+extern alias wle;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using Mediatonic.Logging;
@@ -19,15 +20,12 @@ namespace FGTools.Services
 {
     internal class FGC_CustomColorService : FGTService
     {
-#if INCLUDE_FGC_CUSTOM_COLORS
         bool updatedColor = false;
         string editableColor;
         string currColor;
         string prevCol = null;
-#endif   
         public override void DrawGUI()
         {
-#if INCLUDE_FGC_CUSTOM_COLORS
             if (StateManager.FGTCurrentState == FGTStateEnum.InCreative && wle.FG.Common.LevelEditorManager.Instance != null && wle.FG.Common.LevelEditorManager.Instance.SelectedObject != null && wle.FG.Common.LevelEditorManager.Instance.SelectedObject.gameObject.GetComponent<wle.LevelEditorColourChangerListener>() != null)
             {
                 var CCP = wle.FG.Common.LevelEditorManager.Instance.SelectedObject.gameObject.GetComponent<wle.LevelEditorColourChangerParameter>();
@@ -70,7 +68,6 @@ namespace FGTools.Services
             }
             else
                 updatedColor = false;
-#endif
         }
 
         public override void RegisterService()
@@ -82,3 +79,4 @@ namespace FGTools.Services
         }
     }
 }
+#endif

@@ -253,7 +253,7 @@ namespace FGTools.LocalServer.Implementations
             string paramString = parameters == null ? "null" : string.Join(", ", parameters.Select(p => p?.ToString() ?? "null"));
 
             var target = RMIBehaviourManager.GetRMIBehaviour(rmiID);
-            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "PlayNamedMethodOnObject", $"rmiID = {rmiID}, actionIndex = {actionIndex}, foundObj = {target?.name}, parameters = [{paramString}]");
+            FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Debug, "PlayNamedMethodOnObject", $"rmiID = {rmiID}, actionIndex = {actionIndex}, foundObj = {target?.name}, parameters = [{paramString}]");
 
             LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerEventGeneric()
             {

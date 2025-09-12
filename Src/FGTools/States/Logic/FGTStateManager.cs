@@ -62,6 +62,7 @@ namespace FGTools.States.Logic
         internal bool IsPlayingExplore => ExploreState != null;
         internal bool IsInGameplay => FGTCurrentState == ToolsState.GameActive || FGTCurrentState == ToolsState.FGCGameActive;
         internal bool IsInEditor => FGTCurrentState == ToolsState.InCreative;
+        internal bool IsIntroPlaying => FGTCurrentState == ToolsState.RoundIntro;
 
         internal bool LoggedInBefore = false;
         internal bool CanUseHotkeys = false;

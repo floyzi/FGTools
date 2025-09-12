@@ -37,6 +37,12 @@ namespace FGTools.LocalServer
             __instance._motorFunctionBeingGrabbed = __instance.GetMotorFunction<MotorFunctionBeingGrabbed>();
         }
 
+        [HarmonyPatch(typeof(MotorFunctionRollingBallStateBounce), nameof(MotorFunctionRollingBallStateBounce.Begin)), HarmonyPostfix]
+        static void Begin(MotorFunctionRollingBallStateBounce __instance, int prevState)
+        {
+            __instance.BounceFeedback();
+        }
+
         [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.OnPlayerSpawned)), HarmonyPrefix]
         static bool OnPlayerSpawned(StateGameLoading __instance, MPGNetObject pNetObject, uint playerID, FG_NetworkID playerNetworkID, string accountId, string platformId, string playerName, string playerGeneratedName, uint squadId, int teamId, string partyId, int vsGroupId, bool tailEnabled, CustomisationSelections customisationSelections)
         {

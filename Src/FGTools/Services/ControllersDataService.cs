@@ -106,7 +106,7 @@ namespace FGTools.Services
                 if (string.IsNullOrEmpty(target.PropName))
                     continue;
 
-                FGTLog(BepInEx.Logging.LogLevel.Info, GetType(), $"Setting {target.PropName} from {target.DefaultValue} to {element.Value}");
+                FGTLog(BepInEx.Logging.LogLevel.Debug, GetType(), $"Setting {target.PropName} from {target.DefaultValue} to {element.Value}");
 
                 var actualElement = (JsonElement)element.Value;
 
