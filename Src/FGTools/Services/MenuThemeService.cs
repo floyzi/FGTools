@@ -119,7 +119,21 @@ namespace FGTools.Services
                     return CurrentThemePath.Split('\\')[0];
             }
         }
-        string currentUrl;
+        string _currentUrl;
+        string CurrentUrl
+        {
+            get
+            {
+                return _currentUrl;
+            }
+            set
+            {
+                if (!value.StartsWith("http"))
+                    _currentUrl = OnlineCheck.UsedMirror + value;
+                else
+                    _currentUrl = value;
+            }
+        }
         string folderName;
         string author;
         bool deleteFolderFirst = false;
@@ -547,15 +561,15 @@ namespace FGTools.Services
 
             if (OnlineCheck.FGTContent.ThemeData.TryGetValue(themeKey, out var webTheme))
             {
-                currentUrl = webTheme.DownloadURL;
+                CurrentUrl = webTheme.DownloadURL;
                 folderName = webTheme.FolderName;
                 author = webTheme.Credit;
                 exists = FGTServiceManager.GetService<MenuThemeService>().CurrentThemePath != null && FGTServiceManager.GetService<MenuThemeService>().ThemeDir == folderName;
 
-                toInfo = $"{LocalizedStr("gui_theme2download")}: {folderName}\n{LocalizedStr("gui_author")}: {author}\n{LocalizedStr("gui_theme2download_url")}: {currentUrl}\n{LocalizedStr("gui_theme2download_size")}: {LocalizedStr("gui_wait")}";
+                toInfo = $"{LocalizedStr("gui_theme2download")}: {folderName}\n{LocalizedStr("gui_author")}: {author}\n{LocalizedStr("gui_theme2download_url")}: {CurrentUrl}\n{LocalizedStr("gui_theme2download_size")}: {LocalizedStr("gui_wait")}";
             }
             else
-                currentUrl = null;
+                CurrentUrl = null;
 
             if (folderName != null && Directory.Exists(Launcher.ThemesDir + folderName))
             {
@@ -579,7 +593,7 @@ namespace FGTools.Services
 
             txt.text = toInfo;
 
-            CoroutineRunner.Instance.StartCoroutine(CalculateThemeSize(currentUrl, !exists).WrapToIl2Cpp());
+            CoroutineRunner.Instance.StartCoroutine(CalculateThemeSize(CurrentUrl, !exists).WrapToIl2Cpp());
         }
 
         IEnumerator CalculateThemeSize(string url, bool canBeSelected = true)
@@ -639,9 +653,9 @@ namespace FGTools.Services
             PreviewTheme(currThemeIndx);
         }
 
-        System.Collections.IEnumerator DownloadTheme()
+        IEnumerator DownloadTheme()
         {
-            UnityWebRequest www = UnityWebRequest.Get(currentUrl);
+            UnityWebRequest www = UnityWebRequest.Get(CurrentUrl);
 
             UnityWebRequestAsyncOperation operation = www.SendWebRequest();
 

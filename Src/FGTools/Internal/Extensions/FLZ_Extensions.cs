@@ -342,6 +342,7 @@ namespace FGTools.Internal.Extensions
 
         internal static byte[] GetFileInZip(byte[] zipContent, string file)
         {
+            if (zipContent == null ||  zipContent.Length == 0) return null;
             using var zipStream = new MemoryStream(zipContent);
             using var zip = new ZipArchive(zipStream, ZipArchiveMode.Read);
             var localeFile = zip.Entries.FirstOrDefault(e => e.Name == file);

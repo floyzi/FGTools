@@ -25,11 +25,13 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using UnityEngine;
+using UnityEngine.InputSystem.Utilities;
 using UnityEngine.Localization.SmartFormat.Core.Output;
 using UnityEngine.Networking;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
+using static Il2CppMono.Net.Security.MobileAuthenticatedStream;
 namespace FGTools.Services
 {
     internal class OnlineCheckService : FGTService
@@ -39,6 +41,7 @@ namespace FGTools.Services
             public string Version { get; set; }
             public JsonElement ExploreContent { get; set; }
         }
+
         public static string Error = "";
         public static string LastVer = Launcher.BuildInfo.UI_Version;
         public Dictionary<string, string> ExploreCodes = [];
@@ -56,6 +59,16 @@ namespace FGTools.Services
         Action<Newsfeed.UpdatedEvent> _newsfeedUpdate;
         public string ChecksDisplay = string.Empty;
         internal FGTContentData FGTContent;
+
+        readonly string[] KnownMirrors = [
+            "floyzi.github.io/FGTools/",
+            "floyzi-page.netlify.app/public/FGTools/",
+            "floyzi-gitlab-io.vercel.app/FGTools/",
+            "page.floyzi.workers.dev/FGTools/",
+            "cdn.floyzi.ru/minimal-content/FGTools/"
+        ];
+        internal string UsedMirror = string.Empty;
+
         public override void RegisterService()
         {
             _newsfeedUpdate = new Action<Newsfeed.UpdatedEvent>(PushNewsfeeds);
@@ -88,6 +101,7 @@ namespace FGTools.Services
             if (FGTContent?.Newsfeeds != null)
                 output.AppendLine($"Newsfeeds: {FGTContent.Newsfeeds.Count}");
 
+            output.AppendLine($"UsedMirror: {UsedMirror}");
             output.AppendLine($"Source: {DownloadSource}");
             output.AppendLine($"NextExploreDownload: {FGTServiceManager.GetService<EventService>().ReturnScheduledEventValue("ExploreDownloadSchedule")}");
             output.AppendLine($"CheckLength: {СheckLength}");
@@ -138,21 +152,19 @@ namespace FGTools.Services
 
         IEnumerator DownloadNewLangIEnum(string newLang, Action after)
         {
-            ResetRequest();
-            Request = UnityWebRequest.Get($"{URLBase}localization/{newLang}/{newLang}.zip");
+            Request = UnityWebRequest.Get($"{UsedMirror}localization/{newLang}/{newLang}.zip");
             UnityWebRequestAsyncOperation langOp = Request.SendWebRequest();
 
             yield return DownloadProgress(langOp, LocalizedStr("gui_download_progress_lang", null, true));
 
             if (Request.result != UnityWebRequest.Result.Success)
             {
-                FGTLog(LogLevel.Warning, base.GetType(), $"Unable to fetch localization ({newLang}) from server {Request.error}");
-                Error += $" (locale {Request.error})";
+                FGTLog(LogLevel.Warning, base.GetType(), $"Unable to fetch localization ({newLang}) from mirror [{UsedMirror}] {Request.error}");
+                Error += $" (locale ({UsedMirror}) {Request.error})";
                 ReadLocale(newLang, LocaleParseStrategy.Generic);
             }
             else
             {
-                
                 ReadLocale(newLang, LocaleParseStrategy.NewLang);
             }
 
@@ -179,28 +191,42 @@ namespace FGTools.Services
             else
                 savedBytes = File.Exists(targetPath) ? File.ReadAllBytes(targetPath) : [];
 
-            newBytes = GetFileInZip(Request.downloadHandler.data, "locale.json");
+            newBytes = GetFileInZip(Request?.downloadHandler?.data, "locale.json");
 
             if (!Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
 
-            bool refresh = FGTContent.Config == null ? false : FGTContent.Config.AlwaysRefreshLocale;
-            if (!BytesCheck(savedBytes, newBytes) || refresh)
+            if (newBytes != null && newBytes.Length > 0)
             {
-                FGTLog(LogLevel.Warning, base.GetType(), $"Updating localization ({langCode}) - forced: {refresh}");
-                File.WriteAllBytes(targetPath, newBytes);
+                bool refresh = FGTContent.Config != null && FGTContent.Config.AlwaysRefreshLocale;
+                if (!BytesCheck(savedBytes, newBytes) || refresh)
+                {
+                    FGTLog(LogLevel.Warning, base.GetType(), $"Updating localization ({langCode}) - forced: {refresh}");
+                    File.WriteAllBytes(targetPath, newBytes);
+                }
+
+                File.WriteAllBytes(SelectedLocalizeFolder + $"BACKUP_locale.json", savedBytes);
+
+                if (UseBackupLocale.Value)
+                {
+                    FGTLog(LogLevel.Warning, base.GetType(), $"Using backup localization!!");
+                    targetPath = SelectedLocalizeFolder + $"BACKUP_locale.json";
+                }
+
+                if (parseStrategy == LocaleParseStrategy.Generic)
+                    FGTServiceManager.GetService<LocalizationService>().SetupLocalization(targetPath);
             }
-
-            File.WriteAllBytes(LocalizationService.SelectedLocalizeFolder + $"BACKUP_locale.json", savedBytes);
-
-            if (UseBackupLocale.Value)
+            else
             {
-                FGTLog(LogLevel.Warning, base.GetType(), $"Using backup localization!!");
-                targetPath = LocalizationService.SelectedLocalizeFolder + $"BACKUP_locale.json";
-            }
-
-            if (parseStrategy == LocaleParseStrategy.Generic)
+                FGTLog(LogLevel.Error, GetType(), "Failed to get localization bytes, forcing load of fallback localization...");
+                targetPath = SelectedLocalizeFolder + $"BACKUP_locale.json";
+                if (!File.Exists(targetPath))
+                {
+                    FGTLog(LogLevel.Error, GetType(), "Unable to find fallback localization!!");
+                    return;
+                }
                 FGTServiceManager.GetService<LocalizationService>().SetupLocalization(targetPath);
+            }
         }
 
         void CreateNewNewsfeed(FGTNewsfeed newsfeed)
@@ -340,7 +366,7 @@ namespace FGTools.Services
                 Id = $"IMG_" + newNewsfeed.Id,
                 DlcItem = new()
                 {
-                    Base = NewsfeedImgsURL,
+                    Base = "images/newsfeed/",
                     Path = $"{newsfeed.ImagePath}.{"png"}"
                 }
             };
@@ -416,9 +442,52 @@ namespace FGTools.Services
             ResetAll();
             DoModal(new(LocalizedStr("gui_downloading_title"), LocalizedStr("gui_downloading_desc"), FGClient.UI.UIModalMessage.ModalType.MT_NO_BUTTONS, FGClient.UI.UIModalMessage.OKButtonType.Default, priority: 9999));
 
+            for (int i = 0; i < KnownMirrors.Length; i++)
+            {
+                var url = KnownMirrors[i];
+                var fullUrl = $"{url}contentV2/{ver}.json";
+                if (!url.StartsWith("http"))
+                    fullUrl = $"https://{fullUrl}";
+
+                var testReq = UnityWebRequest.Get(fullUrl);
+                testReq.timeout = 5;
+
+                FGTLog(LogLevel.Info, GetType(), $"Testing mirror [{url}]...");
+
+                yield return testReq.SendWebRequest();
+
+                if (testReq.result != UnityWebRequest.Result.Success)
+                {
+                    FGTLog(LogLevel.Warning, GetType(), $"Mirror [{url}] test failed [{testReq.error}]");
+                    continue;
+                }
+
+                FGTLog(LogLevel.Message, GetType(), $"Selecting mirror [{url}] !");
+                UsedMirror = url;
+                if (!url.StartsWith("http") || !url.StartsWith("https"))
+                    UsedMirror = "https://" + UsedMirror;
+                break;
+            }
+
+            if (string.IsNullOrEmpty(UsedMirror))
+            {
+                ResetAll();
+                DoModal(new(LocalizedStr("no_mirror_err_title"), LocalizedStr("no_mirror_err_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
+                {
+                    if (!wasOk)
+                        Application.Quit();
+                    else
+                        Run();
+                }), okStrOverride: LocalizedStr("content_err_ok")));
+                CoroutineRunner.End(DownloadCoroutine);
+                DownloadCoroutine = null;
+
+                yield break;
+            }
+
             //content
 #if !LOCAL_CONTENT
-            yield return DownloadContent($"{URLBase}contentV2/{ver}.json", "gui_download_progress_content", null, result =>
+            yield return DownloadContent($"{UsedMirror}contentV2/{ver}.json", "gui_download_progress_content", null, result =>
             {
                 FGTContent = new(Request.downloadHandler.text);
             }, errorMsg =>
@@ -436,7 +505,7 @@ namespace FGTools.Services
 #endif
 
             //lang
-            yield return DownloadContent($"{URLBase}localization/{LangFileName.Value}/{LangFileName.Value}.zip", "gui_download_progress_lang", null, result =>
+            yield return DownloadContent($"{UsedMirror}localization/{LangFileName.Value}/{LangFileName.Value}.zip", "gui_download_progress_lang", null, result =>
             {
                 ReadLocale(LangFileName.Value, LocaleParseStrategy.Generic);
             }, errorMsg =>
@@ -498,8 +567,11 @@ namespace FGTools.Services
             ResetRequest();
             yield return new WaitForEndOfFrame();
 
-            foreach (var newsfeed in FGTContent.Newsfeeds)
-                CreateNewNewsfeed(newsfeed);
+            if (FGTContent != null && FGTContent.Newsfeeds != null)
+            {
+                foreach (var newsfeed in FGTContent.Newsfeeds)
+                    CreateNewNewsfeed(newsfeed);
+            }
 
             FinishLogin();
         }

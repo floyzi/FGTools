@@ -43,7 +43,7 @@ namespace FGTools.LocalServer.Patches
     internal class CommonServerPatches : FGTBase
     {
         [HarmonyPatch(typeof(GlobalGameStateClient), nameof(GlobalGameStateClient.InitializeConnectionToServer)), HarmonyPostfix]
-        static void OnClientConnected(GlobalGameStateClient __instance, bool wantsToSpectate, GameMessageBasePublicICopyable1ObfInUIInObFGInStBoInByUnique.EnumNPublicSealedva4vUnique clientType, ClientGameStateData gameStateData, int numLocalPlayers, string entryToken)
+        static void OnClientConnected(GlobalGameStateClient __instance)
         {
             GameActions.OnConnectedToServer?.Invoke();
         }

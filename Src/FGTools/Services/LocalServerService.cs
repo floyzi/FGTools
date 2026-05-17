@@ -39,6 +39,7 @@ namespace FGTools.Services
         internal static bool IsServerInOperation => ServerManager != null && NetworkServer.instance != null;
         internal static bool IsUserAloneAndHost => IsServerInOperation && ServerManager.GetConnections().Length == 1;
         internal static IGameStateView GameStateView;
+        internal Il2CppSystem.Type GameMessageClientConnectType;
         public override void RegisterService()
         {
             Broadcaster.Instance.Register<OnMainMenuDisplayed>(new Action<OnMainMenuDisplayed>(OnEnterMenu));

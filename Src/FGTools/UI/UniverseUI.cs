@@ -1708,7 +1708,6 @@ namespace FGTools.UI
                     var le = upperGradient.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
                     le.ignoreLayout = true;
 
-
                     var circles = UIFactory.CreateUIObject("Circles", previewTheme).AddComponent<Image>();
                     UIFactory.SetLayoutElement(circles.gameObject, ignoreLayout: true);
 

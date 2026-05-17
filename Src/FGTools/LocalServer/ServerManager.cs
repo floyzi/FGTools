@@ -535,18 +535,20 @@ namespace FGTools.LocalServer
         }
 
 
-        void FG_ClientConnectRequest(GameMessageBasePublicICopyable1ObfInUIInObFGInStBoInByUnique msg, GameConnection playerConn)
+        void FG_ClientConnectRequest(object msg, GameConnection playerConn)
         {
             if (State == ServerState.Closing)
                 return;
 
-            playerConn.RemoteNetworkID = msg.field_Public_FG_NetworkID_0;
-            PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);
+            throw new NotImplementedException();
 
-            LocalServerService.CustomMessageManager.SendMessageToClient(new GMC_ServerConnectionStatus()
-            {
-                Status = GMC_ServerConnectionStatus.ServerResponse.AUTHENTICATION_REQUIRED
-            }, playerConn);
+            //playerConn.RemoteNetworkID = msg.field_Public_FG_NetworkID_0;
+            //PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);
+
+            //LocalServerService.CustomMessageManager.SendMessageToClient(new GMC_ServerConnectionStatus()
+            //{
+            //    Status = GMC_ServerConnectionStatus.ServerResponse.AUTHENTICATION_REQUIRED
+            //}, playerConn);
         }
 
         void CustomMessageDespatcher_ClientConnectRequest(GMC_ClientConnectRequest msg)

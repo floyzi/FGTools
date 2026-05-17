@@ -3,8 +3,6 @@ using UnityEngine;
 static class Definitions
 {
     #region URLS
-    internal const string URLBase = "https://floyzi.github.io/FGTools/";
-    internal const string NewsfeedImgsURL = $"{URLBase}images/newsfeed/";
     internal const string DiscordUrl = "https://discord.gg/PEysxvSE3x";
     internal const string FG_ExploreAPI = "https://level-gateway.fallguys.oncatapult.com/api/v1/round_pools";
     internal const string FGAnalyst_ExploreAPI = "https://cloudseeker.xyz/api/cv2/creative-explore/?only_list=1";

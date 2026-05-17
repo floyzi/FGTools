@@ -1,11 +1,8 @@
 ﻿using FMOD.Studio;
 using FMODUnity;
-using NAudio.Codecs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using UnityEngine.AddressableAssets;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.Internal
 {
@@ -28,10 +25,6 @@ namespace FGTools.Internal
 
         internal static void LoadBank(string bankName) 
         {
-            foreach (var bank in AudioManager.Instance._fmodData.SoundBanksArray.ToList().FindAll(x => x.Name == bankName || x.Name == bankName + ".assets"))
-            {
-                var res = RuntimeManager.LoadBank(bank.AssetReference, true);
-            }
         }
 
         internal static void UnloadAllLoadedBanks()

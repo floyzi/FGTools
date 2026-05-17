@@ -509,7 +509,6 @@ namespace FGTools.Services
 
         public void RefreshUI()
         {
-            throw new NotImplementedException();
         }
     }
 }

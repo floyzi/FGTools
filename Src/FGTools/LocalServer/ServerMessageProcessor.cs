@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using FG.Common;
+﻿using FG.Common;
 using FGClient;
 using Il2CppInterop.Runtime.Injection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UniverseLib;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 
@@ -28,6 +29,7 @@ namespace FGTools.LocalServer
 
         public override void processMessage(GameConnection pFrom, GameMessageBase msg)
         {
+
             var msgType = msg.getGameMessageType();
 
             if (!IgnoreList.Contains(msgType))
@@ -42,7 +44,9 @@ namespace FGTools.LocalServer
                     ServerDespatcher.Process(msg.Cast<GameMessageClientConnectInitial>(), pFrom);
                     break;
                 case EnumGameMessageType.GMT_CLIENT_CONNECT_CLIENT:
-                    ServerDespatcher.Process(msg.Cast<GameMessageBasePublicICopyable1ObfInUIInObFGInStBoInByUnique>(), pFrom);
+
+              
+                    //ServerDespatcher.Process(msg.Cast<GameMessageBasePublicInUIInObFGInStBoInByUnique>(), pFrom);
                     break;
                 case EnumGameMessageType.GMT_CLIENT_SET_READY:
                     ServerDespatcher.Process(msg.Cast<GameMessageClientSetReady>(), pFrom);

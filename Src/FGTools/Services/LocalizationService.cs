@@ -41,6 +41,11 @@ namespace FGTools.Services
 
         Dictionary<string, string> ParseLocalization(string path)
         {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                FGTLog(LogLevel.Error, base.GetType(), $"Invalid path \"{path}\" provided to {nameof(ParseLocalization)} !");
+                return new();
+            }    
             var locale = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(File.ReadAllText(path));
 
             if (locale == null || locale.Count == 0)
