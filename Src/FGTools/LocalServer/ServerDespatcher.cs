@@ -8,7 +8,7 @@ namespace FGTools.LocalServer
     {
         public static event Action<GameMessagePing, GameConnection> OnPing;
         public static event Action<GameMessageClientMotorTasks, GameConnection> OnMotorTasks;
-        public static event Action<object, GameConnection> OnClientConnectClient;
+        public static event Action<Il2CppSystem.Object, GameConnection> OnClientConnectClient;
         public static event Action<GameMessageClientConnectInitial, GameConnection> OnClientConnectInitial;
         public static event Action<GameMessageClientDisconnectPlayer, GameConnection> OnDisconnectPlayer;
         public static event Action<GameMessageClientSetReady, GameConnection> OnSetReady;
@@ -25,7 +25,7 @@ namespace FGTools.LocalServer
         {
             OnPing?.Invoke(msg, playerConn);
         }
-        public static void Process(object msg, GameConnection playerConn)
+        public static void Process(Il2CppSystem.Object msg, GameConnection playerConn)
         {
             OnClientConnectClient?.Invoke(msg, playerConn);
         }

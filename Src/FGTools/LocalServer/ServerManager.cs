@@ -535,20 +535,26 @@ namespace FGTools.LocalServer
         }
 
 
-        void FG_ClientConnectRequest(object msg, GameConnection playerConn)
+        void FG_ClientConnectRequest(Il2CppSystem.Object msg, GameConnection playerConn)
         {
             if (State == ServerState.Closing)
                 return;
 
-            throw new NotImplementedException();
+            if (LocalServerService.GameMessageClientConnectType == null)
+            {
+                FGTServiceManager.GetService<LocalServerService>().KillServer(new Exception($"Obfuscated il2cpp client connect message type was null during {nameof(FG_ClientConnectRequest)}"));
+                return;
+            }
 
-            //playerConn.RemoteNetworkID = msg.field_Public_FG_NetworkID_0;
-            //PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);
+            var field = LocalServerService.GameMessageClientConnectType.GetFields().FirstOrDefault(x => x.FieldType == Il2CppType.Of<FG_NetworkID>());
+            playerConn.RemoteNetworkID = field.GetValue(msg).Unbox<FG_NetworkID>();
+            Console.WriteLine(playerConn.RemoteNetworkID);
+            PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);
 
-            //LocalServerService.CustomMessageManager.SendMessageToClient(new GMC_ServerConnectionStatus()
-            //{
-            //    Status = GMC_ServerConnectionStatus.ServerResponse.AUTHENTICATION_REQUIRED
-            //}, playerConn);
+            LocalServerService.CustomMessageManager.SendMessageToClient(new GMC_ServerConnectionStatus()
+            {
+                Status = GMC_ServerConnectionStatus.ServerResponse.AUTHENTICATION_REQUIRED
+            }, playerConn);
         }
 
         void CustomMessageDespatcher_ClientConnectRequest(GMC_ClientConnectRequest msg)

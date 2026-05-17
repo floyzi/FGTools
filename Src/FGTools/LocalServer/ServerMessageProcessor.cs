@@ -44,9 +44,7 @@ namespace FGTools.LocalServer
                     ServerDespatcher.Process(msg.Cast<GameMessageClientConnectInitial>(), pFrom);
                     break;
                 case EnumGameMessageType.GMT_CLIENT_CONNECT_CLIENT:
-
-              
-                    //ServerDespatcher.Process(msg.Cast<GameMessageBasePublicInUIInObFGInStBoInByUnique>(), pFrom);
+                    ServerDespatcher.Process(msg, pFrom);
                     break;
                 case EnumGameMessageType.GMT_CLIENT_SET_READY:
                     ServerDespatcher.Process(msg.Cast<GameMessageClientSetReady>(), pFrom);
