@@ -1,6 +1,9 @@
 ﻿extern alias wle;
+
+using Catapult.Network.Gateway;
 using FG.Common;
 using FGClient;
+using FGClient.CatapultServices;
 using FGClient.ShowSelector;
 using FGClient.UI.Core;
 using FGTools.Internal.Behaviours;
@@ -13,6 +16,7 @@ using HarmonyLib;
 using Levels.Obstacles;
 using System;
 using System.IO;
+using System.Reflection;
 using UnityEngine;
 using static FGTools.Internal.Behaviours.FallGuyBehaviour;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
@@ -87,26 +91,33 @@ namespace FGTools.HarmonyPatches
         static bool ExitSplashscreen(TitleScreenViewModel __instance)
         {
             __instance.ClearViewModel();
-            __instance.CheckToShowLinkedProgressPopup();
             StateManager.HandleFGTState(FGTStateManager.ToolsState.CMSParsed);
             FGTServiceManager.GetService<OnlineCheckService>().Run();
             return false;
         }
 
-        [HarmonyPatch(typeof(MainMenuShowSelectorPlayButtonViewModel), nameof(MainMenuShowSelectorPlayButtonViewModel.Play)), HarmonyPrefix]
-        static bool Play(MainMenuShowSelectorPlayButtonViewModel __instance)
+        //[HarmonyPatch(typeof(MainMenuShowSelectorPlayButtonViewModel), nameof(MainMenuShowSelectorPlayButtonViewModel.Play)), HarmonyPrefix]
+        //static bool Play(MainMenuShowSelectorPlayButtonViewModel __instance)
+        //{
+        //    AudioManager.PlayOneShot(AudioManager.EventMasterData.MainMenuPlay);
+
+        //    var gui = FGToolsUI.NewGUI.Instance;
+        //    gui.ToggleUI(true);
+
+        //    if (StateManager.InternalState.LoaderUIToggle)
+        //        return false;
+
+        //    gui.GoToTab(Tab.RoundLoader, SubLevel.Default);
+        //    gui.GoToTab(Tab.RoundLoader_Main, SubLevel.RoundLoader);
+        //    return false;
+        //}
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CatapultServicesManager), nameof(CatapultServicesManager.BuildCatapultConfig))]
+        static void BuildCatapultConfig(CatapultServicesManager __instance, ref CatapultGatewayConnection.Config __result)
         {
-            AudioManager.PlayOneShot(AudioManager.EventMasterData.MainMenuPlay);
-
-            var gui = FGToolsUI.NewGUI.Instance;
-            gui.ToggleUI(true);
-
-            if (StateManager.InternalState.LoaderUIToggle)
-                return false;
-
-            gui.GoToTab(Tab.RoundLoader, SubLevel.Default);
-            gui.GoToTab(Tab.RoundLoader_Main, SubLevel.RoundLoader);
-            return false;
+            PlatformServices.Instance._antiCheatClientService.Cast<EOSAntiCheatService>().AllowOnlinePlay = true;
+            __result.Platform = "switch";
         }
 
         [HarmonyPatch(typeof(LeaveMatchPopupManager), nameof(LeaveMatchPopupManager.OnClose)), HarmonyPrefix]
@@ -162,6 +173,27 @@ namespace FGTools.HarmonyPatches
             MenuAudioProvider.instance.needToFadeIn = true;
 
             return false;
+        }
+
+        [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.HandleServerSpawnNetObject)), HarmonyPrefix]
+        static bool CloseScreen(ClientGameManager __instance, GameMessageServerSpawnObject spawnMessage)
+        {
+            if (spawnMessage.NetObjectSpawnData.SpawnObjectType == EnumSpawnObjectType.PLAYER)
+            {
+                var spwnData = spawnMessage.NetObjectSpawnData.AdditionalSpawnData.Cast<PlayerSpawnData>();
+                if (spwnData.AccountId == GlobalGameStateClient.Instance.GetLocalClientAccountID())
+                    spwnData._customisationSelections = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections;
+            }
+            return true;
+        }
+
+        [HarmonyPatch(typeof(StateGameLoading), nameof(StateGameLoading.Initialise)), HarmonyPrefix]
+        static bool CloseScreen(ClientGameManager __instance)
+        {
+            if (!LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.NetworkManager != null && GlobalGameStateClient.Instance.NetworkManager.IsConnected)
+                FGTStateManager.StateManager.HandleFGTState(ToolsState.OnlineGameActive);
+
+            return true;
         }
     }
 

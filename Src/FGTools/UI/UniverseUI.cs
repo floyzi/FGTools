@@ -2298,6 +2298,7 @@ namespace FGTools.UI
                     case FGTStateManager.ToolsState.RoundIntro:
                         ToggleGroup(ObjectGroup.Loading);
                         break;
+                    case FGTStateManager.ToolsState.OnlineGameActive:
                     case FGTStateManager.ToolsState.GameActive:
                     case FGTStateManager.ToolsState.FGCGameActive:
                         PrepareVariations();

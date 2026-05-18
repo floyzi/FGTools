@@ -540,13 +540,13 @@ namespace FGTools.LocalServer
             if (State == ServerState.Closing)
                 return;
 
-            if (LocalServerService.GameMessageClientConnectType == null)
+            if (LocalServerService.GameMessageClientConnectClientType == null)
             {
-                FGTServiceManager.GetService<LocalServerService>().KillServer(new Exception($"Obfuscated il2cpp client connect message type was null during {nameof(FG_ClientConnectRequest)}"));
+                FGTServiceManager.GetService<LocalServerService>().KillServer(new Exception($"Obfuscated il2cpp client connect client message type was null during {nameof(FG_ClientConnectRequest)}"));
                 return;
             }
 
-            var field = LocalServerService.GameMessageClientConnectType.GetFields().FirstOrDefault(x => x.FieldType == Il2CppType.Of<FG_NetworkID>());
+            var field = LocalServerService.GameMessageClientConnectClientType.GetFields().FirstOrDefault(x => x.FieldType == Il2CppType.Of<FG_NetworkID>());
             playerConn.RemoteNetworkID = field.GetValue(msg).Unbox<FG_NetworkID>();
             Console.WriteLine(playerConn.RemoteNetworkID);
             PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);

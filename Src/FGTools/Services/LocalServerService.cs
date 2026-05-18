@@ -39,12 +39,13 @@ namespace FGTools.Services
         internal static bool IsServerInOperation => ServerManager != null && NetworkServer.instance != null;
         internal static bool IsUserAloneAndHost => IsServerInOperation && ServerManager.GetConnections().Length == 1;
         internal static IGameStateView GameStateView;
-        internal static Il2CppSystem.Type GameMessageClientConnectType;
+        internal static Il2CppSystem.Type GameMessageClientConnectClientType;
+
         public override void RegisterService()
         {
             var netIdType = Il2CppType.Of<FG_NetworkID>();
             var intType = Il2CppType.Of<Int32>();
-            GameMessageClientConnectType = Il2CppSystem.AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x.FullName.StartsWith("TheMultiplayerGuys.FGCommon")).GetTypes().FirstOrDefault(t => t.BaseType?.Name == "GameMessageBase" && t.GetFields().Any(x => x.FieldType == netIdType) && t.GetFields().Count(x => x.FieldType == intType) >= 6);
+            GameMessageClientConnectClientType = Il2CppSystem.AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x.FullName.StartsWith("TheMultiplayerGuys.FGCommon")).GetTypes().FirstOrDefault(t => t.BaseType?.Name == "GameMessageBase" && t.GetFields().Any(x => x.FieldType == netIdType) && t.GetFields().Count(x => x.FieldType == intType) >= 6);
 
             Broadcaster.Instance.Register<OnMainMenuDisplayed>(new Action<OnMainMenuDisplayed>(OnEnterMenu));
             Broadcaster.Instance.Register<OnDisplayLobby>(new Action<OnDisplayLobby>(OnDisplayLobby));
@@ -101,6 +102,10 @@ namespace FGTools.Services
 
                 FGTLog(LogLevel.Info, typeof(LocalServerService), $"Attempt to host the server on {ip}:{port}");
 
+                ShowsManager.Instance.TrySelectShow(null);
+                ShowsManager.Instance.UpdateSelectedShows();
+                ShowsManager.Instance.SetSelectedGameModeToPublic();
+
                 var gsm = GlobalGameStateClient.Instance._gameStateMachine;
                 var mmManager = GlobalGameStateClient.Instance._mainMenuManager;
 
@@ -155,12 +160,13 @@ namespace FGTools.Services
             }
 
             FGTLog(LogLevel.Error, GetType(), $"TERMINATING SERVER DUE TO EXCEPTION\n\n{ex}");
-            FGTServiceManager.GetService<LocalServerService>().ShutdownSerer(null);
+            ShutdownSerer(null);
             DoModal(new(LocalizationService.LocalizedStr("server_fatal_error_title"), LocalizationService.LocalizedStr("server_fatal_error_desc"), FGClient.UI.UIModalMessage.ModalType.MT_OK, FGClient.UI.UIModalMessage.OKButtonType.Disruptive, new Action<bool>(wasok =>
             {
                 ForceExit();
             })));
         }
+
         internal void ShutdownSerer(Action onShutdown)
         {
             if (!IsServerInOperation)

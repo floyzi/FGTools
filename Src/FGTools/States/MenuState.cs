@@ -72,6 +72,7 @@ namespace FGTools.States
                         if (formats.ContainsKey(pair.Key))
                             actualVal = string.Format(actualVal, formats[pair.Key]);
 
+                      
                         return new ToolTip
                         {
                             _platform = ToolTip.TipPlatform.All,

@@ -187,6 +187,8 @@ namespace FGTools.States
                 }
                 if (activeScene.StartsWith("FallGuy_Fraggle"))
                 {
+                    if (!LocalServerService.IsServerInOperation) return; 
+
                     if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative && !StateManager.IsFGC)
                     {
                         FGTLog(LogLevel.Info, base.GetType(), "Loading into FGC");

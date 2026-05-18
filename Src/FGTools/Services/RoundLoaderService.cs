@@ -77,6 +77,8 @@ namespace FGTools.Services
 
         void OnIntroEnd()
         {
+            if (!LocalServerService.IsServerInOperation) return;
+
             StateManager.HandleFGTState(ToolsState.IntroComplete);
         }
 
@@ -245,6 +247,8 @@ namespace FGTools.Services
 
         void OnIntroStart()
         {
+            if (!LocalServerService.IsServerInOperation) return;
+
             StateManager.ForceSetState(new GameplayState());
             StateManager.HandleFGTState(ToolsState.RoundIntro);
 
@@ -323,6 +327,12 @@ namespace FGTools.Services
             if (!StateManager.RoundLoadingAllowed)
             {
                 ErrorPopup(LocalizedStr("gui_rl_block"));
+                return;
+            }
+
+            if (!LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.NetworkManager != null && GlobalGameStateClient.Instance.NetworkManager.IsConnected)
+            {
+                ErrorPopup(LocalizedStr("gui_rl_block_online_match"));
                 return;
             }
 
@@ -498,6 +508,12 @@ namespace FGTools.Services
 
             if (!StateManager.RoundLoadingAllowed)
             {
+                return;
+            }
+
+            if (!LocalServerService.IsServerInOperation && GlobalGameStateClient.Instance.NetworkManager != null && GlobalGameStateClient.Instance.NetworkManager.IsConnected)
+            {
+                ErrorPopup(LocalizedStr("gui_rl_block_online_match"));
                 return;
             }
 

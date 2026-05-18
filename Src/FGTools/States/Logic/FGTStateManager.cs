@@ -104,6 +104,7 @@ namespace FGTools.States.Logic
             InCreative,
             ConfigIssue,
             Results,
+            OnlineGameActive,
         }
 
         public enum PlayerState
@@ -403,12 +404,6 @@ namespace FGTools.States.Logic
             switch (newState)
             {
                 case ToolsState.CMSParsed:
-                    PlayerTargetSettings.UGCLikesEnabled = false;
-                    PlayerTargetSettings.UGCThumbnailReportingEnabled = false;
-                    PlayerTargetSettings.VoiceChatEnabled = false;
-                    PlayerTargetSettings.PlayerReportEnabled = false;
-                    PlayerTargetSettings.ShowSelectorEnabled = false;
-                    PlayerTargetSettings.ChallengesEnabled = false;
                     PlayerTargetSettings.AnalyticsEnabled = false;
                     PlayerTargetSettings.NewAnalyticsTimeTrackerEnabled = false;
                     foreach (ActiveBinding a in Resources.FindObjectsOfTypeAll<ActiveBinding>())

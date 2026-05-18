@@ -22,7 +22,7 @@ static class Definitions
 #else
     internal const string DownloadSource = "closed_beta";
 #endif
-    internal readonly static string[] TargetFGVersions = ["20.0.2"];
+    internal readonly static string[] TargetFGVersions = ["21.2.0"];
     internal const long DiscordAppID = 1138469244430979143;
     internal const string CurrentFGBackground = "Generic_UI_SeasonS11Background_Canvas_Variant";
 #endregion
