@@ -1,6 +1,7 @@
 ﻿using BepInEx.Logging;
 using Events;
 using FG.Common;
+using FG.Common.Character.MotorSystem;
 using FG.Common.CMS;
 using FGClient;
 using FGTools.Config;
@@ -87,7 +88,7 @@ namespace FGTools.Services
             return p;
         }
 
-        internal static void Host(string ip, int port, int usedFor, Round round)
+        internal void Host(string ip, int port, int usedFor, Round round)
         {
             if (usedFor == 0)
                 throw new ArgumentException("Can't host the server for 0 players");
@@ -113,7 +114,7 @@ namespace FGTools.Services
                     gsm.CurrentState.Cast<StateMainMenu>().StartConnecting(ip, port, MatchmakingEnvironment.Production);
 
                 if (IsServerInOperation)
-                    FGTServiceManager.Instance.GetService<LocalServerService>().ShutdownSerer(null);
+                    ShutdownSerer(null);
 
                 TryRegisterTypeInIl2cpp<ServerMessageProcessor>();
                 TryRegisterTypeInIl2cpp<ServerGameActions>();
@@ -132,7 +133,7 @@ namespace FGTools.Services
                 var actions = new ServerGameActions();
                 ServerGameStateActions.Instance = new IGameStateServerActions(actions.Pointer);
                 GameStateView = new ServerGameStateView().Cast<IGameStateView>();
-                ServerManager = new(FGTServiceManager.Instance.GetService<LocalServerService>(), _networkRequest, _networkRequest.NetworkManager, round, usedFor);
+                ServerManager = new(this, _networkRequest, _networkRequest.NetworkManager, round, usedFor);
 
                 if (!gsm.IsInState<StateConnectToGame>())
                 {
@@ -241,6 +242,9 @@ namespace FGTools.Services
             GameActions.OnRoundStarts = null;
 
             GlobalGameStateClient.Instance.NetObjectManager._networkMode = MPGNetObjectManager.NetworkMode.StandaloneClient;
+
+            foreach (var fgcc in Resources.FindObjectsOfTypeAll<FallGuysCharacterController>())
+                fgcc.MotorAgent._motorFunctionsConfig = MotorAgent.MotorAgentConfiguration.Default;
         }
 
         void OnDisplayLobby(OnDisplayLobby e)

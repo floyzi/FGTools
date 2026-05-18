@@ -131,6 +131,10 @@ namespace FGTools.States.Logic
         {
             get
             {
+                var scene = SceneManager.GetActiveScene();
+                if (scene.name == "Transition" || scene.name == "Boot" || scene.name == "EmptyLoadingScene" || scene.name == "Init")
+                    return true;
+
                 var gsm = GlobalGameStateClient.Instance?._gameStateMachine;
                 if (gsm == null) return false;
 
