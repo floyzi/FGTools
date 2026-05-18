@@ -69,6 +69,7 @@ namespace FGTools.Services
         Text RoundsStats;
         int deletedRounds = 0;
         List<string> RealRoundList = [];
+
         public override void RegisterService()
         {
             GameActions.OnIntroStarts += OnIntroStart;
@@ -324,6 +325,13 @@ namespace FGTools.Services
         }
         public void LoadCMSRound(string roundToLoad, LoadSceneMode mode)
         {
+            var gsm = GlobalGameStateClient.Instance._gameStateMachine;
+            if (IsInIllegalState)
+            {
+                FGTLog(LogLevel.Warning, GetType(), $"Ignoring {nameof(LoadCMSRound)} attempt because client is in illegal state");
+                return;
+            }
+
             if (!StateManager.RoundLoadingAllowed)
             {
                 ErrorPopup(LocalizedStr("gui_rl_block"));
@@ -484,6 +492,12 @@ namespace FGTools.Services
 
         public void LoadFGCRound(string code, LevelInfoDto preloadedDto, bool userRequest)
         {
+            if (IsInIllegalState)
+            {
+                FGTLog(LogLevel.Warning, GetType(), $"Ignoring {nameof(LoadFGCRound)} attempt because client is in illegal state");
+                return;
+            }
+
             if (string.IsNullOrEmpty(code))
             {
                 ErrorPopup(LocalizedStr("gui_default_load"));

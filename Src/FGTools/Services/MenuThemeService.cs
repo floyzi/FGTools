@@ -345,7 +345,7 @@ namespace FGTools.Services
             var a = Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault();
 
             AudioProvider = a.gameObject.GetComponent<MenuAudioProvider>() ?? a.gameObject.AddComponent<MenuAudioProvider>();
-            AudioProvider.PlayMusic(false);
+            AudioProvider?.PlayMusic(false);
 
         }
 

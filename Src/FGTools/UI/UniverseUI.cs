@@ -585,6 +585,7 @@ namespace FGTools.UI
 
                     EndlessExploreBtn.OnClick += () =>
                     {
+                        if (FGTStateManager.IsInIllegalState) return;
                         DoModal(new(LocalizedStr("gui_explore_endless_title"), LocalizedStr("gui_explore_endless_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>((bool wasok) =>
                         {
                             if (wasok)
@@ -844,6 +845,7 @@ namespace FGTools.UI
                     {
                         if (OnlineCheck != null && OnlineCheck.ExploreCodes != null && OnlineCheck.ExploreCodes.Count > 0)
                         {
+                            if (FGTStateManager.IsInIllegalState) return;
                             DoModal(new(LocalizedStr("explore_start_title"), LocalizedStr("explore_start_desc") + "\n\n" + LocalizedStr("gui_explore_desc_base"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasok =>
                             {
                                 if (wasok)

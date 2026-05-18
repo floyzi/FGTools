@@ -47,10 +47,10 @@ static class Definitions
     #endregion
 
     #region ASSEMBLIES
-#if !DEV
-    internal const string UniverseLib = $"UniverseLib.IL2CPP.Interop";
-#else
+//#if !DEV
+  //  internal const string UniverseLib = $"UniverseLib.IL2CPP.Interop";
+//#else
     internal const string UniverseLib = $"UniverseLib.BIE.IL2CPP.Interop";
-#endif
+//#endif
     #endregion
 }

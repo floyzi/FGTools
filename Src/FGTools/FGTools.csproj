@@ -93,12 +93,12 @@
 			<HintPath>$(LibsDir)NAudio\NAudio.WinMM.dll</HintPath>
 		</Reference>
 		<!--i'm using CUE version for testing, you can remove this if needed-->
-		<Reference Include="UniverseLib.BIE.IL2CPP.Interop" Condition="'$(Configuration)' == 'Dev'">
+		<Reference Include="UniverseLib.BIE.IL2CPP.Interop">
 			<HintPath>$(LibsDir)UniverseLib\UniverseLib.BIE.IL2CPP.Interop_CUE.dll</HintPath>
 		</Reference>
-		<Reference Include="UniverseLib.IL2CPP.Interop" Condition="'$(Configuration)' != 'Dev'">
+		<!--<Reference Include="UniverseLib.IL2CPP.Interop" Condition="'$(Configuration)' != 'Dev'">
 			<HintPath>$(LibsDir)UniverseLib\UniverseLib.IL2CPP.Interop.dll</HintPath>
-		</Reference>
+		</Reference>-->
 	</ItemGroup>
 
 	<ItemGroup>

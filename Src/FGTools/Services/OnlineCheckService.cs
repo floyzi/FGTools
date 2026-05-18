@@ -472,7 +472,7 @@ namespace FGTools.Services
             if (string.IsNullOrEmpty(UsedMirror))
             {
                 ResetAll();
-                DoModal(new(LocalizedStr("no_mirror_err_title"), LocalizedStr("no_mirror_err_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
+                DoModal(new(LocalizedStr("no_mirror_err_title"), LocalizedStr("no_mirror_err_desc", [KnownMirrors.Length]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
                 {
                     if (!wasOk)
                         Application.Quit();

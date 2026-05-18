@@ -217,12 +217,7 @@ namespace FGTools
                         File.Create(VariantData);
 
                     if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, Definitions.UniverseLib, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        FLZ_Extensions.QuitWithMessage(
-                            $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
-                            $"Unable to find UniverseLib ({Definitions.UniverseLib}.dll). Please install UniverseLib to use {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
-                        return;
-                    }
+                        Log.LogWarning($"Unable to find UniverseLib as loaded dll ({Definitions.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
 
                     StartUp();
                 }

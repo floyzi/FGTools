@@ -197,6 +197,22 @@ namespace FGTools.States
         {
             FGTLog(LogLevel.Info, base.GetType(), "OnMenuEnter()");
 
+            if (ShowsManager.Instance != null && ShowsManager.Instance.SelectedShowDef != null)
+            {
+                ShowData foundShow = null;
+                foreach (var show in ShowsManager.Instance.SelectedShowDef)
+                {
+                    if (show.Value)
+                    {
+                        foundShow = show.key;
+                        break;
+                    }
+                }
+
+                if (foundShow == null || foundShow.ShowSelectorShow == null || !foundShow.ShowSelectorShow.IsUltimatePartyShow || !foundShow.ShowSelectorShow.IsUltimatePartyRankedShow)
+                    GlobalGameStateClient.Instance.StopUltimatePartyFlow();
+            }
+
             FGTServiceManager.GetService<MenuThemeService>().OnMenuEnterEvent();
             FMODTool.UnloadAllLoadedBanks();
 

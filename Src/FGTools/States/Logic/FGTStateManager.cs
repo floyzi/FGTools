@@ -127,6 +127,23 @@ namespace FGTools.States.Logic
         internal double PeakMemUsage;
         internal double MemUsage;
 
+        internal static bool IsInIllegalState
+        {
+            get
+            {
+                var gsm = GlobalGameStateClient.Instance?._gameStateMachine;
+                if (gsm == null) return false;
+
+                return gsm.IsInState<StateConnectionAuthentication>() ||
+                    gsm.IsInState<StateGameLoading>() ||
+                    gsm.IsInState<StateDisconnectingFromServer>() ||
+                    gsm.IsInState<StateMatchmaking>() ||
+                    gsm.IsInState<StatePrivateLobby>() ||
+                    gsm.IsInState<StateReloadingToMainMenu>();
+            }
+        }
+
+
         public FGTStateManager()
         {
             if (_stateManager != null)

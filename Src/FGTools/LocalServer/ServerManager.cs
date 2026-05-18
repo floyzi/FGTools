@@ -1318,8 +1318,10 @@ namespace FGTools.LocalServer
             GameActions.OnCheckpointReached -= OnCheckpointReached;
             GameActions.OnIntroEnds -= OnIntroEnd;
             GameActions.OnIntroStarts -= OnIntroStarts;
+            GameActions.OnRoundStarts -= OnRoundStart;
             GameActions.OnNetObjSpawned -= OnNetObjSpawned;
             GameActions.OnRoundEnds -= OnRoundEnds;
+
 
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = null;
 
