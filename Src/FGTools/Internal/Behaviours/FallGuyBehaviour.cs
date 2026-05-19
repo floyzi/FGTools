@@ -7,6 +7,7 @@ using FG.Common;
 using FG.Common.Audio;
 using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
+using FG.Common.Definition;
 using FGClient;
 using FGClient.Rendering.XRay;
 using FGClient.UI;
@@ -15,6 +16,7 @@ using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States;
 using FGTools.States.Logic;
+using FMODUnity;
 using Il2CppInterop.Runtime.Attributes;
 using System.Collections;
 using System.Linq;
@@ -72,12 +74,17 @@ namespace FGTools.Internal.Behaviours
             vfxplayer.InjectCameraScreenController(Resources.FindObjectsOfTypeAll<CameraScreenVFXController>().Last());
 
             PreloadPowAudio(Powerup.Value);
+            FMODTool.LoadBank("BNK_SFX_TimeAttack");
 
             FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {gamemodeType}");
         }
 
-        static void PreloadPowAudio(SelectedPowerup power)
+        void PreloadPowAudio(SelectedPowerup power)
         {
+            var ldr = gameObject.AddComponent<SoundBankLoader>();
+            ldr._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
+            ldr._soundbanksToLoad.SoundBanksToLoad = new(["BNK_SFX_PowerUp_RollingBall"]);
+
             switch (power)
             {
                 case SelectedPowerup.RollingBall:
@@ -154,6 +161,7 @@ namespace FGTools.Internal.Behaviours
 
         public void OnGameplayBegin()
         {
+            FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out var _);
             gameObject.GetComponent<Rigidbody>().isKinematic = false;
             ReDisplaySkipBtns(false);
         }
@@ -216,6 +224,7 @@ namespace FGTools.Internal.Behaviours
             }
         }
 
+        string InitialCollideWithTag = null;
         public void FreeFlyController()
         {
             if (StateManager.FGCurrentState != PlayerState.FreeFly)
@@ -226,26 +235,35 @@ namespace FGTools.Internal.Behaviours
             if (UIManager.Instance.GetScreen<InGameMenuViewModel>(ScreenStackType.PartyMenu) != null)
                 return;
 
-            if (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0)), out RaycastHit hit))
-                transform.rotation = Quaternion.Euler(0f, Quaternion.LookRotation(transform.position - hit.point, Vector3.up).eulerAngles.y, 0f);
+            var move = Vector3.zero;
+
+            var lookDir = Camera.main.transform.forward;
+            lookDir.y = 0f;
+
+            CGM.CameraDirector._closeCameraAvoidance._collideOnlyWithTag = "[REDACTED]";
+
+            if (lookDir != Vector3.zero)
+                transform.rotation = Quaternion.LookRotation(lookDir);
 
             if (Input.GetKey(MoveFORWARD.Value))
-                transform.Translate(Vector3.forward * FFMSpeedH.Value * Time.deltaTime);
+                move += transform.forward * FFMSpeedH.Value;
 
             if (Input.GetKey(MoveBACKWARD.Value))
-                transform.Translate(Vector3.back * FFMSpeedH.Value * Time.deltaTime);
+                move -= transform.forward * FFMSpeedH.Value;
 
             if (Input.GetKey(MoveLEFT.Value))
-                transform.Translate(Vector3.left * FFMSpeedH.Value * Time.deltaTime);
+                move -= transform.right * FFMSpeedH.Value;
 
             if (Input.GetKey(MoveRIGHT.Value))
-                transform.Translate(Vector3.right * FFMSpeedH.Value * Time.deltaTime);
+                move += transform.right * FFMSpeedH.Value;
 
             if (Input.GetKey(MoveDOWN.Value))
-                transform.Translate(Vector3.down * FFMSpeedV.Value * Time.deltaTime);
+                move -= transform.up * FFMSpeedV.Value;
 
             if (Input.GetKey(MoveUP.Value))
-                transform.Translate(Vector3.up * FFMSpeedV.Value * Time.deltaTime);
+                move += transform.up * FFMSpeedV.Value;
+
+            FGCC.RigidBody.position += move * Time.deltaTime;
 
         }
 
@@ -287,6 +305,7 @@ namespace FGTools.Internal.Behaviours
                 {
                     if (StateManager.FGCurrentState != PlayerState.FreeFly)
                     {
+                        InitialCollideWithTag ??= CGM.CameraDirector._closeCameraAvoidance._collideOnlyWithTag;
                         StateManager.HandleFGState(PlayerState.FreeFly);
                         FallGuy.GetComponent<Rigidbody>().isKinematic = true;
                     }
@@ -294,6 +313,7 @@ namespace FGTools.Internal.Behaviours
                     {
                         StateManager.HandleFGState(PlayerState.Active);
                         FallGuy.GetComponent<Rigidbody>().isKinematic = false;
+                        CGM.CameraDirector._closeCameraAvoidance._collideOnlyWithTag = InitialCollideWithTag;
                     }
                     FGTServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.OnRecenterAndSnapCameraNextFrameRequested();
                 }

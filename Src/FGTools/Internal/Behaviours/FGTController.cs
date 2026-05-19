@@ -108,7 +108,7 @@ namespace FGTools.Internal.Behaviours
 
         void CheckFunnyStuff()
         {
-            if (CGM != null && (SpeedrunMode.Value || CGM.GameRules.IsTimeAttackGameMode))
+            if (CGM != null && !CGM.IsShutdown && (SpeedrunMode.Value || CGM.GameRules.IsTimeAttackGameMode))
             {
                 if (GlobalGameStateClient.Instance.GameStateView.GameplayTimeElapsed > 1800 && !FGTServiceManager.Instance.GetService<EventService>().ReturnBoolEventValue("SpeedrunnerAlert"))
                 {

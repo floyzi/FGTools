@@ -155,6 +155,9 @@ namespace FGTools.Internal.Behaviours
                     RewiredManager.Instance.EnableMap(0, 0);
                     FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(true);
                 }
+
+                if (FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
+                    evt.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
             }
         }
 
@@ -177,8 +180,7 @@ namespace FGTools.Internal.Behaviours
                 currentDist = GPCams.CurrentDistance;
                 fetchedDist = true;
             }
-            if (CAM != null)
-                CAM.transform.position = lastCamPos;
+            CAM?.transform.position = lastCamPos;
             if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
             {
                 UIM.SwitchToState(InGameUiManager.InGameState.Banners);
@@ -187,6 +189,9 @@ namespace FGTools.Internal.Behaviours
                     AudioMixing.Instance.StartTimeAttackSnapshot();
                 FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(false);
             }
+
+            if (FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
+                evt.start();
         }
 
         void OnGUI()

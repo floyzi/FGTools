@@ -1,8 +1,12 @@
-﻿using FMOD.Studio;
+﻿using FG.Common.Definition;
+using FGTools.Internal.Behaviours;
+using FGTools.States.Logic;
+using FMOD.Studio;
 using FMODUnity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.Internal
 {
@@ -17,14 +21,50 @@ namespace FGTools.Internal
 
         static readonly Dictionary<string, FMODEvent> ValidEvents = [];
 
+        internal static bool TryGetEventInstance(string key, out EventInstance evt)
+        {
+            evt = default;
+            if (ValidEvents.TryGetValue(key, out var eventInstance) && eventInstance.Event.hasHandle())
+            {
+                evt = eventInstance.Event;
+                return true;
+            }
+
+            return false;
+        }
+
         internal static void UnloadBank(string bankName)
         {
-            RuntimeManager.UnloadBank(bankName);
-            RuntimeManager.UnloadBank($"{bankName}.assets");
+            var existing = FGTStateManager.Instance.gameObject.GetComponent<SoundBankLoader>();
+            if (existing != null)
+            {
+                GameObject.DestroyImmediate(existing?._soundbanksToLoad);
+                GameObject.DestroyImmediate(existing);
+            }
+
+            var l = FGTStateManager.Instance.gameObject.AddComponent<SoundBankLoader>();
+            l._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
+            l._soundbanksToLoad.SoundBanksToLoad = new([bankName]);
+            l.UnloadBanks();
+            GameObject.DestroyImmediate(l._soundbanksToLoad);
+            GameObject.DestroyImmediate(l);
         }
 
         internal static void LoadBank(string bankName) 
         {
+            var existing = FGTStateManager.Instance.gameObject.GetComponent<SoundBankLoader>();
+            if (existing != null)
+            {
+                GameObject.DestroyImmediate(existing?._soundbanksToLoad);
+                GameObject.DestroyImmediate(existing);
+            }
+
+            var l = FGTStateManager.Instance.gameObject.AddComponent<SoundBankLoader>();
+            l._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
+            l._soundbanksToLoad.SoundBanksToLoad = new([bankName]);
+            l.LoadBanks();
+            GameObject.DestroyImmediate(l._soundbanksToLoad);
+            GameObject.DestroyImmediate(l);
         }
 
         internal static void UnloadAllLoadedBanks()

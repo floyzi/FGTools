@@ -1211,7 +1211,7 @@ namespace FGTools.UI
                     hostServ.OnClick += () =>
                     {
                         if (!string.IsNullOrEmpty(ipField.Text) && !string.IsNullOrEmpty(portField.Text) && !string.IsNullOrEmpty(lobbySize.Text))
-                            LocalServerService.Host(ipField.Text, Convert.ToInt32(portField.Text), Convert.ToInt32(lobbySize.Text), CMSLoader.Instance.CMSData.Rounds[round2play]);
+                            FGTServiceManager.Instance.GetService<LocalServerService>().Host(ipField.Text, Convert.ToInt32(portField.Text), Convert.ToInt32(lobbySize.Text), CMSLoader.Instance.CMSData.Rounds[round2play]);
                     };
                     UIFactory.SetLayoutElement(hostServ.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
 

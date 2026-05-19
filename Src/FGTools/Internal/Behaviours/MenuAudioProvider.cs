@@ -139,13 +139,13 @@ namespace FGTools.Internal.Behaviours
                     };
 
                     stop = false;
-                    loopEvent.Init(loopVolumeWaveProvider);
+                    loopEvent?.Init(loopVolumeWaveProvider);
 #if AUDIODEBUG
                     targetTime = loopWaveProvider.TotalTime.TotalSeconds - cutoffEdit;
 #else
                     targetTime = loopWaveProvider.TotalTime.TotalSeconds - FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff;
 #endif
-                    loopEvent.Play();
+                    loopEvent?.Play();
                 }
             }
             else
