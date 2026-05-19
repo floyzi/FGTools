@@ -79,6 +79,16 @@ namespace FGTools.Config
             RubberChicken
         }
 
+        public enum MirrorType
+        {
+            Auto,
+            GitHub,
+            Netlify,
+            Vercel,
+            Cloudflare,
+            Custom,
+        }
+
         //LOADER OPTIONS
         public static ConfigEntry<string> LangFileName { get; set; }
         public static ConfigEntry<bool> UseBackupLocale { get; set; }
@@ -189,6 +199,9 @@ namespace FGTools.Config
         public static ConfigEntry<bool> showAutosaveTimer { get; set; }
         public static ConfigEntry<bool> enableLocalAutosaves { get; set; }
         public static ConfigEntry<bool> PauseTimerExplore { get; set; }
+
+        //MIRRORS
+        public static ConfigEntry<MirrorType> ContentMirror { get; set; }
 
         static Dictionary<string, string> Descs = [];
 
@@ -451,6 +464,10 @@ namespace FGTools.Config
             showAutosaveTimer = CFG.Bind(FGCSect, "Show Autosave Timer", true, GetDesc("fgc_show_autosave_timer"));
             enableLocalAutosaves = CFG.Bind(FGCSect, "Enable Local Autosaves", true, GetDesc("fgc_local_saves"));
             //PauseTimerExplore = CFG.Bind(FGCSect, "Pause Autosave Timer While Testing Level", false, GetDesc("fgc_local_saves"));
+            #endregion
+
+            #region MIRRORS
+            ContentMirror = CFG.Bind(FGCSect, "Download Source", MirrorType.Auto, GetDesc("download_mirror"));
             #endregion
         }
     }

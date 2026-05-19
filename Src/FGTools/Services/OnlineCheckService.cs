@@ -60,13 +60,14 @@ namespace FGTools.Services
         public string ChecksDisplay = string.Empty;
         internal FGTContentData FGTContent;
 
-        readonly string[] KnownMirrors = [
-            "floyzi.github.io/FGTools/",
-            "floyzi-page.netlify.app/public/FGTools/",
-            "floyzi-gitlab-io.vercel.app/FGTools/",
-            "page.floyzi.workers.dev/FGTools/",
-            "cdn.floyzi.ru/minimal-content/FGTools/"
-        ];
+        readonly Dictionary<MirrorType, string> KnownMirrors = new() 
+        {
+             { MirrorType.GitHub, "floyzi.github.io/FGTools/" },
+             { MirrorType.Vercel, "floyzi-gitlab-io.vercel.app/FGTools/" },
+             { MirrorType.Netlify, "floyzi-page.netlify.app/public/FGTools/" },
+             { MirrorType.Cloudflare, "page.floyzi.workers.dev/FGTools/" },
+             { MirrorType.Custom, "cdn.floyzi.ru/minimal-content/FGTools/" }
+        };
         internal string UsedMirror = string.Empty;
 
         public override void RegisterService()
@@ -442,37 +443,62 @@ namespace FGTools.Services
             ResetAll();
             DoModal(new(LocalizedStr("gui_downloading_title"), LocalizedStr("gui_downloading_desc"), FGClient.UI.UIModalMessage.ModalType.MT_NO_BUTTONS, FGClient.UI.UIModalMessage.OKButtonType.Default, priority: 9999));
 
-            for (int i = 0; i < KnownMirrors.Length; i++)
+
+            if (ContentMirror.Value == MirrorType.Auto)
             {
-                var url = KnownMirrors[i];
-                var fullUrl = $"{url}contentV2/{ver}.json";
-                if (!url.StartsWith("http"))
-                    fullUrl = $"https://{fullUrl}";
+                Dictionary<MirrorType, DateTime> contentVerMap = [];
 
-                var testReq = UnityWebRequest.Get(fullUrl);
-                testReq.timeout = 5;
-
-                FGTLog(LogLevel.Info, GetType(), $"Testing mirror [{url}]...");
-
-                yield return testReq.SendWebRequest();
-
-                if (testReq.result != UnityWebRequest.Result.Success)
+                foreach (var mirror in KnownMirrors)
                 {
-                    FGTLog(LogLevel.Warning, GetType(), $"Mirror [{url}] test failed [{testReq.error}]");
-                    continue;
-                }
+                    var url = mirror.Value;
+                    var fullUrl = $"{url}contentV2/info";
+                    if (!url.StartsWith("http"))
+                        fullUrl = $"https://{fullUrl}";
 
-                FGTLog(LogLevel.Message, GetType(), $"Selecting mirror [{url}] !");
-                UsedMirror = url;
-                if (!url.StartsWith("http") || !url.StartsWith("https"))
-                    UsedMirror = "https://" + UsedMirror;
-                break;
+                    var testReq = UnityWebRequest.Get(fullUrl);
+                    testReq.timeout = 5;
+
+                    FGTLog(LogLevel.Info, GetType(), $"Testing mirror [{url}]...");
+
+                    yield return testReq.SendWebRequest();
+
+                    if (testReq.result != UnityWebRequest.Result.Success)
+                    {
+                        FGTLog(LogLevel.Warning, GetType(), $"Mirror [{url}] test failed [{testReq.error}]");
+                        contentVerMap[mirror.Key] = DateTime.MinValue;
+                        continue;
+                    }
+
+                    var lines = testReq.downloadHandler.text?.Split('\n');
+                    if (lines == null && lines.Length == 0)
+                    {
+                        contentVerMap[mirror.Key] = DateTime.MinValue;
+                        continue;
+                    }
+
+                    var contentDate = lines[0];
+                    if (!DateTime.TryParse(contentDate, out var date))
+                    {
+                        contentVerMap[mirror.Key] = DateTime.MinValue;
+                        continue;
+                    }
+
+                    contentVerMap[mirror.Key] = date;
+
+                    //todo second loop
+                    //FGTLog(LogLevel.Message, GetType(), $"Selecting mirror [{url}] !");
+                    //UsedMirror = url;
+                    //if (!url.StartsWith("http") || !url.StartsWith("https"))
+                    //    UsedMirror = "https://" + UsedMirror;
+                }
             }
+            else
+                KnownMirrors.TryGetValue(ContentMirror.Value, out UsedMirror);
 
             if (string.IsNullOrEmpty(UsedMirror))
             {
                 ResetAll();
-                DoModal(new(LocalizedStr("no_mirror_err_title"), LocalizedStr("no_mirror_err_desc", [KnownMirrors.Length]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
+                DoModal(new(LocalizedStr("no_mirror_err_title"), LocalizedStr("no_mirror_err_desc", [KnownMirrors.Count]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
                 {
                     if (!wasOk)
                         Application.Quit();
