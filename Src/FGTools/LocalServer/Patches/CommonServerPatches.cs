@@ -166,6 +166,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageComplete)), HarmonyPrefix]
         static bool CreateMessageComplete(BannersDefault __instance)
         {
+            Console.WriteLine(3434);
             AudioManager.PlayGameplayEndAudio(true);
             __instance.State = BannersDefault.BannerActive.Complete;
             var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
@@ -183,6 +184,7 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.IsPlayingExplore)
                 {
+                    Console.WriteLine(434343);
                     StateManager.ExploreState.RequestNewRound();
                 }
                 else
@@ -370,5 +372,10 @@ namespace FGTools.LocalServer.Patches
             }
         }
 
+        [HarmonyPatch(typeof(GameplaySpectatorUltimatePartyFlowViewModel), nameof(GameplaySpectatorUltimatePartyFlowViewModel.OnEnable)), HarmonyPostfix]
+        static void OnEnable(GameplaySpectatorUltimatePartyFlowViewModel __instance)
+        {
+            StateManager.ExploreState?.RequestNewRound();
+        }
     }
 }

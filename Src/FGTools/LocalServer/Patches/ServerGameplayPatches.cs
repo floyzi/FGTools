@@ -150,7 +150,6 @@ namespace FGTools.LocalServer.Patches
             "ChickenChaseController"
         ];
 
-
         [HarmonyPatch(typeof(ClientGameStateView), nameof(ClientGameStateView.IsGameServer), MethodType.Getter), HarmonyPostfix]
         static void IsGameServer(ClientGameStateView __instance, ref bool __result)
         {

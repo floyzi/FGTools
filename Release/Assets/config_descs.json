@@ -50,5 +50,6 @@
     "menu_theme": "Theme that used in the Main Menu",
     "disable_checkpoints": "A pretty much self explaining thing",
     "fgc_local_saves": "If enabled, every autosave will result in creating locally stored level copy that you can always return to",
-    "download_mirror": "Source that will be used to fetch FGTools content, highly recommended to keep it on \"Auto\", some sources may have older content version"
+    "download_mirror": "Source that will be used to fetch FGTools content, highly recommended to keep it on \"Auto\", some sources may have older content version",
+    "download_mirror_override": "Custom source that will be used for content fetcheing, when set \"Download Source\" setting will be ignored, keep it blank until you know what you're doing"
 }

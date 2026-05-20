@@ -69,6 +69,7 @@ namespace FGTools.Services
              { MirrorType.Custom, "cdn.floyzi.ru/minimal-content/FGTools/" }
         };
         internal string UsedMirror = string.Empty;
+        int SucceededMirrors = -1;
 
         public override void RegisterService()
         {
@@ -102,7 +103,10 @@ namespace FGTools.Services
             if (FGTContent?.Newsfeeds != null)
                 output.AppendLine($"Newsfeeds: {FGTContent.Newsfeeds.Count}");
 
+            output.AppendLine($"MirrorType: {ContentMirror.Value}");
+            output.AppendLine($"MirrorOverride: {(string.IsNullOrWhiteSpace(ContentSourceOverride.Value) ? "None" : ContentSourceOverride.Value)}");
             output.AppendLine($"UsedMirror: {UsedMirror}");
+            output.AppendLine($"Succeeded mirrors: {(SucceededMirrors >= 0 ? SucceededMirrors : "Not Tested")} / {KnownMirrors.Count}");
             output.AppendLine($"Source: {DownloadSource}");
             output.AppendLine($"NextExploreDownload: {FGTServiceManager.GetService<EventService>().ReturnScheduledEventValue("ExploreDownloadSchedule")}");
             output.AppendLine($"CheckLength: {СheckLength}");
@@ -134,7 +138,7 @@ namespace FGTools.Services
 
         void DisplayNewLoadingScreen()
         {
-            FGTLog(LogLevel.Info, base.GetType(), $"New check started at {DateTime.Now}. Source: {DownloadSource}");
+            FGTLog(LogLevel.Info, base.GetType(), $"New check started at {DateTime.Now} | Source: {DownloadSource} | Mirror type: {ContentMirror.Value} | Source Override: {(string.IsNullOrWhiteSpace(ContentSourceOverride.Value) ? "None" : ContentSourceOverride.Value)}");
             LoadingManager = Resources.FindObjectsOfTypeAll<LoadingScreenManager>().FirstOrDefault();
             LoadingManager.HideScreen(new(true));
             LoadingManager.ShowScreen(new(true));
@@ -444,56 +448,105 @@ namespace FGTools.Services
             DoModal(new(LocalizedStr("gui_downloading_title"), LocalizedStr("gui_downloading_desc"), FGClient.UI.UIModalMessage.ModalType.MT_NO_BUTTONS, FGClient.UI.UIModalMessage.OKButtonType.Default, priority: 9999));
 
 
-            if (ContentMirror.Value == MirrorType.Auto)
+            if (string.IsNullOrWhiteSpace(ContentSourceOverride.Value) || !ContentSourceOverride.Value.Contains('.'))
             {
-                Dictionary<MirrorType, DateTime> contentVerMap = [];
-
-                foreach (var mirror in KnownMirrors)
+                if (ContentMirror.Value == MirrorType.Auto)
                 {
-                    var url = mirror.Value;
-                    var fullUrl = $"{url}contentV2/info";
-                    if (!url.StartsWith("http"))
-                        fullUrl = $"https://{fullUrl}";
+                    LoadingManager._loadingScreen.UpdateDisplay("gui_download_progress_mirror_testing", false, false, null, true, true, 0, true, 0, 0);
 
-                    var testReq = UnityWebRequest.Get(fullUrl);
-                    testReq.timeout = 5;
+                    Dictionary<MirrorType, DateTime> contentVerMap = [];
+                    SucceededMirrors = 0;
 
-                    FGTLog(LogLevel.Info, GetType(), $"Testing mirror [{url}]...");
-
-                    yield return testReq.SendWebRequest();
-
-                    if (testReq.result != UnityWebRequest.Result.Success)
+                    foreach (var mirror in KnownMirrors)
                     {
-                        FGTLog(LogLevel.Warning, GetType(), $"Mirror [{url}] test failed [{testReq.error}]");
-                        contentVerMap[mirror.Key] = DateTime.MinValue;
-                        continue;
+                        var url = mirror.Value;
+                        var fullUrl = $"{url}contentV2/info";
+                        if (!url.StartsWith("http"))
+                            fullUrl = $"https://{fullUrl}";
+
+                        var testReq = UnityWebRequest.Get(fullUrl);
+                        testReq.timeout = 5;
+
+                        FGTLog(LogLevel.Info, GetType(), $"Testing source [{url}]...");
+
+                        yield return testReq.SendWebRequest();
+
+                        if (testReq.result != UnityWebRequest.Result.Success)
+                        {
+                            FGTLog(LogLevel.Warning, GetType(), $"Source [{url}] test failed [{testReq.error}]");
+                            contentVerMap[mirror.Key] = DateTime.MinValue;
+                            continue;
+                        }
+
+                        var lines = testReq.downloadHandler.text?.Split('\n');
+                        if (lines == null && lines.Length == 0)
+                        {
+                            contentVerMap[mirror.Key] = DateTime.MinValue;
+                            FGTLog(LogLevel.Warning, GetType(), $"Source [{url}] test failed, no data");
+                            continue;
+                        }
+
+                        var contentDate = lines[0];
+                        if (!DateTime.TryParse(contentDate, out var date))
+                        {
+                            contentVerMap[mirror.Key] = DateTime.MinValue;
+                            FGTLog(LogLevel.Warning, GetType(), $"Source [{url}] test failed, reading invalid date {contentDate}");
+                            continue;
+                        }
+
+                        contentVerMap[mirror.Key] = date;
+                        FGTLog(LogLevel.Info, GetType(), $"Source [{url}] test successfull !");
+                        SucceededMirrors++;
                     }
 
-                    var lines = testReq.downloadHandler.text?.Split('\n');
-                    if (lines == null && lines.Length == 0)
+                    var newsetContent = contentVerMap.OrderByDescending(x => x.Value).FirstOrDefault();
+                    if (newsetContent.Value == DateTime.MinValue)
                     {
-                        contentVerMap[mirror.Key] = DateTime.MinValue;
-                        continue;
-                    }
+                        FGTLog(LogLevel.Warning, GetType(), $"Unable to automatically determine best content source, trying to fetch first one avaiable");
 
-                    var contentDate = lines[0];
-                    if (!DateTime.TryParse(contentDate, out var date))
+                        foreach (var mirror in KnownMirrors)
+                        {
+                            var url = mirror.Value;
+                            var fullUrl = $"{url}contentV2/{ver}.json";
+                            if (!url.StartsWith("http"))
+                                fullUrl = $"https://{fullUrl}";
+
+                            var testReq = UnityWebRequest.Get(fullUrl);
+                            testReq.timeout = 5;
+
+                            FGTLog(LogLevel.Info, GetType(), $"Testing source [{url}]...");
+
+                            yield return testReq.SendWebRequest();
+
+                            if (testReq.result != UnityWebRequest.Result.Success)
+                            {
+                                FGTLog(LogLevel.Warning, GetType(), $"Source [{url}] test failed [{testReq.error}]");
+                                contentVerMap[mirror.Key] = DateTime.MinValue;
+                                continue;
+                            }
+
+                            FGTLog(LogLevel.Message, GetType(), $"Selecting source [{url}] !");
+                            UsedMirror = url;
+                            break;
+                        }
+                    }
+                    else
                     {
-                        contentVerMap[mirror.Key] = DateTime.MinValue;
-                        continue;
+                        FGTLog(LogLevel.Info, GetType(), $"Using best avaiable source [{newsetContent.Key}], content version dated by [{newsetContent.Value}]");
+                        UsedMirror = KnownMirrors[newsetContent.Key];
                     }
-
-                    contentVerMap[mirror.Key] = date;
-
-                    //todo second loop
-                    //FGTLog(LogLevel.Message, GetType(), $"Selecting mirror [{url}] !");
-                    //UsedMirror = url;
-                    //if (!url.StartsWith("http") || !url.StartsWith("https"))
-                    //    UsedMirror = "https://" + UsedMirror;
+                }
+                else
+                {
+                    FGTLog(LogLevel.Warning, GetType(), $"Forcing download source to [{UsedMirror}] ({ContentMirror.Value}) !");
+                    KnownMirrors.TryGetValue(ContentMirror.Value, out UsedMirror);
                 }
             }
             else
-                KnownMirrors.TryGetValue(ContentMirror.Value, out UsedMirror);
+            {
+                UsedMirror = ContentSourceOverride.Value;
+                FGTLog(LogLevel.Warning, GetType(), $"Overriding download source to [{UsedMirror}] !");
+            }
 
             if (string.IsNullOrEmpty(UsedMirror))
             {
@@ -510,6 +563,9 @@ namespace FGTools.Services
 
                 yield break;
             }
+
+            if (!UsedMirror.StartsWith("http"))
+                UsedMirror = "https://" + UsedMirror;
 
             //content
 #if !LOCAL_CONTENT

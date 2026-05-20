@@ -243,6 +243,9 @@ namespace FGTools.Services
 
         public void UpdateTimer(bool debug)
         {
+            if (SpeedrunState == RunState.Running && !_restartButton.gameObject.activeSelf)
+                _restartButton.gameObject.SetActive(true);
+
             if (!debug)
                 CurrentRun.RunningTime += GameStateView.Instance.SimulationDeltaTime;
             else
@@ -264,8 +267,6 @@ namespace FGTools.Services
 
             if (!FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out SnapshotEvent))
                 FGTLog(LogLevel.Warning, GetType(), "Unable to create snapshot event");
-            else
-                SnapshotEvent.start();
         }
 
         public void LoadUI()
@@ -410,7 +411,7 @@ namespace FGTools.Services
                     TriggerTimer(true);
 
                     if (SnapshotEvent.hasHandle())
-                        SnapshotEvent.stop(STOP_MODE.IMMEDIATE);
+                        SnapshotEvent.stop(STOP_MODE.ALLOWFADEOUT);
 
                     if (SPRespawnCD.Value >= 0.3f)
                         AudioManager.PlayOneShot(AudioManager.Instance._eventMasterData.TimeAttackTimeStart);

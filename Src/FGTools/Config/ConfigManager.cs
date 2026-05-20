@@ -200,8 +200,9 @@ namespace FGTools.Config
         public static ConfigEntry<bool> enableLocalAutosaves { get; set; }
         public static ConfigEntry<bool> PauseTimerExplore { get; set; }
 
-        //MIRRORS
+        //SOURCES
         public static ConfigEntry<MirrorType> ContentMirror { get; set; }
+        public static ConfigEntry<string> ContentSourceOverride { get; set; }
 
         static Dictionary<string, string> Descs = [];
 
@@ -296,8 +297,8 @@ namespace FGTools.Config
             #endregion
 
             #region FREE FLY
-            FFMSpeedH = CFG.Bind(FFMSect, "Horizontal Speed", 60f);
-            FFMSpeedV = CFG.Bind(FFMSect, "Verctical Speed", 40f);
+            FFMSpeedH = CFG.Bind(FFMSect, "Horizontal Speed", 45f);
+            FFMSpeedV = CFG.Bind(FFMSect, "Verctical Speed", 25f);
             #endregion
 
             #region FREE CAMERA
@@ -468,6 +469,7 @@ namespace FGTools.Config
 
             #region MIRRORS
             ContentMirror = CFG.Bind(FGCSect, "Download Source", MirrorType.Auto, GetDesc("download_mirror"));
+            ContentSourceOverride = CFG.Bind(FGCSect, "Download Source Override", string.Empty, GetDesc("download_mirror_override"));
             #endregion
         }
     }

@@ -343,12 +343,12 @@ namespace FGTools.States.Logic
             CurrentRound = round;
         }
 
-        public T GetState<T>() where T : Logic.FGTState
+        public T GetState<T>() where T : FGTState
         {
             return ActiveState as T;
         }
 
-        public void ForceSetState(Logic.FGTState state)
+        public void ForceSetState(FGTState state)
         {
             FGTLog(LogLevel.Info, GetType(), $"Changing state to {state.GetType().Name}");
 

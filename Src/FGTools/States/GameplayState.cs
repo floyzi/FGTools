@@ -140,6 +140,7 @@ namespace FGTools.States
 
         public override void OnStateExit()
         {
+            if (Spawnpoint != null) GameObject.DestroyImmediate(Spawnpoint);
             GameActions.OnRoundStarts -= OnGameplayBegins;
             GameActions.OnCheckpointReached -= OnCheckpoint;
         }

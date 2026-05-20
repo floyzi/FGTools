@@ -1,11 +1,12 @@
-﻿using System;
-using System.IO;
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
 using FGClient;
 using FGTools.Services;
 using FGTools.States;
 using FGTools.States.Logic;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using System;
+using System.IO;
 using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 
@@ -37,9 +38,13 @@ namespace FGTools.Internal.Behaviours
         public bool needToFadeOut;
         bool gui = true;
         bool focusPending = false;
+        bool WaitForAudioDevice = false;
+        MMDeviceEnumerator DeviceEnumerator;
 
         private void Awake()
         {
+            DeviceEnumerator = new MMDeviceEnumerator();
+
             if (instance == null)
                 instance = this;
             else
@@ -62,44 +67,51 @@ namespace FGTools.Internal.Behaviours
 
                 if (targetTime != -1)
                 {
-                    input = GUI.TextField(new Rect(15f, guiPosBase + 40, 240f, 20f), input);
-                    if (GUI.Button(new Rect(15f, guiPosBase + 60, 240f, 20f), "set position"))
+                    try
                     {
-                        var pos = float.Parse(input);
-                        loopWaveProvider.CurrentTime = TimeSpan.FromSeconds(pos);
-                        elapsedTime = pos;
-                    }
-                    cutoffEditHandler = GUI.TextField(new Rect(15f, guiPosBase + 80, 240f, 20f), cutoffEditHandler);
-                    if (GUI.Button(new Rect(15f, guiPosBase + 100, 240f, 20f), "set cutoff"))
-                    {
-                        cutoffEdit = float.Parse(cutoffEditHandler);
-                        targetTime = loopWaveProvider.TotalTime.TotalSeconds - /*ThemesLogic.selectedTheme.EndCutoff*/ cutoffEdit;
-                    }
+                        input = GUI.TextField(new Rect(15f, guiPosBase + 40, 240f, 20f), input);
+                        if (GUI.Button(new Rect(15f, guiPosBase + 60, 240f, 20f), "set position"))
+                        {
+                            var pos = float.Parse(input);
+                            loopWaveProvider.CurrentTime = TimeSpan.FromSeconds(pos);
+                            elapsedTime = pos;
+                        }
+                        cutoffEditHandler = GUI.TextField(new Rect(15f, guiPosBase + 80, 240f, 20f), cutoffEditHandler);
+                        if (GUI.Button(new Rect(15f, guiPosBase + 100, 240f, 20f), "set cutoff"))
+                        {
+                            cutoffEdit = float.Parse(cutoffEditHandler);
+                            targetTime = loopWaveProvider.TotalTime.TotalSeconds - /*ThemesLogic.selectedTheme.EndCutoff*/ cutoffEdit;
+                        }
 
-                    GUI.Label(new Rect(15f, guiPosBase + 120, 240f, 50f), debugOut);
-                    GUI.Label(new Rect(15f, guiPosBase + 160, 240f, 50f), $"Intro: {FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.IntroLength} Custom: {introEdit} Cutoff: {FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff} Custom: {cutoffEdit} CurrentVol: {musVol} TargetVol: {targetMusVol}");
+                        GUI.Label(new Rect(15f, guiPosBase + 120, 240f, 50f), debugOut);
+                        GUI.Label(new Rect(15f, guiPosBase + 160, 240f, 50f), $"Intro: {FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.IntroLength} Custom: {introEdit} Cutoff: {FGTServiceManager.GetService<MenuThemeService>().CurrentTheme.EndCutoff} Custom: {cutoffEdit} CurrentVol: {musVol} TargetVol: {targetMusVol}");
 
-                    if (GUI.Button(new Rect(15f, guiPosBase + 200, 240f, 20f), "toggle volume"))
-                        toggleMute(false);
+                        if (GUI.Button(new Rect(15f, guiPosBase + 200, 240f, 20f), "toggle volume"))
+                            toggleMute(false);
 
-                    introEditHandler = GUI.TextField(new Rect(15f, guiPosBase + 220, 240f, 20f), introEditHandler);
-                    if (GUI.Button(new Rect(15f, guiPosBase + 240, 240f, 20f), "set intro"))
-                    {
-                        introEdit = float.Parse(introEditHandler);
+                        introEditHandler = GUI.TextField(new Rect(15f, guiPosBase + 220, 240f, 20f), introEditHandler);
+                        if (GUI.Button(new Rect(15f, guiPosBase + 240, 240f, 20f), "set intro"))
+                        {
+                            introEdit = float.Parse(introEditHandler);
 
+                        }
+                        if (GUI.Button(new Rect(15f, guiPosBase + 260, 240f, 20f), "fadein"))
+                        {
+                            needToFadeIn = true;
+                        }
+                        if (GUI.Button(new Rect(15f, guiPosBase + 280, 240f, 20f), "fadeout"))
+                        {
+                            needToFadeOut = true;
+                        }
+                        GUI.Toggle(new Rect(15f, guiPosBase + 300, 240, 20), needToFadeIn, "fadein");
+                        GUI.Toggle(new Rect(65f, guiPosBase + 300, 240, 20), needToFadeOut, "fadeout");
+                        GUI.Toggle(new Rect(125f, guiPosBase + 300, 240, 20), muted, "muted");
+                        GUI.Toggle(new Rect(175f, guiPosBase + 300, 240, 20), celebrationPreview, "celebView");
                     }
-                    if (GUI.Button(new Rect(15f, guiPosBase + 260, 240f, 20f), "fadein"))
+                    catch
                     {
-                        needToFadeIn = true;
+                        GUI.Label(new Rect(15f, guiPosBase + 40, 255f, 30f), "draw failed this frame");
                     }
-                    if (GUI.Button(new Rect(15f, guiPosBase + 280, 240f, 20f), "fadeout"))
-                    {
-                        needToFadeOut = true;
-                    }
-                    GUI.Toggle(new Rect(15f, guiPosBase + 300, 240, 20), needToFadeIn, "fadein");
-                    GUI.Toggle(new Rect(65f, guiPosBase + 300, 240, 20), needToFadeOut, "fadeout");
-                    GUI.Toggle(new Rect(125f, guiPosBase + 300, 240, 20), muted, "muted");
-                    GUI.Toggle(new Rect(175f, guiPosBase + 300, 240, 20), celebrationPreview, "celebView");
 
                 }
                 else
@@ -115,8 +127,16 @@ namespace FGTools.Internal.Behaviours
                 return;
 
             var ms = StateManager.GetState<MenuState>();
-            if (ms != null && ms.IntroStopwatch.IsRunning)
+            if (ms != null && ms.IntroStopwatch != null && ms.IntroStopwatch.IsRunning)
                 return;
+
+            var devices = DeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.Active);
+            if (devices.Count == 0)
+            {
+                FGTLog(LogLevel.Warning, base.GetType(), $"PlayMusic(): not playing music right now, no audio devices connected, waiting for output device...");
+                WaitForAudioDevice = true;
+                return;
+            }
 
             if (Application.isFocused)
             {
@@ -129,7 +149,7 @@ namespace FGTools.Internal.Behaviours
 
                 if (File.Exists(loopPath) && (force || loopEvent == null))
                 {
-                    FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): force: {force}, fileName {Path.GetFileName(loopPath)}");
+                    FGTLog(LogLevel.Info, base.GetType(), $"PlayMusic(): force: {force}, fileName {Path.GetFileName(loopPath)}, total devices: {devices.Count}");
 
                     loopEvent = new WaveOutEvent();
                     loopWaveProvider = Path.GetExtension(loopPath) == ".wav" ? new WaveFileReader(loopPath) : new Mp3FileReader(loopPath);
@@ -188,6 +208,17 @@ namespace FGTools.Internal.Behaviours
                 focusPending = false;
                 PlayMusic(true);
             }
+
+            if (WaitForAudioDevice)
+            {
+                var devices = DeviceEnumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.Active);
+                if (devices.Count > 0)
+                {
+                    WaitForAudioDevice = false;
+                    PlayMusic(false);
+                }
+            }
+
             if (FGTServiceManager.GetService<MenuThemeService>().CurrentTheme != null)
             {
                 if (!muted && !needToFadeIn && !needToFadeOut && musVol == targetMusVol)
