@@ -577,5 +577,6 @@
   {"key": "img2fgc_no_levels", "value": "No levels were found, open level picker before using this action"},
   {"key": "no_mirror_err_title", "value": "NO DOWNLOAD MIRROR AVAILABLE"},
   {"key": "no_mirror_err_desc", "value": "Client failed to obtain content from all of \"{0}\" available download mirrors, make sure that you are connected to the internet and try again later if the error persists. See discord server for more information"},
-  {"key": "gui_rl_block_online_match", "value": "Before you can use round loader disconnect from an online match you're currently in!"}
+  {"key": "gui_rl_block_online_match", "value": "Before you can use round loader disconnect from an online match you're currently in!"},
+  {"key": "gui_download_progress_mirror_testing", "value": "CHECKING DOWNLOAD SOURCES"}
 ]

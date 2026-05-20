@@ -66,7 +66,7 @@ namespace FGTools.Services
              { MirrorType.Vercel, "floyzi-gitlab-io.vercel.app/FGTools/" },
              { MirrorType.Netlify, "floyzi-page.netlify.app/public/FGTools/" },
              { MirrorType.Cloudflare, "page.floyzi.workers.dev/FGTools/" },
-             { MirrorType.Custom, "cdn.floyzi.ru/minimal-content/FGTools/" }
+             { MirrorType.MyCDN, "cdn.floyzi.ru/minimal-content/FGTools/" }
         };
         internal string UsedMirror = string.Empty;
         int SucceededMirrors = -1;
@@ -541,7 +541,7 @@ namespace FGTools.Services
                 }
                 else
                 {
-                    FGTLog(LogLevel.Warning, GetType(), $"Forcing download source to [{UsedMirror}] ({ContentMirror.Value}) !");
+                    FGTLog(LogLevel.Warning, GetType(), $"Forcing download source to [{KnownMirrors[ContentMirror.Value]}] ({ContentMirror.Value}) !");
                     KnownMirrors.TryGetValue(ContentMirror.Value, out UsedMirror);
                 }
             }
@@ -577,7 +577,17 @@ namespace FGTools.Services
                 FGTContent = new(Request.downloadHandler.text);
             }, errorMsg =>
             {
-                throw new Exception($"Content download failed - {errorMsg}");
+                FGTLog(LogLevel.Error, GetType(), $"Content download failed: {errorMsg}");
+                ResetAll();
+                DoModal(new(LocalizedStr("content_err_title"), LocalizedStr("content_err_desc", [errorMsg]), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Positive, new Action<bool>(wasOk =>
+                {
+                    if (!wasOk)
+                        Application.Quit();
+                    else
+                        Run();
+                }), okStrOverride: LocalizedStr("content_err_ok")));
+                CoroutineRunner.End(DownloadCoroutine);
+                DownloadCoroutine = null;
             });
 #else
             FGTLog(LogLevel.Warning, GetType(), "BUILD USING LOCAL CONTENT FILE!");

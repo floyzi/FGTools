@@ -1839,9 +1839,10 @@ namespace FGTools.UI
                     ButtonRef selectLangButton = UIFactory.CreateButton(langRow, "Select Button", LocalizedStr("gui_select"));
                     UIFactory.SetLayoutElement(selectLangButton.Component.gameObject, 100, 25, 100, 0, 99999);
 
-                    ButtonRef localizationHelp = UIFactory.CreateButton(langRow, "Help", "?");
-                    UIFactory.SetLayoutElement(localizationHelp.Component.gameObject, 30, 25, 30, 0, 30);
-                    localizationHelp.OnClick = () => { DoModal(new(LocalizedStr("gui_localization_faq_title"), LocalizedStr("gui_localization_faq_desc"), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, okStrOverride: LocalizedStr("gui_btn_got_it"), hideLvl: ModalHideGUIType.KeepHiddenForThisModal)); };
+                    //TODO update
+                    //ButtonRef localizationHelp = UIFactory.CreateButton(langRow, "Help", "?");
+                    //UIFactory.SetLayoutElement(localizationHelp.Component.gameObject, 30, 25, 30, 0, 30);
+                    //localizationHelp.OnClick = () => { DoModal(new(LocalizedStr("gui_localization_faq_title"), $"<size=70%>{LocalizedStr("gui_localization_faq_desc")}</size>", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Default, okStrOverride: LocalizedStr("gui_btn_got_it"), hideLvl: ModalHideGUIType.KeepHiddenForThisModal)); };
 
                     GameObject langDir = UIFactory.CreateHorizontalGroup(MiscContent, "Lang Dir Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                     ButtonRef langDirBtn = UIFactory.CreateButton(langDir, "Dir Button", LocalizedStr("gui_localization_lang_dir"));

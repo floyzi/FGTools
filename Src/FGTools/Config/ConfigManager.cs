@@ -86,7 +86,7 @@ namespace FGTools.Config
             Netlify,
             Vercel,
             Cloudflare,
-            Custom,
+            MyCDN,
         }
 
         //LOADER OPTIONS
