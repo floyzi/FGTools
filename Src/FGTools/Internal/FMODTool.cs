@@ -69,20 +69,22 @@ namespace FGTools.Internal
 
         internal static void UnloadAllLoadedBanks()
         {
-            for (int i = ValidEvents.Count - 1; i >= 0; i--)
+            foreach (var evt in ValidEvents)
             {
-                var evt = ValidEvents.ElementAt(i);
                 evt.Value.Event.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                evt.Value.Event.release();
+              
             }
-
+         
             ValidEvents.Clear();
         }
 
         internal static bool CreateFMODEvent(string eventName, out EventInstance res)
         {
             if (ValidEvents.TryGetValue(eventName, out var cachedEvt))
+            {
+                cachedEvt.Event.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
                 ValidEvents.Remove(eventName);
+            }
 
             FGTLog(BepInEx.Logging.LogLevel.Info, "CreateFMODEvent", $"Creating {eventName}...");
 

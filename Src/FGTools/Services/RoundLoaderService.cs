@@ -597,6 +597,7 @@ namespace FGTools.Services
                     return;
                 }
 
+                FMODTool.UnloadAllLoadedBanks();
                 UIManager.Instance.ShowScreen<LoadingSpinnerScreenViewModel>(new() { UseScrim = true });
                 IncreaseRateLimit();
                 FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) => 

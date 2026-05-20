@@ -31,7 +31,7 @@ namespace FGTools.Services.Logic
             Services.Add(new OnlineCheckService());
             Services.Add(new SpeedrunService());
             Services.Add(new StatisticsService());
-            Services.Add(new DiscordRPCService());
+            Services.Add(new DiscordRPCService()); //possible cpu increased usage
             Services.Add(new CosmeticsService());
             Services.Add(new MenuThemeService());
             Services.Add(new RoundLoaderService());
@@ -71,7 +71,6 @@ namespace FGTools.Services.Logic
 
         public string ReturnDebugInfo()
         {
-
             return $"Services total: {Services.Count} | AtLeastOneError: {errorCatch}" +
                 $"\nLatest service error: {latestError}" +
                 $"\nTimeSinceLastError: {timeSinceLastErrror}";

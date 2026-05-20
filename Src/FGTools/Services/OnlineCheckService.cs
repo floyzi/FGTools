@@ -452,7 +452,10 @@ namespace FGTools.Services
             {
                 if (ContentMirror.Value == MirrorType.Auto)
                 {
-                    LoadingManager._loadingScreen.UpdateDisplay("gui_download_progress_mirror_testing", false, false, null, true, true, 0, true, 0, 0);
+                    var id = $"gui_download_progress_mirror_testing_{Guid.NewGuid()}";
+                    var msg = LocalizedStr("gui_download_progress_mirror_testing").ToUpper();
+                    FLZ_Extensions.AddCMSString(id, msg.EndsWith("...") ? msg : $"{msg}...");
+                    LoadingManager._loadingScreen.UpdateDisplay(id, false, false, null, true, true, 0, true, 0, 0);
 
                     Dictionary<MirrorType, DateTime> contentVerMap = [];
                     SucceededMirrors = 0;

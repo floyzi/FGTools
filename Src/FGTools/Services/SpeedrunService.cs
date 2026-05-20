@@ -65,6 +65,7 @@ namespace FGTools.Services
 
         internal bool IsSepeedrunsDisabled => SpeedrunState == RunState.TimeAttack || SpeedrunState == RunState.TempDisabled;
 
+        const string SNAPSHOT_KEY = "SFX_TimeAttack_Snapshot_TimeStop";
         string _timerText;
         int _checkpointNum = 0;
         int _lapNum = 0;
@@ -81,7 +82,6 @@ namespace FGTools.Services
         string _infoStat;
         string LatestRunScene;
         SpeedrunSaveJson latestSave;
-        EventInstance SnapshotEvent;
 
         Speedrun CurrentRun;
         List<Speedrun> RunsHistory = [];
@@ -265,7 +265,7 @@ namespace FGTools.Services
             LoadUI();
             HandleState(RunState.Respawned);
 
-            if (!FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out SnapshotEvent))
+            if (!FMODTool.CreateFMODEvent(SNAPSHOT_KEY, out _))
                 FGTLog(LogLevel.Warning, GetType(), "Unable to create snapshot event");
         }
 
@@ -336,6 +336,7 @@ namespace FGTools.Services
 
         public override void UpdateService()
         {
+          
             if (StateManager.IsInGameplay && SpeedrunMode.Value && _allowTimerBeActive)
             {
 
@@ -373,8 +374,8 @@ namespace FGTools.Services
                         EndCurrentRun();
                     AmountOfSpawns++;
                     TriggerTimer(true);
-                    if (SnapshotEvent.hasHandle())
-                        SnapshotEvent.start();
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt))
+                        evt.start();
                     _lapTimeText.GetComponent<TextMeshProUGUI>().SetText(ReturnTimeAsString(0, true, true, false));
                     ResetStats();
                     if (_display != null)
@@ -394,8 +395,8 @@ namespace FGTools.Services
                     break;
                 case RunState.Finish:
                     TriggerTimer(false);
-                    if (SnapshotEvent.hasHandle())
-                        SnapshotEvent.start();
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt2))
+                        evt2.start();
                     _display._currentLocalTimeAttackLapState = TimeAttackLapState.Finished;
                     _restartButton?.gameObject.SetActive(false);
                     CGM.SetClockPaused(true);
@@ -410,8 +411,8 @@ namespace FGTools.Services
                     LatestRunScene = SceneManager.GetActiveScene().name;
                     TriggerTimer(true);
 
-                    if (SnapshotEvent.hasHandle())
-                        SnapshotEvent.stop(STOP_MODE.ALLOWFADEOUT);
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt3))
+                        evt3.stop(STOP_MODE.IMMEDIATE);
 
                     if (SPRespawnCD.Value >= 0.3f)
                         AudioManager.PlayOneShot(AudioManager.Instance._eventMasterData.TimeAttackTimeStart);
@@ -431,6 +432,9 @@ namespace FGTools.Services
                     }
                     break;
                 case RunState.Inactive:
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt4))
+                        evt4.stop(STOP_MODE.IMMEDIATE);
+
                     RunsHistory.Clear();
 
                     TriggerTimer(false);
@@ -442,10 +446,16 @@ namespace FGTools.Services
                     _restartButton = null;
                     break;
                 case RunState.TimeAttack:
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt5))
+                        evt5.stop(STOP_MODE.IMMEDIATE);
+
                     RunsHistory.Clear();
                     TriggerTimer(false);
                     break;
                 case RunState.TempDisabled:
+                    if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt6))
+                        evt6.stop(STOP_MODE.IMMEDIATE);
+
                     RunsHistory.Clear();
                     _timerObject.gameObject.SetActive(false);
                     _restartButton?.gameObject.SetActive(false);
