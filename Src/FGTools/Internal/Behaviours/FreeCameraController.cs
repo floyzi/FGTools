@@ -149,14 +149,12 @@ namespace FGTools.Internal.Behaviours
                 enterFreeCam = false;
                 if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                 {
-                    if (FreeCamAudioEffect.Value)
-                        AudioMixing.Instance.ResetTimeAttackParams();
                     UIM.SwitchToState(InGameUiManager.InGameState.Playing);
                     RewiredManager.Instance.EnableMap(0, 0);
                     FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(true);
                 }
 
-                if (FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
+                if (FreeCamAudioEffect.Value && FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
                     evt.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
             }
         }
@@ -185,12 +183,10 @@ namespace FGTools.Internal.Behaviours
             {
                 UIM.SwitchToState(InGameUiManager.InGameState.Banners);
                 RewiredManager.Instance.DisableMap(0, 0);
-                if (FreeCamAudioEffect.Value)
-                    AudioMixing.Instance.StartTimeAttackSnapshot();
                 FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(false);
             }
 
-            if (FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
+            if (FreeCamAudioEffect.Value && FMODTool.TryGetEventInstance("SFX_TimeAttack_Snapshot_TimeStop", out var evt))
                 evt.start();
         }
 
