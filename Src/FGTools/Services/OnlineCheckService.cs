@@ -66,7 +66,7 @@ namespace FGTools.Services
              { MirrorType.Vercel, "floyzi-gitlab-io.vercel.app/FGTools/" },
              { MirrorType.Netlify, "floyzi-page.netlify.app/public/FGTools/" },
              { MirrorType.Cloudflare, "page.floyzi.workers.dev/FGTools/" },
-             { MirrorType.MyCDN, "cdn.floyzi.ru/minimal-content/FGTools/" }
+             { MirrorType.MyCDN, "cdn.floyzi.dev/content/FGTools/" }
         };
         internal string UsedMirror = string.Empty;
         int SucceededMirrors = -1;

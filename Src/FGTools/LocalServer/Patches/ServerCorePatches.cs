@@ -1,29 +1,13 @@
 ﻿extern alias wle;
 using FG.Common;
 using FG.Common.Character;
-using FG.Common.LODs;
 using FGClient;
-using FGTools.Internal;
-using FGTools.Internal.Behaviours;
-using FGTools.LocalServer.Implementations;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using HarmonyLib;
-using Il2CppInterop.Runtime;
-using Levels.Obstacles;
-using Levels.WallGuys;
 using Mediatonic.Networking;
-using MPG.Utility;
-using SRF;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using static FGTools.Internal.Extensions.FLZ_Extensions;
 namespace FGTools.LocalServer
 {
     /// <summary>
