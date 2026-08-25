@@ -2,6 +2,7 @@
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using FG.Common;
+using FG.Common.CMS;
 using FGClient;
 using FGClient.FallFeed;
 using FGClient.UI;
@@ -88,11 +89,35 @@ namespace FGTools.Internal.Behaviours
 
             if (GlobalGameStateClient.Instance.GameStateView.GameplayTimeElapsed > Random.Range(25, 40) && HerobrineShouldAppear)
             {
-                Resources.FindObjectsOfTypeAll<FallFeedQualifyEliminateHandler>().FirstOrDefault().BroadCastMessage("0", "Herobrine", "fallfeed-race-first", FallFeedAudio.Qualification_1st, default);
+                if (ColorUtility.TryParseHtmlString(CMSLoader.Instance.CMSData.SettingsFallFeed["singleton"].DefaultColor, out var c))
+                {
+                    CGM._clientPlayerManager.AddPlayer(null, new()
+                    {
+                        EntityID = 9999,
+                        accountID = Guid.NewGuid().ToString(),
+                        completedLevel = true,
+                        realPlayer = true,
+                        platformID = "pc_steam",
+                        playerKey = "pc_steam_Herobrine",
+                        isParticipant = true,
+                        remotePlayerID = 9999,
+                        objectNetID = new(9999)
+                    }, GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections);
 
-                CGM._qualifiedPlayerCount += 1;
-                CGM._requiredQualifiedPlayerCount += 1;
-                FGTStateManager.UIM.GetComponentInChildren<GameplayScoringViewModel>().UpdateQualificationProgress();
+                    PlatformServices.Instance.PlayerDetailsService.AddOrUpdatePlayer(PlayerDetailsService.NameSource.InGame, "pc_steam", "Herobrine", "", false);
+
+                    Resources.FindObjectsOfTypeAll<FallFeedQualifyEliminateHandler>().FirstOrDefault().HandleQualification(new()
+                    {
+                        succeeded = true,
+                        playerId = 9999,
+                    });
+
+                    CGM._qualifiedPlayerCount += 1;
+                    CGM._requiredQualifiedPlayerCount += 1;
+
+                    //FGTStateManager.UIM.GetComponentInChildren<GameplayScoringViewModel>().UpdateQualificationProgress();
+                }
+
                 HerobrineShouldAppear = false;
             }
 

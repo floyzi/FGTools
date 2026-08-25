@@ -23,6 +23,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static FG.Common.GameStateMachine;
+using static FGClient.FallFeed.FallFeedManager;
 using static FGTools.Config.ConfigManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.FMODTool;
@@ -135,6 +136,7 @@ namespace FGTools.States
 
             FGTServiceManager.GetService<StatisticsService>().currentStats.TotalRoundsLoaded++;
             FGBehaviour.OnGameplayBegin();
+
             FGTLog(LogLevel.Info, "OnIntroCountdownEnded", "Gameplay begins...");
         }
 

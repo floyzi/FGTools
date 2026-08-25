@@ -1,28 +1,22 @@
 ﻿extern alias wle;
 
+using Catapult.Network.Connections.Config;
 using Catapult.Network.Gateway;
 using FG.Common;
 using FGClient;
 using FGClient.CatapultServices;
-using FGClient.ShowSelector;
 using FGClient.UI.Core;
 using FGTools.Internal.Behaviours;
-using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.States.Logic;
 using FGTools.UI;
-using FMODUnity;
 using HarmonyLib;
-using Levels.Obstacles;
 using System;
 using System.IO;
-using System.Reflection;
-using UnityEngine;
 using static FGTools.Internal.Behaviours.FallGuyBehaviour;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.States.Logic.FGTStateManager;
-using static FGTools.UI.FGToolsUI.NewGUI;
 
 namespace FGTools.HarmonyPatches
 {
