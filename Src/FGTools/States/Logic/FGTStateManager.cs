@@ -66,25 +66,6 @@ namespace FGTools.States.Logic
 
         internal bool LoggedInBefore = false;
         internal bool CanUseHotkeys = false;
-
-        internal static string TargetFontName
-        {
-            get
-            {
-                if (UseCustomFonts.Value)
-                {
-                    if (ConfigManager.LangFileName.Value == "ru")
-                        return "PT Astra Sans_Bold (Body)";
-                    else if (ConfigManager.LangFileName.Value == "ko" || ConfigManager.LangFileName.Value == "jp" || ConfigManager.LangFileName.Value == "cn")
-                        return "NotoSansCJKsc-Medium (Body)";
-                    else
-                        return "FGAsap-Bold (Body)";
-                }
-                else
-                    return "";
-            }
-        }
-
         internal bool RoundLoadingAllowed = false;
 
         public enum ToolsState

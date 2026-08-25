@@ -92,11 +92,8 @@ namespace FGTools.Config
         //LOADER OPTIONS
         public static ConfigEntry<string> LangFileName { get; set; }
         public static ConfigEntry<bool> UseBackupLocale { get; set; }
-        //public static ConfigEntry<bool> offlineMode { get; set; }
-        //public static ConfigEntry<string> offlineUsername { get; set; }
         public static ConfigEntry<bool> AllowRPC { get; set; }
         public static ConfigEntry<string> InGameTheme { get; set; }
-        public static ConfigEntry<bool> UseCustomFonts { get; set; }
         public static ConfigEntry<bool> AutoSetPreset { get; set; }
 
         #region HOTKEYS BINDINGS
@@ -113,13 +110,13 @@ namespace FGTools.Config
         public static ConfigEntry<KeyCode> SkipIntroHotkey { get; set; }
         public static ConfigEntry<KeyCode> DebugUIHotkey { get; set; }
         public static ConfigEntry<KeyCode> FreeCamToggleUI { get; set; }
-        public static ConfigEntry<KeyCode> EnterFFM;
-        public static ConfigEntry<KeyCode> MoveUP;
-        public static ConfigEntry<KeyCode> MoveDOWN;
-        public static ConfigEntry<KeyCode> MoveFORWARD;
-        public static ConfigEntry<KeyCode> MoveBACKWARD;
-        public static ConfigEntry<KeyCode> MoveLEFT;
-        public static ConfigEntry<KeyCode> MoveRIGHT;
+        public static ConfigEntry<KeyCode> EnterFFM { get; set; }
+        public static ConfigEntry<KeyCode> MoveUP { get; set; }
+        public static ConfigEntry<KeyCode> MoveDOWN { get; set; }
+        public static ConfigEntry<KeyCode> MoveFORWARD { get; set; }
+        public static ConfigEntry<KeyCode> MoveBACKWARD { get; set; }
+        public static ConfigEntry<KeyCode> MoveLEFT { get; set; }
+        public static ConfigEntry<KeyCode> MoveRIGHT { get; set; }
         #endregion
 
 
@@ -145,29 +142,14 @@ namespace FGTools.Config
         public static ConfigEntry<ElimType> ElimLevel { get; set; }
         public static ConfigEntry<WinType> WinLevel { get; set; }
         public static ConfigEntry<bool> GravZoneEffect { get; set; }
-        //public static ConfigEntry<bool> OneTimeCheckpoint { get; set; }
-        public static ConfigEntry<int> PointsObjective { get; set; }
-        public static ConfigEntry<int> AirTimeObjective { get; set; }
         public static ConfigEntry<bool> InvisibleCheckpoint { get; set; }
         public static ConfigEntry<bool> RealHardMode { get; set; }
         public static ConfigEntry<float> RCDelay { get; set; }
-        public static ConfigEntry<int> SpawnedObjLifeTime { get; set; }
-        //public static ConfigEntry<bool> enableTimer { get; set; }
-        //public static ConfigEntry<float> timerTime { get; set; }
-        public static ConfigEntry<bool> SkipIntro { get; set; }
         public static ConfigEntry<float> SkipIntroTime { get; set; }
-        public static ConfigEntry<bool> AllowNametags { get; set; }
         public static ConfigEntry<bool> ColliderView { get; set; }
-        public static ConfigEntry<bool> TimePause { get; set; }
         public static ConfigEntry<bool> RandomizeRings { get; set; }
-        //public static ConfigEntry<bool> destroyFakeTiptoe { get; set; }
         public static ConfigEntry<float> CameraDistance { get; set; }
-        //public static ConfigEntry<bool> allowRandomSeeds { get; set; }
-        //public static ConfigEntry<bool> fastLoad { get; set; }
         public static ConfigEntry<bool> RandomMusic { get; set; }
-        public static ConfigEntry<bool> DisableCheckpoints { get; set; }
-        public static ConfigEntry<bool> customObjectiveText { get; set; }
-        public static ConfigEntry<string> objectiveText { get; set; }
 
         //PHYSICS
         public static ConfigEntry<float> DiveSens { get; set; }
@@ -190,14 +172,13 @@ namespace FGTools.Config
         public static ConfigEntry<bool> PowerupInventory { get; set; }
         public static ConfigEntry<bool> InfPowerups { get; set; }
         public static ConfigEntry<float> PowerupLength { get; set; }
-        public static ConfigEntry<float> PowerupCD { get; set; }
         public static ConfigEntry<byte> PowerupAmount { get; set; }
 
         //FG CREATIVE
-        public static ConfigEntry<bool> allowFGCAutosaves { get; set; }
-        public static ConfigEntry<float> targetFGCSaveTime { get; set; }
-        public static ConfigEntry<bool> showAutosaveTimer { get; set; }
-        public static ConfigEntry<bool> enableLocalAutosaves { get; set; }
+        public static ConfigEntry<bool> AllowFGCAutosaves { get; set; }
+        public static ConfigEntry<float> TargetFGCSaveTime { get; set; }
+        public static ConfigEntry<bool> ShowAutosaveTimer { get; set; }
+        public static ConfigEntry<bool> EnableLocalAutosaves { get; set; }
         public static ConfigEntry<bool> PauseTimerExplore { get; set; }
 
         //SOURCES
@@ -248,11 +229,6 @@ namespace FGTools.Config
                 //}
             };
             InGameTheme = CFG.Bind(OptionsSect, "Theme", "DEFAULT", GetDesc("menu_theme"));
-            UseCustomFonts = CFG.Bind(OptionsSect, "Custom Fonts", true, GetDesc("custom_fonts"));
-            UseCustomFonts.SettingChanged += (sender, args) =>
-            {
-                ConfigAction(true);
-            };
             AutoSetPreset = CFG.Bind(OptionsSect, "Auto Set Preset", true, GetDesc("auto_preset"));
             #endregion
 
@@ -293,18 +269,24 @@ namespace FGTools.Config
                     FGTServiceManager.GetService<CosmeticsService>().RemoveAllCosmetics();
 
             };
+
             AllCosmeticsAlert = CFG.Bind(AllCosmeticsSect, "Show Popup", true, GetDesc("cosmetics_alert"));
             #endregion
 
             #region FREE FLY
             FFMSpeedH = CFG.Bind(FFMSect, "Horizontal Speed", 45f);
+
             FFMSpeedV = CFG.Bind(FFMSect, "Verctical Speed", 25f);
+
             #endregion
 
             #region FREE CAMERA
             FreeCamSpeed = CFG.Bind(FCSect, "Camera Speed", 30f);
+
             FreeCamSens = CFG.Bind(FCSect, "Camera Sensivity", 3f);
+
             FreeCamZoomSpeed = CFG.Bind(FCSect, "Camera Zoom Speed", 30f);
+
             FreeCamAudioEffect = CFG.Bind(FCSect, "Audio Effect", true, GetDesc("fc_time_attack_effect"));
             #endregion
 
@@ -314,73 +296,39 @@ namespace FGTools.Config
 
             #region GAMEPLAY
             QualLevel = CFG.Bind(GPSect, "Qualification Type", QualType.LoadRandomRoundAfter);
+
             ElimLevel = CFG.Bind(GPSect, "Elimination Type", ElimType.LoadRandomRoundAfter);
+
             WinLevel = CFG.Bind(GPSect, "Win Type", WinType.LoadRandomRoundAfter);
+
             GravZoneEffect = CFG.Bind(GPSect, "Gravity Zone Effect", false, GetDesc("grav_zone_effect"));
             GravZoneEffect.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            //OneTimeCheckpoint = CFG.Bind(GPSect, "One Time Checkpoint", false, GetDesc("one_time_checkpoint"));
-            //OneTimeCheckpoint.SettingChanged += (sender, args) => {
-            //    ConfigAction();
-            //};
-            PointsObjective = CFG.Bind(GPSect, "Points Objective", 0, GetDesc("points_goal"));
-            PointsObjective.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
-            AirTimeObjective = CFG.Bind(GPSect, "Airtime Objective", 100, GetDesc("airtime_goal"));
-            AirTimeObjective.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
+
             InvisibleCheckpoint = CFG.Bind(GPSect, "Invisible Checkpoint", false, GetDesc("hide_checkpoint"));
             InvisibleCheckpoint.SettingChanged += (sender, args) => {
                 if (StateManager.IsInGameplay)
                   FGBehaviour.CurrentGPState.Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
             };
             RealHardMode = CFG.Bind(GPSect, "Hard Mode", false, GetDesc("hard_mode"));
+
             RCDelay = CFG.Bind(GPSect, "Delay", 0.5f, GetDesc("cr_delay"));
-            SpawnedObjLifeTime = CFG.Bind(GPSect, "Spawned Object Life Time", 30, GetDesc("object_life_time"));
-            //enableTimer = cfg.Bind(gpSect, "Enable Timer In Rounds", false, GetDesc("gp08"));
-            //enableTimer.SettingChanged += (sender, args) => {
-            //    ConfigAction();
-            //};
-            //timerTime = cfg.Bind(gpSect, "Time Limit", 0f, GetDesc("gp09"));
-            //timerTime.SettingChanged += (sender, args) => {
-            //    if (enableTimer.Value)
-            //        ConfigAction();
-            //};
-            SkipIntro = CFG.Bind(GPSect, "Instantly Skip Intro", false, GetDesc("skip_intro"));
+
             SkipIntroTime = CFG.Bind(GPSect, "Skip Intro Time", 0.5f, GetDesc("skip_intro_time"));
+
             RoundsFilter = CFG.Bind(GPSect, "Random Rounds Filter", RandomRoundsFilter.All, GetDesc("round_filter"));
-            //useIngameObjective = cfg.Bind(gpSect, "Ingame Objective", true, GetDesc("gp13"));
-            //useIngameObjective.SettingChanged += (sender, args) => {
-            //    ConfigAction();
-            //};
-            customObjectiveText = CFG.Bind(GPSect, "Enable Custom Text", false, GetDesc("enable_objective_text"));
-            customObjectiveText.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
-            objectiveText = CFG.Bind(GPSect, "Custom Text", "i'm obed guys fan, i'm really like obed guys", GetDesc("objective_text"));
-            objectiveText.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
-            AllowNametags = CFG.Bind(GPSect, "Allow Nametags", true, GetDesc("allow_nametags"));
-            AllowNametags.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
+
             ColliderView = CFG.Bind(GPSect, "Collider View", false, GetDesc("collider_view"));
             ColliderView.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            TimePause = CFG.Bind(GPSect, "Pause Time While Game Paused", false, GetDesc("time_pause"));
+
             RandomizeRings = CFG.Bind(GPSect, "Random Roll Levels Rings", false, GetDesc("random_rings"));
             RandomizeRings.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            //destroyFakeTiptoe = cfg.Bind(gpSect, "Destroy Fake TipToe Tiles", false, GetDesc("gp21"));
-            //destroyFakeTiptoe.SettingChanged += (sender, args) => {
-            //    ConfigAction();
-            //};
+
             CameraDistance = CFG.Bind(GPSect, "Camera Distance", 0f, GetDesc("custom_camera_distance"));
             CameraDistance.SettingChanged += (sender, args) => {
                 if (StateManager.IsInGameplay && CameraDistance.Value > 0)
@@ -389,8 +337,7 @@ namespace FGTools.Config
                         camFov._maxDistance = CameraDistance.Value;
                 }
             };
-            //allowRandomSeeds = cfg.Bind(gpSect, "Allow Random Seeds", true, GetDesc("gp24"));
-            //fastLoad = cfg.Bind(gpSect, "Fast Load", false, GetDesc("gp26"));
+
             RandomMusic = CFG.Bind(GPSect, "Random Music", false, GetDesc("random_music"));
             RandomMusic.SettingChanged += (sender, args) => {
                 ConfigAction();
@@ -398,7 +345,6 @@ namespace FGTools.Config
             RandomMusic.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            DisableCheckpoints = CFG.Bind(GPSect, "Disable Checkpoints", false, GetDesc("disable_checkpoints"));
             #endregion
 
             #region PHYSICS
@@ -406,6 +352,7 @@ namespace FGTools.Config
             DiveSens.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
+
             OldPhysics = CFG.Bind(CPSect, "Old Physics", false, GetDesc("old_char_phys"));
             DiveSens.SettingChanged += (sender, args) => {
                 ConfigAction();
@@ -420,10 +367,15 @@ namespace FGTools.Config
                 ConfigAction();
             };
             SPRespawnCD = CFG.Bind(SPSect, "Restart Run Cooldown", 0.75f, GetDesc("speedrun_restart_cd"));
+
             SpeedrunUI = CFG.Bind(SPSect, "Enable Run-stats UI", true, GetDesc("speedrun_stats_ui"));
+
             SPResetPoints = CFG.Bind(SPSect, "Reset Points After Restart", true, GetDesc("speedrun_points_drop"));
+
             OldSPContinue = CFG.Bind(SPSect, "Old Speedrun Mode", false, GetDesc("speedrun_old_mode"));
+
             SPInstaStart = CFG.Bind(SPSect, "Instantly Start", false, GetDesc("speedrun_insta_start"));
+
             RespawnAtCheckpoint = CFG.Bind(SPSect, "Respawn At Checkpoint", false, GetDesc("speedrun_checkpoint_res"));
             #endregion
 
@@ -433,22 +385,22 @@ namespace FGTools.Config
                 if (StateManager.IsInGameplay)
                     FGBehaviour.SetPowerup(Powerup.Value);
             };
+
             PowerupInventory = CFG.Bind(PWSect, "Inventory UI", true, GetDesc("powerup_ui"));
             PowerupInventory.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
+
             InfPowerups = CFG.Bind(PWSect, "Infinite Usages", true, GetDesc("inf_powerup"));
             InfPowerups.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
+
             PowerupLength = CFG.Bind(PWSect, "Durination", float.MaxValue, GetDesc("powerup_length"));
             PowerupLength.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
-            PowerupCD = CFG.Bind(PWSect, "Cooldown", 0.5f, GetDesc("powerup_cd"));
-            PowerupCD.SettingChanged += (sender, args) => {
-                ConfigAction();
-            };
+
             PowerupAmount = CFG.Bind(PWSect, "Amount", (byte)255, GetDesc("powerup_amount"));
             PowerupAmount.SettingChanged += (sender, args) => {
                 ConfigAction();
@@ -456,14 +408,14 @@ namespace FGTools.Config
             #endregion
 
             #region FGC
-            allowFGCAutosaves = CFG.Bind(FGCSect, "Enable Autosaves", true, GetDesc("fgc_autosaves"));
-            targetFGCSaveTime = CFG.Bind(FGCSect, "Autosave Time", 300f, GetDesc("fgc_time_between_autosaves"));
-            targetFGCSaveTime.SettingChanged += (sender, args) => {
-                if (targetFGCSaveTime.Value < 20)
-                    targetFGCSaveTime.Value = 20;
+            AllowFGCAutosaves = CFG.Bind(FGCSect, "Enable Autosaves", true, GetDesc("fgc_autosaves"));
+            TargetFGCSaveTime = CFG.Bind(FGCSect, "Autosave Time", 300f, GetDesc("fgc_time_between_autosaves"));
+            TargetFGCSaveTime.SettingChanged += (sender, args) => {
+                if (TargetFGCSaveTime.Value < 20)
+                    TargetFGCSaveTime.Value = 20;
             };
-            showAutosaveTimer = CFG.Bind(FGCSect, "Show Autosave Timer", true, GetDesc("fgc_show_autosave_timer"));
-            enableLocalAutosaves = CFG.Bind(FGCSect, "Enable Local Autosaves", true, GetDesc("fgc_local_saves"));
+            ShowAutosaveTimer = CFG.Bind(FGCSect, "Show Autosave Timer", true, GetDesc("fgc_show_autosave_timer"));
+            EnableLocalAutosaves = CFG.Bind(FGCSect, "Enable Local Autosaves", true, GetDesc("fgc_local_saves"));
             //PauseTimerExplore = CFG.Bind(FGCSect, "Pause Autosave Timer While Testing Level", false, GetDesc("fgc_local_saves"));
             #endregion
 

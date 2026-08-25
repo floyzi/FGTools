@@ -396,7 +396,7 @@ namespace FGTools.Services
         {
             try
             {
-                if (FGTTargetSettings.FGCLocalSaves && (ConfigManager.enableLocalAutosaves.Value || MeetDefaultRequirnments()))
+                if (FGTTargetSettings.FGCLocalSaves && (ConfigManager.EnableLocalAutosaves.Value || MeetDefaultRequirnments()))
                     OnLevelAutosaved();
             }
             catch (Exception ex) 

@@ -1,6 +1,8 @@
 ﻿extern alias wle;
 
 using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using Events;
 using FG.Common;
 using FG.Common.Character;
 using FG.Common.Character.MotorSystem;
@@ -33,6 +35,7 @@ using Levels.TimeAttack;
 using Mediatonic.Networking;
 using SRF;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

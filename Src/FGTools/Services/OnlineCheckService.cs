@@ -730,6 +730,7 @@ namespace FGTools.Services
         void FinishLogin()
         {
             CheckInProgress = false;
+
             Resources.FindObjectsOfTypeAll<PopupManager>().FirstOrDefault().HideActivePopup();
             Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault().OnTitleScreenComplete();
             CatapultAnalyticsClient.Boot.BootCompleteEvent.TrackEvent();

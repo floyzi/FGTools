@@ -29,7 +29,7 @@ namespace FGTools.Services
 
         public override void UpdateService()
         {
-            if (IsInEditor && allowFGCAutosaves.Value)
+            if (IsInEditor && AllowFGCAutosaves.Value)
             {
                 if (NextAutosaveTime != DateTime.MinValue && DateTime.Now >= NextAutosaveTime && FGTTargetSettings.FGCAutosaves)
                 {
@@ -43,7 +43,7 @@ namespace FGTools.Services
         void EnterEvent(LevelEditorEnterEvent e)
         {
             if (FGTTargetSettings.FGCAutosaves)
-                NextAutosaveTime = DateTime.Now.AddSeconds(targetFGCSaveTime.Value);
+                NextAutosaveTime = DateTime.Now.AddSeconds(TargetFGCSaveTime.Value);
 
             PendingAutosaveAction = false;
             ShouldDisplayResult = false;
@@ -63,7 +63,7 @@ namespace FGTools.Services
             FGTLog(LogLevel.Info, base.GetType(), $"Level save ended with result \"{e.Results}\". Was it autosave: {PendingAutosaveAction}");
 
             if (e.Results == LevelEditorSavedEvent.Result.No_Error || PendingAutosaveAction)
-                NextAutosaveTime = DateTime.Now.AddSeconds(targetFGCSaveTime.Value);
+                NextAutosaveTime = DateTime.Now.AddSeconds(TargetFGCSaveTime.Value);
             
             if (PendingAutosaveAction)
             {
@@ -95,7 +95,7 @@ namespace FGTools.Services
 
         public override void DrawGUI()
         {
-            if (IsInEditor && allowFGCAutosaves.Value && showAutosaveTimer.Value)
+            if (IsInEditor && AllowFGCAutosaves.Value && ShowAutosaveTimer.Value)
             {
                 TimeSpan autosave_left = NextAutosaveTime - DateTime.Now;
                 string label;
