@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 using static FGTools.UI.NewGUI;
 
 namespace FGTools.UI.Tabs.Logic
@@ -15,7 +16,18 @@ namespace FGTools.UI.Tabs.Logic
         internal Dictionary<GroupPolicy, Func<bool>> StatePerGroup;
         protected Tab Tab { get; } = tab;
         internal GameObject ControlledObject;
-        internal abstract void Draw();
+        internal Button TabButton;
+        internal abstract void Draw(GameObject root);
+        internal abstract void Refresh();
+        internal virtual void OnStateChange(ObjectGroup group)
+        {
+
+        }
+
+        internal virtual void Update()
+        {
+
+        }
     }
 
     internal abstract class UITab<TService>(Tab tab, TService serviceDependency) : UITab(tab) where TService : FGTService

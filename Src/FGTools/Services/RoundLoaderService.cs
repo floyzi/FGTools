@@ -67,8 +67,9 @@ namespace FGTools.Services
         Dropdown roundNamesDrop;
         Dropdown roundVariantsDrop;
         Text RoundsStats;
+        internal Text LevelInfo;
         int deletedRounds = 0;
-        List<string> RealRoundList = [];
+        readonly List<string> RealRoundList = [];
 
         public override void RegisterService()
         {
@@ -171,6 +172,7 @@ namespace FGTools.Services
             var searchBar = (InputFieldRef)data[2];
             searchBar.OnValueChanged += SearchForRound;
             RoundsStats = (Text)data[3];
+            LevelInfo = (Text)data[4];
 
             RefreshRoundsInfo();
             PopulateRounds();
@@ -481,13 +483,13 @@ namespace FGTools.Services
                 FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) =>
                 {
                     preloadedDTO = data?.LevelInfoDto;
-                    NewGUI.Instance.levelInfo.text = NewGUI.ParseLevelDTO(preloadedDTO);
+                    LevelInfo.text = ParseLevelDTO(preloadedDTO);
                     if (data.LevelInfoDto != null)
                         FGTServiceManager.GetService<StatisticsService>().AddFGCHistoryRound(code);
                 }), null);
             }
             else
-                NewGUI.Instance.levelInfo.text = $"{ThrowRateLimitText()}";
+                LevelInfo.text = $"{ThrowRateLimitText()}";
         }
 
         public void LoadFGCRound(string code, LevelInfoDto preloadedDto, bool userRequest)
@@ -781,6 +783,49 @@ namespace FGTools.Services
                 }
 
                 FGTLog(LogLevel.Message, base.GetType(), File.ReadAllText(Launcher.CMSRounds));
+            }
+        }
+
+        public static string ParseLevelDTO(LevelInfoDto dto)
+        {
+            string outLine = string.Empty;
+            if (dto == null)
+                return LocalizedStr("fgc_level_nodto");
+            try
+            {
+                var locale = CMSLoader.Instance._localisedStrings._localisedStrings;
+                string extraLine = $"\n\n<b>{LocalizedStr("fgc_level_extra").ToUpper()}</b>";
+
+                string gmType = locale["archetype_race"].ToUpper();
+                if (dto.GameModeId.Contains("survival"))
+                    gmType = locale["archetype_survival"].ToUpper();
+                if (dto.GameModeId.Contains("points"))
+                    gmType = locale["archetype_points"].ToUpper();
+
+                if (dto.Config.TryGetValue("qualification_percentage", out Il2CppSystem.Object qp) && qp != null)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_qp")}: {qp.TryCast<long>()}%";
+                if (dto.Config.TryGetValue("survival_percentage", out Il2CppSystem.Object sp) && sp != null)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_sp")}: {sp.TryCast<long>()}%";
+                if (dto.Config.TryGetValue("time_limit_seconds", out Il2CppSystem.Object tl) && tl != null)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_timel")}: {TimeSpan.FromSeconds(tl.TryCast<long>()):mm\\:ss}";
+                if (dto.Config.TryGetValue("ingame_music_soundtrack", out Il2CppSystem.Object ost) && ost != null)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_muz")}: {ost.TryCast<string>()}";
+                if (dto.Config.TryGetValue("ingame_theme", out Il2CppSystem.Object theme) && theme != null)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_theme")}: {theme.TryCast<string>()}";
+                if (dto.Tags != null && dto.Tags.Count > 0)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_tags")}: {string.Join(", ", dto.Tags)}";
+                if (dto.UserTags != null && dto.UserTags.Count > 0)
+                    extraLine += $"\n- {LocalizedStr("fgc_level_utags")}: {string.Join(", ", dto.UserTags)}";
+
+                string compStat = dto.IsCompleted ? LocalizedStr("gui_yes") : LocalizedStr("gui_no");
+
+                outLine = $"<b>{LocalizedStr("fgc_level_inf")} - <color=grey><i>{dto.ShareCode}</i></color></b>\n\n- {LocalizedStr("fgc_level_name")}: {dto.Title}\n- {LocalizedStr("fgc_level_desc")}: {dto.Description}\n- {LocalizedStr("fgc_level_gamemode")}: {gmType}\n- {LocalizedStr("fgc_level_author")}: {dto.GetCreatorPlatformName(default)}\n- {LocalizedStr("fgc_level_ver")}: {dto.Version}\n- {LocalizedStr("fgc_level_compstat")}: {compStat}\n- {LocalizedStr("fgc_level_likes")}: {dto.LevelStats.LikesCount}\n- {LocalizedStr("fgc_level_pc")}: {dto.LevelStats.PlayCount}\n- {LocalizedStr("fgc_level_maxp")}: {dto.MaxPlayers}\n- {LocalizedStr("fgc_level_platform")}: {dto.Platform}";
+                outLine += extraLine;
+                return outLine;
+            }
+            catch
+            {
+                return $"{LocalizedStr("failed_desc_new")}\n\nOutput:\n\n{outLine}";
             }
         }
 

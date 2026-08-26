@@ -27,10 +27,11 @@ namespace FGTools.HarmonyPatches
         {
             try
             {
+                var service = FGTServiceManager.GetService<RoundLoaderService>();
                 StateManager.RoundLoadingAllowed = true;
                 UIManager.Instance.HideScreen<LoadingSpinnerScreenViewModel>();
-                FGTServiceManager.GetService<RoundLoaderService>().preloadedDTO = null;
-                NewGUI.Instance.levelInfo.text = $"<b>{LocalizedStr("failed_desc_new")}</b>\n\n{LocalizedStr("gui_fgc_not_found")}\n\n({error} | {levelLookup.ShareCode})";
+                service.preloadedDTO = null;
+                service.LevelInfo.text = $"<b>{LocalizedStr("failed_desc_new")}</b>\n\n{LocalizedStr("gui_fgc_not_found")}\n\n({error} | {levelLookup.ShareCode})";
             }
             catch { }
             return false;

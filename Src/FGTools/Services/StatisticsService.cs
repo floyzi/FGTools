@@ -16,6 +16,7 @@ using FGTools.Services.Logic;
 using static FGTools.States.Logic.FGTStateManager;
 using BepInEx.Logging;
 using FGTools.UI;
+using FGTools.UI.Tabs;
 namespace FGTools.Services
 {
     internal class StatisticsService : FGTService
@@ -146,12 +147,11 @@ namespace FGTools.Services
 
         public void AddFGCHistoryRound(string code)
         {
-            if (currentStats.FGCSearchHistory == null)
-                currentStats.FGCSearchHistory = new();
-
+            currentStats.FGCSearchHistory ??= [];
             currentStats.FGCSearchHistory.Add(code);
 
-            NewGUI.Instance.RefreshFGCHistory(code);
+            NewGUI.Instance.GetTab<RoundLoaderTab>(NewGUI.Tab.RoundLoader).RefreshFGCHistory(code);
+
             Save();
         }
 

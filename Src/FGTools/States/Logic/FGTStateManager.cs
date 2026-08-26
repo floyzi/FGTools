@@ -15,6 +15,7 @@ using FGTools.Internal;
 using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services;
+using FGTools.UI;
 using Levels.Progression;
 using Mediatonic.Tools.MVVM;
 using ProtoBuf;
