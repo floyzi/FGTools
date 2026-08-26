@@ -27,7 +27,7 @@ namespace FGTools.UI.Tabs
 
         internal override void Draw(GameObject root)
         {
-            ControlledObject = UIFactory.CreateVerticalGroup(root, "ShowLoader", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
+            ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
             NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.ShowLoader, ControlledObject, new(() =>

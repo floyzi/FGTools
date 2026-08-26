@@ -173,6 +173,9 @@ namespace FGTools.UI
         [
             new RoundLoaderTab(),
             new ShowLoaderTab(),
+#if LAN_MULTIPLAYER
+            new LANMultiplayTab(),
+#endif
         ];
         internal event Action<TabMeta> OnTabChanged;
         internal event Action<FGTStateManager.ToolsState> OnStateChange;
@@ -183,7 +186,7 @@ namespace FGTools.UI
 
             try
             {
-                FGTLog(LogLevel.Info, GetType(), "Trying to draw tabs");
+                FGTLog(LogLevel.Info, GetType(), "Trying to draw tabs...");
 
                 GameActions.OnStateChange += StateChange;
 
@@ -192,14 +195,11 @@ namespace FGTools.UI
 
                 foreach (var tab in _tabMap)
                 {
-                    var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, "gui_cms_loader", "gui_cms_loader");
+                    var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, "todo", "todo");
                     tab.TabButton = t.Component;
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
 
-#if LAN_MULTIPLAYER
-                CreateTab(Tab.LocalMultiplayer, SubLevel.Default, tabGroup, () => FGTLocalMultiplayerGUI, "gui_lan_multiplayer", "gui_lan_multiplayer");
-#endif
                 var presetsBtn = CreateTab(Tab.PresetSelector, SubLevel.Default, tabGroup, () => FGTPresetsGUI, "gui_presets_title", "gui_presets_title");
                 AssignToGroups(presetsBtn.Component, new()
                     {
@@ -239,9 +239,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-#if LAN_MULTIPLAYER
-                DrawLocalMultiplayer();
-#endif
                 DrawPresetSelector();
                 DrawMediaLoader();
                 DrawIMG2FGC();
@@ -439,87 +436,6 @@ namespace FGTools.UI
 
             }
         }
-
-
-#if LAN_MULTIPLAYER
-        void DrawLocalMultiplayer()
-        {
-            var server = FGTBase.FGTServiceManager.GetService<LocalServerService>();
-            string round2play = "round_gauntlet_01";
-
-            FGTLocalMultiplayerGUI = UIFactory.CreateVerticalGroup(ContentRoot, "FGTLocalMultiplayer", true, true, true, true, 5, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTLocalMultiplayerGUI, minHeight: 25, flexibleHeight: 0);
-
-
-            #region LOCAL MULTIPLAYER DEV
-            TryDrawUI(() => FGTTargetSettings.LocalMultiplayer, FGTLocalMultiplayerGUI, new(() =>
-            {
-                var fields = UIFactory.CreateHorizontalGroup(FGTLocalMultiplayerGUI, "HostFields", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(fields, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var ipField = UIFactory.CreateInputField(fields, "ipField", LocalizedStr("lan_ip_field_holder"));
-                ipField.Text = "127.0.0.1";
-                ipField.Component.characterLimit = 15;
-                UIFactory.SetLayoutElement(ipField.GameObject, minHeight: 25, flexibleHeight: 25, flexibleWidth: 20, minWidth: 20, preferredWidth: 20);
-
-                var portField = UIFactory.CreateInputField(fields, "portField", LocalizedStr("lan_port_field_holder"));
-                portField.Text = "1002";
-                portField.Component.characterLimit = 4;
-                UIFactory.SetLayoutElement(portField.GameObject, minHeight: 25, flexibleHeight: 25, flexibleWidth: 20, minWidth: 20, preferredWidth: 20);
-
-                var lobbySize = UIFactory.CreateInputField(fields, "lobbySize", LocalizedStr("lan_players_field_holder"));
-                lobbySize.Text = "1";
-                lobbySize.Component.characterLimit = 2;
-                UIFactory.SetLayoutElement(lobbySize.GameObject, minHeight: 25, flexibleHeight: 25, flexibleWidth: 20, minWidth: 20, preferredWidth: 20);
-
-                var roundField = UIFactory.CreateInputField(FGTLocalMultiplayerGUI, "joinServ", $"id of round to play on");
-                roundField.Text = round2play;
-                roundField.OnValueChanged += (string s) =>
-                {
-                    round2play = s;
-                };
-                UIFactory.SetLayoutElement(roundField.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var actionButtons = UIFactory.CreateHorizontalGroup(FGTLocalMultiplayerGUI, "HostFields", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(actionButtons, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var hostServ = UIFactory.CreateButton(actionButtons, "hostServ", LocalizedStr("gui_server_host"));
-                hostServ.OnClick += () =>
-                {
-                    if (!string.IsNullOrEmpty(ipField.Text) && !string.IsNullOrEmpty(portField.Text) && !string.IsNullOrEmpty(lobbySize.Text))
-                        FGTBase.FGTServiceManager.GetService<LocalServerService>().Host(ipField.Text, Convert.ToInt32(portField.Text), Convert.ToInt32(lobbySize.Text), CMSLoader.Instance.CMSData.Rounds[round2play]);
-                };
-                UIFactory.SetLayoutElement(hostServ.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var joinServ = UIFactory.CreateButton(actionButtons, "joinServ", LocalizedStr("gui_server_join"));
-                joinServ.OnClick += () =>
-                {
-                    if (!string.IsNullOrEmpty(ipField.Text) && !string.IsNullOrEmpty(portField.Text))
-                        LocalServerService.Join(ipField.Text, Convert.ToInt32(portField.Text));
-                };
-                UIFactory.SetLayoutElement(joinServ.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var terminateServ = UIFactory.CreateButton(FGTLocalMultiplayerGUI, "joinServ", LocalizedStr("gui_server_shutdown"));
-                terminateServ.OnClick += () =>
-                {
-                    server.ShutdownSerer(new(() =>
-                    {
-
-                    }));
-                };
-                UIFactory.SetLayoutElement(terminateServ.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                var allRounds = UIFactory.CreateButton(FGTLocalMultiplayerGUI, "allRounds", $"Print all rounds in console");
-                allRounds.OnClick += () =>
-                {
-                    foreach (var r in CMSLoader.Instance.CMSData.Rounds)
-                        FGTLog(LogLevel.Info, GetType(), $"{r.key} - {r.value.Archetype._name} - {r.value.GetSceneName()}");
-                };
-                UIFactory.SetLayoutElement(allRounds.GameObject, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-            }));
-            #endregion
-        }
-#endif
 
         GameObject mediaFGPosGrp;
         InputFieldRef posX;

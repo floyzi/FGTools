@@ -75,7 +75,7 @@ namespace FGTools.UI.Tabs
             NewGUI.Instance.OnTabChanged += OnTabChange;
             NewGUI.Instance.OnStateChange += OnStateChange;
 
-            ControlledObject = UIFactory.CreateVerticalGroup(root, Tab.ToString(), true, true, true, true, 2, new Vector4(2, 2, 2, 2));
+            ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
 
             FGTRoundLoaderTabs = UIFactory.CreateHorizontalGroup(root, "FGTRoundLoaderTabs", true, false, true, false, 2, new Vector4(2, 2, 2, 2));
