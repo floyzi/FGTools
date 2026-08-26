@@ -21,7 +21,7 @@ using System.Linq;
 using System.Text.Json;
 using UnityEngine;
 using UniverseLib.UI;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static Il2CppSystem.Globalization.TimeSpanFormat;

@@ -25,7 +25,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.States.Logic.FGTStateManager;
@@ -291,7 +291,7 @@ namespace FGTools.Services
             _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
             _lapTimeText = GetChild(UIManager, "LapTimeText");
             _restartButton?.gameObject.SetActive(false);
-            _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
+            _restartButton?.SetHoldTimeRequired(Config.Config.SPRespawnCD.Value);
             var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
             if (lap != null)
             {
@@ -424,7 +424,7 @@ namespace FGTools.Services
                     {
                         _display._currentLocalTimeAttackLapState = TimeAttackLapState.InProgress;
                         _restartButton?.gameObject.SetActive(true);
-                        _restartButton?.SetHoldTimeRequired(ConfigManager.SPRespawnCD.Value);
+                        _restartButton?.SetHoldTimeRequired(Config.Config.SPRespawnCD.Value);
                         _display._timeAttackIsTimerPaused = false;
                         _display._timeAttackLapTimeAnimation.Play("UI_HUD_TimeAttack_LapTime_Base");
                         _display.TryTimeAttackPulseTimer(new(102, null));

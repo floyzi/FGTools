@@ -138,7 +138,7 @@ namespace FGTools.LocalServer.Patches
         static bool ButtonResetTimeAttackLap(GameplayInstructionsViewModel __instance)
         {
             var sp = FGTServiceManager.GetService<SpeedrunService>();
-            if (!ConfigManager.SpeedrunMode.Value || sp.IsSepeedrunsDisabled)
+            if (!Config.Config.SpeedrunMode.Value || sp.IsSepeedrunsDisabled)
                 return true;
 
             ServerGameStateActions.Instance.RespawnParticipant(CGM.GetNetObjectByID(CGM.GetFocusedNetId()).FGCharacterController);
@@ -169,7 +169,7 @@ namespace FGTools.LocalServer.Patches
             Console.WriteLine(3434);
             AudioManager.PlayGameplayEndAudio(true);
             __instance.State = BannersDefault.BannerActive.Complete;
-            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
+            var speedrun = Config.Config.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
             if (speedrun)
             {
@@ -209,7 +209,7 @@ namespace FGTools.LocalServer.Patches
             AudioManager.PlayGameplayEndAudio(true);
             __instance.State = BannersDefault.BannerActive.Qualified;
             __instance._isEliminateOrQualifiedMessageShowed = true;
-            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
+            var speedrun = Config.Config.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
             if (speedrun)
             {
@@ -252,7 +252,7 @@ namespace FGTools.LocalServer.Patches
             AudioManager.PlayGameplayEndAudio(false);
             __instance.State = BannersDefault.BannerActive.Eliminated;
             __instance._isEliminateOrQualifiedMessageShowed = true;
-            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
+            var speedrun = Config.Config.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
             if (speedrun)
             {
@@ -299,7 +299,7 @@ namespace FGTools.LocalServer.Patches
         static bool CreateMessageWonEpisode(BannersDefault __instance)
         {
             AudioManager.PlayGameplayEndAudio(true);
-            var speedrun = ConfigManager.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
+            var speedrun = Config.Config.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
 
             if (speedrun)
             {
@@ -358,7 +358,7 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.StartPreparationPhaseAudio)), HarmonyPrefix]
         static bool StartPreparationPhaseAudio()
         {
-            return !ConfigManager.FastLoad.Value;
+            return !Config.Config.FastLoad.Value;
         }
 
         [HarmonyPatch(typeof(MPGNetObjectManager), nameof(MPGNetObjectManager.SetupNetObjectOnGameObject)), HarmonyPostfix]

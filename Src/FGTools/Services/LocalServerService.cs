@@ -216,10 +216,10 @@ namespace FGTools.Services
             CustomMessageDespatcher.OnClientVersionDifference += VersionDifference;
 
             var cSets = FGTServiceManager.GetService<ControllersDataService>();
-            cSets.SetDataPreset(ConfigManager.OldPhysics.Value ? "10_8" : "Default");
+            cSets.SetDataPreset(Config.Config.OldPhysics.Value ? "10_8" : "Default");
 
-            if (ConfigManager.DiveSens.Value > (float)ConfigManager.DiveSens.DefaultValue)
-                cSets.ActiveControllerData.divePlayerSensitivity = ConfigManager.DiveSens.Value;
+            if (Config.Config.DiveSens.Value > (float)Config.Config.DiveSens.DefaultValue)
+                cSets.ActiveControllerData.divePlayerSensitivity = Config.Config.DiveSens.Value;
 
             if (IsServerInOperation)
                 GlobalGameStateClient.Instance.NetObjectManager._networkMode = MPGNetObjectManager.NetworkMode.ComboServer;

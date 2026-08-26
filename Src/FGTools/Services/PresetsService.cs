@@ -248,7 +248,7 @@ namespace FGTools.Services
 
         void OnMenuEnter(OnMainMenuDisplayed evt)
         {
-            if (!_ignoreMenu && ConfigManager.AutoSetPreset.Value)
+            if (!_ignoreMenu && Config.Config.AutoSetPreset.Value)
             {
                 string value = FGTServiceManager.GetService<EventService>().ReturnStringEventValue("LatestUserPreset");
 

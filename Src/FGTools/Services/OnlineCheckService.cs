@@ -28,7 +28,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.Localization.SmartFormat.Core.Output;
 using UnityEngine.Networking;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static Il2CppMono.Net.Security.MobileAuthenticatedStream;

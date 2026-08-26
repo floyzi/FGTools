@@ -159,7 +159,7 @@ namespace FGTools.LocalServer
 
         void OnRoundStart(GameMessageServerStartGame e)
         {
-            if (LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value)
+            if (LocalServerService.IsUserAloneAndHost && Config.Config.FastLoad.Value)
                 CoroutineRunner.Instance.ExecuteAfterPredicate(new Func<bool>(() => CGM._gameSession.IsCountdownOrPlaying), new Action(() => { Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent()); }));
         }
 
@@ -836,7 +836,7 @@ namespace FGTools.LocalServer
                     NumVsGroups = vsGroups,
                     TeamAssignments = teamAssigments,
                     VsGroupAssignments = vsGroupAssigments,
-                    StartRoundTime = LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value ? 0 : 5,
+                    StartRoundTime = LocalServerService.IsUserAloneAndHost && Config.Config.FastLoad.Value ? 0 : 5,
                 });
 
                 ReadyPlayers = -1;
@@ -1353,7 +1353,7 @@ namespace FGTools.LocalServer
 
         void OnIntroStarts()
         {
-            if (LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value && !CGM._round.IsUGC())
+            if (LocalServerService.IsUserAloneAndHost && Config.Config.FastLoad.Value && !CGM._round.IsUGC())
             {
                 CGM.FinishPreparationPhase();
                 ReadyPlayers = 1;

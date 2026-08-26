@@ -11,7 +11,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.Services
@@ -99,7 +99,7 @@ namespace FGTools.Services
                 b1.AppendLine($"Ver: {Launcher.BuildInfo.UI_Version} | BuildEnv: {Launcher.BuildInfo.Config} | Commit: #{Launcher.BuildInfo.GetCommit()}");
                 b1.AppendLine($"Build ID: {Launcher.BuildInfo.GUID}");
                 b1.AppendLine($"Session Length: {DateTime.UtcNow.Subtract(Launcher.StartupTime):hh\\:mm\\:ss}");
-                b1.AppendLine($"Locale: {ConfigManager.LangFileName.Value}");
+                b1.AppendLine($"Locale: {Config.Config.LangFileName.Value}");
                 b1.AppendLine($"CanUseHotkeys: {StateManager.CanUseHotkeys}");
                 b1.AppendLine($"HarmonyPatched: {Launcher.HarmonyPatched}");
                 b1.AppendLine($"AdditiveLoad: {FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad}");
@@ -107,9 +107,9 @@ namespace FGTools.Services
                 b1.AppendLine($"PreviousRoundID: {defRound}");
                 b1.AppendLine($"OfflinePatches: {StateManager.InternalState.OfflinePatches}");
                 b1.AppendLine($"FGCPatches: {Launcher.FGCHarmonyPatched}");
-                b1.AppendLine($"AllCosmetics: {ConfigManager.AllCosmetics.Value}");
-                b1.AppendLine($"SelectedTheme: {ConfigManager.InGameTheme.Value}");
-                b1.AppendLine($"DiscordRpc: {ConfigManager.AllowRPC.Value}");
+                b1.AppendLine($"AllCosmetics: {Config.Config.AllCosmetics.Value}");
+                b1.AppendLine($"SelectedTheme: {Config.Config.InGameTheme.Value}");
+                b1.AppendLine($"DiscordRpc: {Config.Config.AllowRPC.Value}");
                 b1.AppendLine($"{FGTServiceManager.ReturnDebugInfo()}");
 
                 DebugContent[0] = b1.ToString();

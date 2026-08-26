@@ -51,7 +51,7 @@ namespace FGTools.LocalServer.Implementations
 
             FLZ_Extensions.FGTLog(LogLevel.Warning, "MarkPlayerAsSuccessful", $"Trying to qualify NetObject {playerNetObject.name} with ID {playerNetObject.NetID}");
 
-            if (LocalServerService.IsUserAloneAndHost && ConfigManager.QualLevel.Value == ConfigManager.QualType.None)
+            if (LocalServerService.IsUserAloneAndHost && Config.Config.QualLevel.Value == Config.Config.QualType.None)
             {
                 FLZ_Extensions.FGTLog(LogLevel.Info, "MarkPlayerAsSuccessful", $"Qualifications disabled.");
                 return;
@@ -59,7 +59,7 @@ namespace FGTools.LocalServer.Implementations
 
             var playerInQuestion = LocalServerService.ServerManager.GetNetPlayer(playerNetObject);
             var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
-            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
+            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !Config.Config.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
             var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
             var actualFinal = ServerManager.CGM._round.GameRules.IsFinalRound && isNotInSpeedrun;
 
@@ -129,11 +129,11 @@ namespace FGTools.LocalServer.Implementations
         {
             FLZ_Extensions.FGTLog(BepInEx.Logging.LogLevel.Warning, "EliminateParticipant", $"Trying to eliminate NetObject {playerNetObject.name} with ID {playerNetObject.NetID}");
 
-            if (LocalServerService.IsUserAloneAndHost && ConfigManager.ElimLevel.Value == ConfigManager.ElimType.None)
+            if (LocalServerService.IsUserAloneAndHost && Config.Config.ElimLevel.Value == Config.Config.ElimType.None)
                 return;
 
             var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
-            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !ConfigManager.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
+            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !Config.Config.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
             var playerInQuestion = LocalServerService.ServerManager.GetNetPlayer(playerNetObject);
             var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
 

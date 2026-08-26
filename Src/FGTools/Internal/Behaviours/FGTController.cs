@@ -23,7 +23,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using static FGClient.FallFeed.FallFeedManager;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.UI.ReadyPopups;

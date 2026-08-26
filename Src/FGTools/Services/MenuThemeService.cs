@@ -105,7 +105,7 @@ namespace FGTools.Services
         Image image;
         Image pattern;
         public string ThemeOnPreviewPath;
-        public string CurrentThemePath = ConfigManager.InGameTheme.Value;
+        public string CurrentThemePath = Config.Config.InGameTheme.Value;
         public Theme ThemeOnPreview;
         MenuAudioProvider AudioProvider;
         ButtonRef SelectButton;
@@ -204,7 +204,7 @@ namespace FGTools.Services
             if (ThemeOnPreviewPath != LocalizedStr("gui_default"))
             {
                 Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault().StopMusic(true);
-                ConfigManager.InGameTheme.Value = ThemeOnPreviewPath;
+                Config.Config.InGameTheme.Value = ThemeOnPreviewPath;
                 CurrentTheme = ThemeOnPreview;
                 CurrentThemePath = ThemeOnPreviewPath;
                 LoadThemeFromPreview();
@@ -216,7 +216,7 @@ namespace FGTools.Services
 
                 CurrentTheme = null;
                 CurrentThemePath = null;
-                ConfigManager.InGameTheme.Value = LocalizedStr("gui_default");
+                Config.Config.InGameTheme.Value = LocalizedStr("gui_default");
                 if (Launcher.ThemesHarmonyPatched)
                 {
                     Launcher.ThemesHarmony.UnpatchSelf();
@@ -258,7 +258,7 @@ namespace FGTools.Services
 
         public void OnMenuSetThemeEvent(bool skipMus)
         {
-            if (ConfigManager.InGameTheme.Value == LocalizedStr("gui_default"))
+            if (Config.Config.InGameTheme.Value == LocalizedStr("gui_default"))
                 return;
 
             if (CurrentTheme != null)
@@ -339,7 +339,7 @@ namespace FGTools.Services
 
         public void OnMenuPlayMusicEvent()
         {
-            if (ConfigManager.InGameTheme.Value == LocalizedStr("gui_default"))
+            if (Config.Config.InGameTheme.Value == LocalizedStr("gui_default"))
                 return;
 
             var a = Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault();
@@ -481,11 +481,11 @@ namespace FGTools.Services
 
         public void SetThemeForLoadingScreens()
         {
-            if (File.Exists($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}") && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default"))
+            if (File.Exists($"{Launcher.ThemesDir}/{Config.Config.InGameTheme.Value}") && Config.Config.InGameTheme.Value != LocalizedStr("gui_default"))
             {
                 LoadTheme_LoadingScreens(false);
             }
-            else if (ConfigManager.InGameTheme.Value == LocalizedStr("gui_default"))
+            else if (Config.Config.InGameTheme.Value == LocalizedStr("gui_default"))
             {
                 if (Launcher.ThemesHarmonyPatched)
                 {
@@ -497,9 +497,9 @@ namespace FGTools.Services
 
         public void SetTheme(Theme theme, GameObject gameObject)
         {
-            if (FGTTargetSettings.CustomThemes && ConfigManager.InGameTheme.Value != LocalizedStr("gui_default") && File.Exists($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}"))
+            if (FGTTargetSettings.CustomThemes && Config.Config.InGameTheme.Value != LocalizedStr("gui_default") && File.Exists($"{Launcher.ThemesDir}/{Config.Config.InGameTheme.Value}"))
             {
-                string themeString = File.ReadAllText($"{Launcher.ThemesDir}/{ConfigManager.InGameTheme.Value}");
+                string themeString = File.ReadAllText($"{Launcher.ThemesDir}/{Config.Config.InGameTheme.Value}");
                 CurrentTheme = JsonSerializer.Deserialize<Theme>(themeString);
 
                 Sprite pattern = PNGtoSprite($"{Launcher.ThemesDir}/{Path.GetDirectoryName(CurrentThemePath)}/{theme.Pattern}");

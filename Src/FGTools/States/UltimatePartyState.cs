@@ -91,17 +91,17 @@ namespace FGTools.States
             {
                 var total = OnlineCheck.ExploreCodes.Count;
 
-                switch (ConfigManager.RoundsFilter.Value)
+                switch (Config.Config.RoundsFilter.Value)
                 {
-                    case ConfigManager.RandomRoundsFilter.Race:
+                    case Config.Config.RandomRoundsFilter.Race:
                         List<string> races = OnlineCheck.ExploreCodes.Where(pair => pair.Value == "GAMEMODE_GAUNTLET").Select(pair => pair.Key).ToList();
                         code = races[UnityEngine.Random.Range(0, races.Count)];
                         break;
-                    case ConfigManager.RandomRoundsFilter.Survival:
+                    case Config.Config.RandomRoundsFilter.Survival:
                         List<string> survivals = OnlineCheck.ExploreCodes.Where(pair => pair.Value == "GAMEMODE_SURVIVAL").Select(pair => pair.Key).ToList();
                         code = survivals[UnityEngine.Random.Range(0, survivals.Count)];
                         break;
-                    case ConfigManager.RandomRoundsFilter.Hunt:
+                    case Config.Config.RandomRoundsFilter.Hunt:
                         List<string> points = OnlineCheck.ExploreCodes.Where(pair => pair.Value == "GAMEMODE_POINTS").Select(pair => pair.Key).ToList();
                         code = points[UnityEngine.Random.Range(0, points.Count)];
                         break;

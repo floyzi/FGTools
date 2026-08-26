@@ -32,7 +32,7 @@ using UnityEngine.SceneManagement;
 using wle::ScriptableObjects;
 using static FGClient.GlobalGameStateClient;
 using static FGClient.UI.UIModalMessage;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.Services.MenuThemeService;

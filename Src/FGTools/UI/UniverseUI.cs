@@ -4,6 +4,7 @@ using BepInEx.Unity.IL2CPP.Utils.Collections;
 using FG.Common;
 using FG.Common.CMS;
 using FGClient;
+using FGClient.Rendering.XRay;
 using FGClient.UI;
 using FGClient.UI.Core;
 using FGTools.Config;
@@ -54,6 +55,7 @@ namespace FGTools.UI
                 Misc = 6,
                 FGCAutosaves = 7,
                 Credits = 9,
+                Config = 10,
                 RoundLoader_Main = 50,
                 RoundLoader_FGC = 51,
                 RoundLoader_InGame = 52,
@@ -147,9 +149,10 @@ namespace FGTools.UI
             GameObject FGTMiscGUI;
             GameObject FGTAutosavesGUI;
             GameObject FGTCreditsGUI;
+            GameObject FGTConfigGUI;
 
             //GameObject RLG_Gameplay;
-      
+
             //GameObject gameplayGUI_Content;
             //Text rl_desc;
             //ButtonRef additiveButton;
@@ -320,6 +323,7 @@ namespace FGTools.UI
 
                     CreateTab(Tab.Misc, SubLevel.Default, tabGroup, () => FGTMiscGUI, "gui_misc", "gui_misc");
                     CreateTab(Tab.FGCAutosaves, SubLevel.Default, tabGroup, () => FGTAutosavesGUI, "gui_fgc_local_autosaves", "gui_fgc_local_autosaves");
+                    CreateTab(Tab.Config, SubLevel.Default, tabGroup, () => FGTConfigGUI, "gui_config", "gui_config");
                     CreateTab(Tab.Credits, SubLevel.Default, tabGroup, () => FGTCreditsGUI, "gui_credits", "gui_credits");
                 }
                 catch (Exception e)
@@ -341,6 +345,7 @@ namespace FGTools.UI
                     DrawMisc();
                     DrawFGCAutosaves();
                     DrawCredits();
+                    DrawConfig();
 
                     TabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
                     TabHoverText.rectTransform.sizeDelta = new(500, 100);
@@ -1056,7 +1061,7 @@ namespace FGTools.UI
 
             void TryToSetLang()
             {
-                if (selectedLang != null && ConfigManager.LangFileName.Value != selectedLang)
+                if (selectedLang != null && Config.Config.LangFileName.Value != selectedLang)
                 {
                     if (SceneManager.GetActiveScene().name == "MainMenu" && StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
                     {
@@ -1073,7 +1078,7 @@ namespace FGTools.UI
                                     Instance = null;
                                     StateManager.LoggedInBefore = false;
                                     FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Launcher.LocalizationDir, selectedLang, "locale.json"));
-                                    ConfigManager.LangFileName.Value = selectedLang;
+                                    Config.Config.LangFileName.Value = selectedLang;
                                     GlobalGameStateClient.Instance._mainMenuManager.ShowMainMenu(true, true, false);
                                 }));
                             }
@@ -1628,7 +1633,7 @@ namespace FGTools.UI
                 var linearGraidentImage = Resources.FindObjectsOfTypeAll<Sprite>().ToList().Find(x => x.name == "UI_LinearGradient_Image");
                 Theme theme = null;
                 Color placeholderCol = Color.magenta;
-                if (ConfigManager.InGameTheme.Value != LocalizedStr("gui_default"))
+                if (Config.Config.InGameTheme.Value != LocalizedStr("gui_default"))
                     theme = tS.CurrentTheme;
 
                 TryDrawUI(() => FGTTargetSettings.CustomThemes, MiscContent, new(() =>
@@ -1933,7 +1938,7 @@ namespace FGTools.UI
                 ButtonRef saveBtn2 = UIFactory.CreateButton(MiscContent, "Refresh", $"{LocalizedStr("gui_refresh_config")}", new Color(0.2f, 0.3f, 0.2f));
                 Text refreshDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_0"), TextAnchor.MiddleLeft);
                 UIFactory.SetLayoutElement(saveBtn2.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
-                saveBtn2.OnClick += () => { ConfigManager.CFG.Reload(); };
+                saveBtn2.OnClick += () => { Config.Config.CFG.Reload(); };
                 ButtonRef saveBtn3 = UIFactory.CreateButton(MiscContent, "RefreshGUI", $"{LocalizedStr("gui_refresh_gui")}", new Color(0.2f, 0.3f, 0.2f));
                 Text refreshGUIDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_1"), TextAnchor.MiddleLeft);
                 UIFactory.SetLayoutElement(saveBtn3.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
@@ -1944,7 +1949,7 @@ namespace FGTools.UI
                 ButtonRef saveBtn4 = UIFactory.CreateButton(MiscContent, "OpenConfig", $"{LocalizedStr("gui_open_config")}", new Color(0.2f, 0.3f, 0.2f));
                 Text openCfgDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_2"), TextAnchor.MiddleLeft);
                 UIFactory.SetLayoutElement(saveBtn4.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
-                saveBtn4.OnClick += () => { Application.OpenURL(ConfigManager.CFG.ConfigFilePath); };
+                saveBtn4.OnClick += () => { Application.OpenURL(Config.Config.CFG.ConfigFilePath); };
                 ButtonRef saveBtn5 = UIFactory.CreateButton(MiscContent, "ClearEvents", $"{LocalizedStr("gui_clear_evt")}", new Color(0.2f, 0.3f, 0.2f));
                 Text clearEventsDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_4"), TextAnchor.MiddleLeft);
                 UIFactory.SetLayoutElement(saveBtn5.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
@@ -1969,7 +1974,7 @@ namespace FGTools.UI
                         target.Add($"{str}");
                 }
                 langDropdown.AddOptions(target);
-                int currLangIndx = KnownLocales.IndexOf(ConfigManager.LangFileName.Value.ToUpper());
+                int currLangIndx = KnownLocales.IndexOf(Config.Config.LangFileName.Value.ToUpper());
                 langDropdown.value = currLangIndx + 1;
             }
 
@@ -1988,31 +1993,40 @@ namespace FGTools.UI
                     langAuthor.gameObject.SetActive(false);
             }
 
+            void DrawConfig()
+            {
+
+                FGTConfigGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Config", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
+                UIFactory.SetLayoutElement(FGTConfigGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
+                GameObject scrollview = UIFactory.CreateScrollView(FGTConfigGUI, "creditsGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
+                UIFactory.SetLayoutElement(scrollview, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
+            }
+
             void DrawCredits()
             {
                 FGTCreditsGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Credits", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(FGTCreditsGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
                 GameObject scrollview = UIFactory.CreateScrollView(FGTCreditsGUI, "creditsGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
                 UIFactory.SetLayoutElement(scrollview, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
-          
-                StringBuilder strBuilder = new();
+
+                var sb = new StringBuilder();
 
                 foreach (var credit in OnlineCheck.FGTContent.Credits)
                 {
-                    strBuilder.AppendLine($"<b>{LocalizedStr(credit.Value.Id).ToUpper()}</b>\n");
+                    sb.AppendLine($"<b>{LocalizedStr(credit.Value.Id).ToUpper()}</b>\n");
 
                     foreach (var actualCredit in credit.Value.Credits)
                     {
                         if (actualCredit.Perfom != string.Empty)
-                            strBuilder.AppendLine($"{actualCredit.Subject} - {actualCredit.Perfom}");
+                            sb.AppendLine($"{actualCredit.Subject} - {actualCredit.Perfom}");
                         else
-                            strBuilder.AppendLine($"{actualCredit.Subject}");
+                            sb.AppendLine($"{actualCredit.Subject}");
                     }
 
-                    strBuilder.AppendLine();
+                    sb.AppendLine();
                 }
 
-                Text credits = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo", $"{strBuilder}", TextAnchor.LowerCenter, default, true, 14);
+                Text credits = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo", $"{sb.ToString().Trim()}", TextAnchor.LowerCenter, default, true, 14);
                 credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
                 Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
                 UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);

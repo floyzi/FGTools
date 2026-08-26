@@ -16,7 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using UnityEngine;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.HarmonyPatches

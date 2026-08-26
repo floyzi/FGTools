@@ -21,7 +21,7 @@ using Il2CppInterop.Runtime.Attributes;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.Services.SpeedrunService;

@@ -17,8 +17,8 @@ namespace FGTools.Services
         public static string SelectedLocalizeFolder = null;
         public override void RegisterService()
         {
-            if (ConfigManager.LangFileName.Value == null || ConfigManager.LangFileName.Value == string.Empty)
-                ConfigManager.LangFileName.Value = "en";
+            if (Config.Config.LangFileName.Value == null || Config.Config.LangFileName.Value == string.Empty)
+                Config.Config.LangFileName.Value = "en";
 
             string targetPatn = null;
             string targetDir = Path.Combine(Launcher.LocalizationDir, "en", "locale.json");

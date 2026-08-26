@@ -7,7 +7,7 @@ using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using UnityEngine;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Services.LocalizationService;
 using static FGTools.States.Logic.FGTStateManager;
 

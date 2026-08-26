@@ -33,7 +33,7 @@ using UnityEngine.UI;
 using UniverseLib;
 using UniverseLib.UI.Models;
 using static FG.Common.GameStateMachine;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.Extensions.FLZ_UIExtensions;
 using static FGTools.Services.LocalizationService;

@@ -25,7 +25,7 @@ using Levels.Obstacles;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UniverseLib.UI;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Launcher;
 using static FGTools.Services.SpeedrunService;
@@ -293,7 +293,7 @@ namespace FGTools.States
 
         void WatermarkGUI()
         {
-            var watermark = ConfigManager.WatermarkLevel.Value switch
+            var watermark = Config.Config.WatermarkLevel.Value switch
             {
                 Watermark.OnlyVersion => $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version}",
                 Watermark.None => string.Empty,

@@ -24,7 +24,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using static FG.Common.GameStateMachine;
 using static FGClient.FallFeed.FallFeedManager;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.FMODTool;
 using static FGTools.Launcher;

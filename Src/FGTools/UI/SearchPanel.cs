@@ -93,7 +93,7 @@ namespace FGTools.UI
                     FGTServiceManager.Instance.GetService<CosmeticsService>().SearchEnd(false);
             };
 
-            doSearchBtn.OnClick += () => { FGTServiceManager.Instance.GetService<CosmeticsService>().Search(SearchBar.Text, FGTServiceManager.Instance.GetService<CosmeticsService>().GetSection(), printAsListToggle.isOn ? CosmeticsService.RequestType.List : CosmeticsService.RequestType.Locker, ConfigManager.AllCosmetics.Value); };
+            doSearchBtn.OnClick += () => { FGTServiceManager.Instance.GetService<CosmeticsService>().Search(SearchBar.Text, FGTServiceManager.Instance.GetService<CosmeticsService>().GetSection(), printAsListToggle.isOn ? CosmeticsService.RequestType.List : CosmeticsService.RequestType.Locker, Config.Config.AllCosmetics.Value); };
 
             ChangeTitle(LocalizedStr("gui_cosmetics_search"));
         }
@@ -105,7 +105,7 @@ namespace FGTools.UI
 
             var a = FGTServiceManager.Instance.GetService<CosmeticsService>();
 
-            if (ConfigManager.AllCosmetics.Value)
+            if (Config.Config.AllCosmetics.Value)
                 a.GrantAllCosmetics();
             else
                 a.RemoveAllCosmetics();

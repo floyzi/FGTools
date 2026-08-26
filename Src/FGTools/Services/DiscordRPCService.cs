@@ -5,7 +5,7 @@ using Discord;
 using FGTools.HarmonyPatches;
 using FGTools.Internal;
 using FGTools.Services.Logic;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Launcher;
 using static FGTools.States.Logic.FGTStateManager;

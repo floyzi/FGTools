@@ -7,7 +7,7 @@ using FGClient;
 using FGTools.Content;
 using FGTools.Services.Logic;
 using UnityEngine;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 namespace FGTools.Services

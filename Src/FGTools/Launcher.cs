@@ -16,7 +16,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UniverseLib.UI;
-using static FGTools.Config.ConfigManager;
+using static FGTools.Config.Config;
 
 namespace FGTools
 {
