@@ -144,7 +144,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(searchbarGroup, minHeight: 30, flexibleHeight: 0);
                 inputFieldRef = UIFactory.CreateInputField(searchbarGroup, "searchInRoundNames", $"{LocalizedStr("gui_search_round")}");
                 ButtonRef printCms = UIFactory.CreateButton(searchbarGroup, "Advanced_PrintCms", $"{LocalizedStr("gui_print_round_list")}", null);
-                printCms.OnClick += () => { FGTRoundLoader.GenerateCMSList(); };
+                printCms.OnClick += () => { Service.GenerateCMSList(); };
                 printCms.GameObject.SetActive(false);
                 ButtonRef delList = UIFactory.CreateButton(searchbarGroup, "Advanced_DelList", $"{LocalizedStr("gui_del_list")}", GUIRed);
                 delList.OnClick += () =>
@@ -173,7 +173,7 @@ namespace FGTools.UI.Tabs
 
                 InputFieldRef advRoundInput = UIFactory.CreateInputField(roundNamesGroup, "advRoundInput", $"{LocalizedStr("gui_rl_a_inputholder")}");
                 advRoundInput.Text = "round_";
-                advRoundInput.OnValueChanged += input => { FGTRoundLoader.RoundToLoad = input; };
+                advRoundInput.OnValueChanged += input => { Service.RoundToLoad = input; };
                 UIFactory.SetLayoutElement(advRoundInput.GameObject, minHeight: 25, flexibleHeight: 0);
                 advRoundInput.GameObject.gameObject.SetActive(false);
                 UIFactory.SetLayoutElement(roundNamesGroup, minHeight: 25, flexibleHeight: 0);
@@ -198,7 +198,7 @@ namespace FGTools.UI.Tabs
             });
                 singleButton.OnClick += () =>
                 {
-                    FGTRoundLoader.LoadLatestRound(LoadSceneMode.Single);
+                    Service.LoadLatestRound(LoadSceneMode.Single);
                 };
 
                 UIFactory.SetLayoutElement(singleButton.GameObject, 30, 20, null, 0, null, null, null);
@@ -210,7 +210,7 @@ namespace FGTools.UI.Tabs
             });
                 additiveButton.OnClick += () =>
                 {
-                    FGTRoundLoader.LoadLatestRound(LoadSceneMode.Additive);
+                    Service.LoadLatestRound(LoadSceneMode.Additive);
                 };
                 UIFactory.SetLayoutElement(additiveButton.GameObject, 30, 20, null, 0, null, null, null);
 
@@ -479,7 +479,7 @@ namespace FGTools.UI.Tabs
                     {
                         //FGTBase.StateManager.InternalState.shouldSkipErrors = true;
                         levelInfo.text = LocalizedStr("fgc_level_load");
-                        FGTRoundLoader.GetOnlyLevelDto(x);
+                        Service.GetOnlyLevelDto(x);
                     }
                 });
                 UIFactory.SetLayoutElement(fgcInputfield.Component.gameObject, minWidth: 100, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 0);
@@ -505,7 +505,7 @@ namespace FGTools.UI.Tabs
                 load.OnClick += () =>
                 {
                     //FGT.shouldSkipErrors = false;
-                    FGTRoundLoader.LoadFGCRound(code, null, true);
+                    Service.LoadFGCRound(code, null, true);
                 };
 
                 ButtonRef explorePlay = UIFactory.CreateButton(loadingBtnsFGC, "explore", $"{LocalizedStr("gui_play_explore")}");
@@ -640,7 +640,7 @@ namespace FGTools.UI.Tabs
             }));
             #endregion
 
-            FGTRoundLoader.SetUIReferences([
+            Service.SetUIReferences([
                 roundNamesDrop,
                     roundVariantsDrop,
                     inputFieldRef,
@@ -789,7 +789,7 @@ namespace FGTools.UI.Tabs
                 {
                     var a = UnityEngine.Object.Instantiate(fgcHistoryPrefab);
                     a.transform.GetChild(0).gameObject.GetComponent<Text>().text = code;
-                    void b() => FGTRoundLoader.LoadFGCRound(code, null, true);
+                    void b() => Service.LoadFGCRound(code, null, true);
                     a.transform.GetChild(1).gameObject.GetComponent<Button>().onClick.AddListener(b);
                     a.transform.SetParent(FGCHistory.transform);
                     a.transform.SetSiblingIndex(0);
@@ -802,7 +802,7 @@ namespace FGTools.UI.Tabs
         {
             var a = UnityEngine.Object.Instantiate(fgcHistoryPrefab);
             a.transform.GetChild(0).gameObject.GetComponent<Text>().text = newLevel;
-            void b() => FGTRoundLoader.LoadFGCRound(newLevel, null, true);
+            void b() => Service.LoadFGCRound(newLevel, null, true);
             a.transform.GetChild(1).gameObject.GetComponent<Button>().onClick.AddListener(b);
             a.transform.SetParent(FGCHistory.transform);
             a.transform.SetSiblingIndex(0);
