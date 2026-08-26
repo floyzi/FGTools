@@ -9,7 +9,7 @@ using UniverseLib.Input;
 using UniverseLib.UI;
 using UniverseLib.UI.Models;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
     public class InteractiveKeycode : InteractiveValue
     {

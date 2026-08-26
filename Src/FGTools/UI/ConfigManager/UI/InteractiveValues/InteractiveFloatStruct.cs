@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using ConfigManager.UI;
 using System.Reflection;
 using UniverseLib.UI;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
     // Class for supporting any "float struct" (ie Vector, Quaternion, etc).
     // Supports any struct where all the instance fields are floats

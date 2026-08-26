@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace FGTools.Internal.Behaviours
+namespace FGTools.Internal.Behaviours.ServerSide
 {
     //not proud of this 
     internal class PrefabSpawnerController : ToolsBehaviour

@@ -9,11 +9,10 @@ using UnityEngine.UI;
 using UniverseLib.UI;
 using UniverseLib.UI.Models;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
-    public class InteractiveTomlObject : InteractiveValue
+    public class InteractiveTomlObject(object value, Type valueType) : InteractiveValue(value, valueType)
     {
-        public InteractiveTomlObject(object value, Type valueType) : base(value, valueType) { }
 
         // Default handler for any type without a specific handler.
         public override bool SupportsType(Type type) => true;

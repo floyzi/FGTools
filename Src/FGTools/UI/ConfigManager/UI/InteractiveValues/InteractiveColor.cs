@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using UniverseLib.UI;
 using UniverseLib;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
     public class InteractiveColor : InteractiveValue
     {

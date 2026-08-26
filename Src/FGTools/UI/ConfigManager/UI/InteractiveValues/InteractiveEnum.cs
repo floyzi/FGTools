@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using ConfigManager.UI;
 using UniverseLib.UI;
 using UniverseLib;
 using FGTools;
 using FGTools.Internal.Extensions;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
     public class InteractiveEnum : InteractiveValue
     {

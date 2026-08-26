@@ -4,7 +4,6 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
-using ConfigManager.UI;
 using FG.Common;
 using FG.Common.CMS;
 using FGClient;
@@ -19,6 +18,7 @@ using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States;
 using FGTools.States.Logic;
+using FGTools.UI.ConfigManager.UI;
 using Il2CppSystem.Runtime.Remoting;
 using System;
 using System.Collections.Generic;
@@ -272,6 +272,7 @@ namespace FGTools.UI
 
                 trigger.triggers.Add(entry);
                 trigger.triggers.Add(exit);
+
                 return tabBtn;
             }
 
@@ -2034,9 +2035,9 @@ namespace FGTools.UI
                 UIFactory.SetLayoutElement(content, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
                 var scroll = content.GetComponent<ScrollRect>().content.gameObject;
 
-                Dictionary<string, List<ConfigEntryBase>> dict = new()
+                var dict = new Dictionary<string, List<ConfigEntryBase>>()
                 {
-                    { "", new List<ConfigEntryBase>() } // make sure the null category is first.
+                    { "", new List<ConfigEntryBase>() }
                 };
 
                 foreach (var entry in Launcher.BepConfig.Keys)
@@ -2050,7 +2051,6 @@ namespace FGTools.UI
                     dict[sec].Add(Launcher.BepConfig[entry]);
                 }
 
-                // Create actual entry editors
                 foreach (var ctg in dict)
                 {
                     if (!string.IsNullOrEmpty(ctg.Key))
@@ -2061,12 +2061,10 @@ namespace FGTools.UI
                         UIFactory.SetLayoutElement(title.gameObject, minHeight: 30, minWidth: 200, flexibleWidth: 9999);
                     }
 
-                    foreach (ConfigEntryBase configEntry in ctg.Value)
+                    foreach (var configEntry in ctg.Value)
                     {
                         CachedConfigEntry cache = new(configEntry, scroll);
                         cache.Enable();
-
-                        //configsToCached.Add(configEntry, cache);
 
                         GameObject obj = cache.UIroot;
 

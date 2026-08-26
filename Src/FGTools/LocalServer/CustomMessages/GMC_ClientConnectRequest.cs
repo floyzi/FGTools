@@ -1,5 +1,6 @@
 ﻿using FG.Common;
 using FGClient;
+using FGTools.LocalServer.CustomMessages.Logic;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Mediatonic.Networking;
 using System;

@@ -8,7 +8,7 @@ using FGTools.States.Logic;
 using HarmonyLib;
 using Mediatonic.Networking;
 using UnityEngine;
-namespace FGTools.LocalServer
+namespace FGTools.LocalServer.Patches
 {
     /// <summary>
     /// General patches for local server

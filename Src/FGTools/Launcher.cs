@@ -6,7 +6,7 @@ using FGTools.HarmonyPatches;
 using FGTools.Internal.Behaviours;
 using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Internal.Extensions;
-using FGTools.LocalServer;
+using FGTools.LocalServer.Patches;
 using HarmonyLib;
 using Il2CppSystem.Net;
 using System;

@@ -5,14 +5,13 @@ using System.Text;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
-using ConfigManager.UI;
 using BepInEx.Configuration;
 using UniverseLib.UI;
 using UniverseLib;
 using UniverseLib.UI.Models;
 using HarmonyLib;
 
-namespace ConfigManager.UI.InteractiveValues
+namespace FGTools.UI.ConfigManager.UI.InteractiveValues
 {
     public class InteractiveNumber : InteractiveValue
     {

@@ -1,5 +1,5 @@
 ﻿using BepInEx.Configuration;
-using ConfigManager.UI.InteractiveValues;
+using FGTools.UI.ConfigManager.UI.InteractiveValues;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,7 +7,7 @@ using UniverseLib;
 using UniverseLib.UI;
 using UniverseLib.Utility;
 
-namespace ConfigManager.UI
+namespace FGTools.UI.ConfigManager.UI
 {
     public class CachedConfigEntry
     {

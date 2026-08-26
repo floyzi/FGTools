@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static FGTools.LocalServer.CustomMessages.Logic.CustomMessageManager;
 
-namespace FGTools.LocalServer.CustomMessages
+namespace FGTools.LocalServer.CustomMessages.Logic
 {
     internal abstract class FLZMessage(FLZ_CustomMessage lvl)
     {

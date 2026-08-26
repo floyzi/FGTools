@@ -5,7 +5,7 @@ using FG.Common.LODs;
 using FG.Common.Network;
 using FGClient;
 using FGTools.Internal;
-using FGTools.Internal.Behaviours;
+using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Services;
 using FGTools.States.Logic;
 using HarmonyLib;

@@ -1,5 +1,4 @@
 ﻿using FG.Common;
-using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Internal.Extensions;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace FGTools.Internal.Behaviours
+namespace FGTools.Internal.Behaviours.ServerSide
 {
     internal class ServerControlledObject : ServerBehaviour
     {
