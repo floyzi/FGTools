@@ -42,6 +42,7 @@ namespace FGTools.UI.Tabs
         GameObject fgcHistoryPrefab;
         ButtonRef randt;
         string ExploreRoundsCount = "0";
+        Dropdown VariationsDropdown;
 
         void OnTabChange(TabMeta newTab)
         {

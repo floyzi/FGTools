@@ -169,9 +169,11 @@ namespace FGTools.UI
         Text TabHoverText;
         bool HoveringOnTab;
 
-        readonly List<UITab> _tabMap = [
-            new RoundLoaderTab()
-            ];
+        readonly List<UITab> _tabMap = 
+        [
+            new RoundLoaderTab(),
+            new ShowLoaderTab(),
+        ];
         internal event Action<TabMeta> OnTabChanged;
         internal event Action<FGTStateManager.ToolsState> OnStateChange;
 
@@ -194,17 +196,6 @@ namespace FGTools.UI
                     tab.TabButton = t.Component;
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
-
-
-
-                var showTab = CreateTab(Tab.ShowLoader, SubLevel.Default, tabGroup, () => FGTShowLoaderGUI, "gui_show_loader", "gui_show_loader");
-                AssignToGroups(showTab.Component, new()
-                    {
-                        { new GroupPolicy(ObjectGroup.Editor, GroupOperation.Interactable), () => false },
-                        { new GroupPolicy(ObjectGroup.Menu, GroupOperation.Interactable), () => true },
-                        { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.Interactable), () => true },
-                        { new GroupPolicy(ObjectGroup.Loading, GroupOperation.Interactable), () => false }
-                    });
 
 #if LAN_MULTIPLAYER
                 CreateTab(Tab.LocalMultiplayer, SubLevel.Default, tabGroup, () => FGTLocalMultiplayerGUI, "gui_lan_multiplayer", "gui_lan_multiplayer");
@@ -248,7 +239,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-                DrawShowLoader();
 #if LAN_MULTIPLAYER
                 DrawLocalMultiplayer();
 #endif
@@ -450,85 +440,6 @@ namespace FGTools.UI
             }
         }
 
-
-        public static Dropdown VariationsDropdown;
-        void DrawShowLoader()
-        {
-            FGTShowLoaderGUI = UIFactory.CreateVerticalGroup(ContentRoot, "ShowLoader", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTShowLoaderGUI, minHeight: 25, flexibleHeight: 0);
-
-            TryDrawUI(() => FGTTargetSettings.ShowLoader, FGTShowLoaderGUI, new(() =>
-            {
-                var sL = FGTBase.FGTServiceManager.GetService<ShowLoaderService>();
-
-                GameObject showSearchbarGroup = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "searchGroup", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(showSearchbarGroup, minHeight: 30, flexibleHeight: 0);
-                InputFieldRef showSearchBar = UIFactory.CreateInputField(showSearchbarGroup, "searchInRoundNames", $"{LocalizedStr("gui_search_show")}");
-
-                GameObject showsDropGroup = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "showsDropGroup", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(showsDropGroup, minHeight: 30, flexibleHeight: 0);
-                GameObject showsDropUI = UIFactory.CreateDropdown(showsDropGroup, "showsDropUI", out Dropdown showListDrop, $"{LocalizedStr("dropdown_placeholder")}", 14, null, null);
-
-                GameObject showLoadBtns = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "loadingBtns", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(showLoadBtns, minHeight: 25, flexibleHeight: 0);
-                var showPlayBtn = UIFactory.CreateButton(showLoadBtns, "play", $"{LocalizedStr("gui_play")}", null);
-                AssignToGroups(showPlayBtn.GameObject, new()
-            {
-                    { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
-                    { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => false }
-            });
-
-                UIFactory.SetLayoutElement(showPlayBtn.GameObject, 30, 20, null, 0, null, null, null);
-
-                var showInfoGroup = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "infoArea", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                var placeholder = UIFactory.CreateLabel(showInfoGroup, "ShowDesc", $"...", TextAnchor.UpperLeft, default, true, 14);
-                UIFactory.SetLayoutElement(placeholder.gameObject, minHeight: 25, flexibleHeight: 0, preferredWidth: 4);
-                UIFactory.SetLayoutElement(showInfoGroup, minHeight: 55, flexibleHeight: 0);
-
-                GameObject showInfoButtons = UIFactory.CreateVerticalGroup(showInfoGroup, "infoArea", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                ButtonRef viewImgBtn = UIFactory.CreateButton(showInfoButtons, "viewImg", $"{LocalizedStr("gui_show_image")}", null);
-                UIFactory.SetLayoutElement(viewImgBtn.GameObject, minHeight: 25, flexibleHeight: 0);
-                UIFactory.SetLayoutElement(showInfoButtons, minHeight: 25, flexibleHeight: 0);
-
-                var showRoundList = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "roundsArea", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                GameObject hell = UIFactory.CreateScrollView(showRoundList, "showRounds", out GameObject content, out AutoSliderScrollbar scrollBar, new(0.1f, 0.1f, 0.1f));
-                UIFactory.SetLayoutElement(hell, flexibleHeight: 9999, minHeight: 120);
-                Transform settingsList = hell.GetComponent<ScrollRect>().content.transform;
-                var showlist = UIFactory.CreateLabel(settingsList.gameObject, "showList", $"...", TextAnchor.LowerLeft, default, true, 14);
-                //UIFactory.SetLayoutElement(hotkeys.previewTheme, minHeight: 25, flexibleHeight: 0);
-                showInfoGroup.gameObject.SetActive(false);
-                showRoundList.gameObject.SetActive(false);
-
-                GameObject icoGrp = UIFactory.CreateVerticalGroup(showRoundList, "Image", false, false, true, true, 0, new Vector4(0, 0, 0, 0), childAlignment: TextAnchor.UpperLeft);
-                var showIco = UIFactory.CreateUIObject("gradient", icoGrp).AddComponent<Image>();
-                UIFactory.SetLayoutElement(showIco.gameObject, minHeight: 170, preferredHeight: 170, flexibleHeight: 170, flexibleWidth: 168, preferredWidth: 168, minWidth: 168);
-
-                var SLG_Gameplay = UIFactory.CreateHorizontalGroup(FGTShowLoaderGUI, "ingameUI", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                AssignToGroups(SLG_Gameplay, new()
-            {
-                    { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => FGTBase.StateManager.ShowState != null },
-                    { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => false },
-                    { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => false }
-            });
-                UIFactory.SetLayoutElement(SLG_Gameplay, minHeight: 25, flexibleHeight: 0);
-                SLG_Gameplay.gameObject.SetActive(false);
-                var randomShow = UIFactory.CreateButton(SLG_Gameplay, "randomShow", $"{LocalizedStr("gui_random_round")}", null);
-                UIFactory.SetLayoutElement(randomShow.GameObject, 30, 20, null, 0, null, null, null);
-                var showInfo = UIFactory.CreateLabel(FGTShowLoaderGUI, "showInfo", $"{LocalizedStr("gui_loaded_show")}: ...", TextAnchor.LowerCenter, default, true, 14);
-                UIFactory.SetLayoutElement(showInfo.gameObject, minHeight: 25, flexibleHeight: 0);
-                GameObject placeholder42 = UIFactory.CreateLabel(FGTShowLoaderGUI, "ShowLoaderDesc", $"{LocalizedStr("gui_show_loader_desc")}", TextAnchor.LowerCenter, default, true, 14).gameObject;
-                UIFactory.SetLayoutElement(placeholder42.gameObject, preferredHeight: 1000, flexibleHeight: 9999, flexibleWidth: 9999);
-
-                sL.SetUIReferences([showListDrop, showSearchBar, showRoundList, showIco, randomShow, placeholder, showInfo, showInfoGroup, showlist, viewImgBtn, showPlayBtn]);
-            }));
-        }
 
 #if LAN_MULTIPLAYER
         void DrawLocalMultiplayer()
