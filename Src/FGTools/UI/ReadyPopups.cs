@@ -23,30 +23,6 @@ namespace FGTools.UI
 {
     public class ReadyPopups : FGTBase
     {
-        public static void IMG2FGCAlert()
-        {
-            DoModal(new(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(LaunchIMG2FGC), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
-            static void LaunchIMG2FGC(bool wasok)
-            {
-                if (wasok)
-                {
-                    List<string> writeInfo = [];
-                    string outputfile = Path.Combine(Application.persistentDataPath, "output.txt");
-                    if (File.Exists(outputfile))
-                        File.Delete(outputfile);
-                    File.Create(outputfile).Close();
-                    writeInfo.Add("path_to_file" + " = " + Launcher.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath);
-                    writeInfo.Add("width" + " = " + NewGUI.Instance.imgWidth);
-                    writeInfo.Add("height" + " = " + NewGUI.Instance.imgHeight);
-                    writeInfo.Add("shouldDeleteBlackPixels" + " = " + NewGUI.Instance.shouldDeleteBlackPixels);
-                    writeInfo.Add("shouldDeleteWhitePixels" + " = " + NewGUI.Instance.shouldDeleteWhitePixels);
-                    writeInfo.Add("isDigital" + " = " + NewGUI.Instance.isDigital);
-                    File.WriteAllLines(outputfile, writeInfo);
-                    Application.OpenURL(Launcher.IMG2FGCExe);
-                }
-            }
-        }
-
         public static void AreYouSurePopup(string action, Action<bool> popAct = null)
         {
             DoModal(new(LocalizedStr("confirm_title"), $"{LocalizedStr("confirm_desc")} {action}", UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Default, new Action<bool>(popAct), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
