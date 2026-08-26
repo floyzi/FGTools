@@ -1,5 +1,6 @@
 ﻿extern alias wle;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
 using FGTools.HarmonyPatches;
 using FGTools.Internal.Behaviours;
@@ -7,6 +8,7 @@ using FGTools.Internal.Behaviours.ServerSide;
 using FGTools.Internal.Extensions;
 using FGTools.LocalServer;
 using HarmonyLib;
+using Il2CppSystem.Net;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -91,6 +93,7 @@ namespace FGTools
         internal static bool HarmonyPatched;
         internal static bool FGCHarmonyPatched;
         internal static bool ThemesHarmonyPatched;
+        internal static ConfigFile BepConfig;
 
         internal static string DisplayName 
         { 
@@ -184,7 +187,8 @@ namespace FGTools
                 monoMain.AddComponent<FGTBehaviour>();
                 monoMain.hideFlags = HideFlags.HideAndDontSave;
 
-                LoadCFG(Config);
+                BepConfig = Config;
+                LoadCFG(BepConfig);
 
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<FallGuyBehaviour>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<FGTController>();

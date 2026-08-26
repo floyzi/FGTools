@@ -1,6 +1,9 @@
 ﻿extern alias wle;
+
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
+using ConfigManager.UI;
 using FG.Common;
 using FG.Common.CMS;
 using FGClient;
@@ -22,6 +25,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -31,6 +35,7 @@ using UniverseLib.UI.Models;
 using UniverseLib.UI.Panels;
 using UniverseLib.UI.Widgets;
 using wle::Wushu.LevelEditor.Runtime.UI.LevelBrowser;
+using static FGClient.CatapultServices.GamefuelContentDownloader;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.Services.MenuThemeService;
@@ -177,7 +182,7 @@ namespace FGTools.UI
 
             string selectedLang = null;
             public override Vector2 DefaultPosition => new Vector2(-350, 400);
-            Queue<Action> PendindTabs = new();
+            readonly Queue<Action> PendindTabs = new();
 
             Text TabHoverText;
             bool HoveringOnTab;
@@ -272,7 +277,6 @@ namespace FGTools.UI
                 FGTLog(LogLevel.Fatal, GetType(), $"Unable to init UI (failed on {lvl}) due to an error {e.Message} | {e.StackTrace}");
                 DoModal(new(LocalizedStr("new_gui_err_title"), LocalizedStr("new_gui_err_desc", [e.Message]), UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Disruptive));
             }
-
 
             protected override void ConstructPanelContent()
             {
@@ -781,8 +785,7 @@ namespace FGTools.UI
                         {
                             foreach (var mapping in Switcher.SwitchableSetMappings)
                             {
-                                if (mapping.SwitchableSetHolder != null)
-                                    mapping.SwitchableSetHolder.gameObject.SetActive(toggled);
+                                mapping.SwitchableSetHolder?.gameObject.SetActive(toggled);
                             }
                         }
                     };
@@ -1998,8 +2001,76 @@ namespace FGTools.UI
 
                 FGTConfigGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Config", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(FGTConfigGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-                GameObject scrollview = UIFactory.CreateScrollView(FGTConfigGUI, "creditsGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
-                UIFactory.SetLayoutElement(scrollview, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
+                GameObject content = UIFactory.CreateScrollView(FGTConfigGUI, "configGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
+                UIFactory.SetLayoutElement(content, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
+
+                Dictionary<string, List<ConfigEntryBase>> dict = new()
+                {
+                    { "", new List<ConfigEntryBase>() } // make sure the null category is first.
+                };
+
+                foreach (var entry in Launcher.BepConfig.Keys)
+                {
+                    string sec = entry.Section;
+                    sec ??= "";
+
+                    if (!dict.ContainsKey(sec))
+                        dict.Add(sec, []);
+
+                    dict[sec].Add(Launcher.BepConfig[entry]);
+                }
+
+                // Create actual entry editors
+                foreach (KeyValuePair<string, List<ConfigEntryBase>> ctg in dict)
+                {
+                    foreach (ConfigEntryBase configEntry in ctg.Value)
+                    {
+                        CachedConfigEntry cache = new(configEntry, content.GetComponent<ScrollRect>().content.gameObject);
+                        cache.Enable();
+
+                        //configsToCached.Add(configEntry, cache);
+
+                        GameObject obj = cache.UIroot;
+
+                        bool advanced = false;
+
+                        if (!advanced)
+                        {
+                            object[] tags = configEntry.Description?.Tags;
+                            if (tags != null && tags.Any())
+                            {
+                                if (tags.Any(it => it is string s && s == "Advanced"))
+                                {
+                                    advanced = true;
+                                }
+                                else if (tags.FirstOrDefault(it => it.GetType().Name == "ConfigurationManagerAttributes") is object attributes)
+                                {
+                                    advanced = (bool?)attributes.GetType().GetField("IsAdvanced")?.GetValue(attributes) == true;
+                                }
+                            }
+                        }
+
+                     
+
+                        //info.Entries.Add(new EntryInfo(cache)
+                        //{
+                        //    RefEntry = configEntry,
+                        //    content = obj,
+                        //    IsHidden = advanced
+                        //});
+                    }
+                }
+
+                // hide buttons for completely-hidden categories.
+                //if (!info.Entries.Any(it => !it.IsHidden))
+                //{
+                //    btn.Component.gameObject.SetActive(false);
+                //    info.isCompletelyHidden = true;
+                //}
+
+                content.SetActive(true);
+
+           
             }
 
             void DrawCredits()
