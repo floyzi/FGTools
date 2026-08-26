@@ -13,6 +13,7 @@ using FG.Common.Messages;
 using FG.Common.Network;
 using FGClient;
 using FGClient.UI;
+using FGTools.Config;
 using FGTools.Internal;
 using FGTools.Internal.Behaviours;
 using FGTools.Internal.Behaviours.ServerSide;
@@ -46,6 +47,7 @@ using UniverseLib;
 using static FG.Common.COMMON_ObjectiveBase;
 using static FG.Common.FG_NetworkManager;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
+using static FGTools.States.Logic.FGTStateManager;
 using Random = UnityEngine.Random;
 
 namespace FGTools.LocalServer
@@ -134,7 +136,6 @@ namespace FGTools.LocalServer
             GameActions.OnNetObjSpawned += OnNetObjSpawned;
             GameActions.OnRoundEnds += OnRoundEnds;
 
-
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = DelegateSupport.ConvertDelegate<HandleObjectiveSatisfied>(ObjectiveAchived);
 
             TimeAttackStart += OnTimeAttackStart;
@@ -150,7 +151,23 @@ namespace FGTools.LocalServer
 
             GameActions.OnRoundLoaded += PrepareForNetworkedGame;
 
+            CGMDespatcher.m_onGameServerStartGame += new Action<GameMessageServerStartGame>(OnRoundStart);
+
             HandleServerState(ServerState.Open);
+        }
+
+        void OnRoundStart(GameMessageServerStartGame e)
+        {
+            if (LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value)
+            {
+                CoroutineRunner.Instance.StartCoroutine(_fastLoad().WrapToIl2Cpp());
+            }
+        }
+
+        IEnumerator _fastLoad()
+        {
+            yield return new WaitForSeconds(0.15f);
+            Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent());
         }
 
         void OnIntroEnd()
@@ -825,13 +842,19 @@ namespace FGTools.LocalServer
                     NumVsGroups = vsGroups,
                     TeamAssignments = teamAssigments,
                     VsGroupAssignments = vsGroupAssigments,
-                    StartRoundTime = 5,
+                    StartRoundTime = LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value ? 0 : 5,
                 });
 
                 ReadyPlayers = -1;
                 SpawnedPlayers = -1;
                 LoadedPlayers = -1;
             }
+        }
+
+        IEnumerator _actAfter(float f, Action a)
+        {
+            yield return new WaitForSeconds(f);
+            a();
         }
 
         void SpawnPlayer(GameMessageClientRequestSpawnPlayer msg, GameConnection conn)
@@ -1325,7 +1348,7 @@ namespace FGTools.LocalServer
             GameActions.OnNetObjSpawned -= OnNetObjSpawned;
             GameActions.OnRoundEnds -= OnRoundEnds;
 
-
+            CGMDespatcher.m_onGameServerStartGame = null;
             COMMON_ObjectiveBase.m_OnObjectiveSatisfied_SERVERONLY = null;
 
             TimeAttackStart -= OnTimeAttackStart;
@@ -1336,6 +1359,12 @@ namespace FGTools.LocalServer
 
         void OnIntroStarts()
         {
+            if (LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value && !CGM._round.IsUGC())
+            {
+                CGM.FinishPreparationPhase();
+                ReadyPlayers = 1;
+                CheckIfWeReadyToPlay();
+            }
         }
 
         void OnRoundEnds()

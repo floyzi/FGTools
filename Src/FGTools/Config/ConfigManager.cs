@@ -150,6 +150,7 @@ namespace FGTools.Config
         public static ConfigEntry<bool> RandomizeRings { get; set; }
         public static ConfigEntry<float> CameraDistance { get; set; }
         public static ConfigEntry<bool> RandomMusic { get; set; }
+        public static ConfigEntry<bool> FastLoad { get; set; }
 
         //PHYSICS
         public static ConfigEntry<float> DiveSens { get; set; }
@@ -345,6 +346,8 @@ namespace FGTools.Config
             RandomMusic.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
+
+            FastLoad = CFG.Bind(GPSect, "Fast Load", false, GetDesc("fast_load"));
             #endregion
 
             #region PHYSICS
