@@ -176,6 +176,7 @@ namespace FGTools.UI
 #if LAN_MULTIPLAYER
             new LANMultiplayTab(),
 #endif
+            new PresetsTab(),
         ];
         internal event Action<TabMeta> OnTabChanged;
         internal event Action<FGTStateManager.ToolsState> OnStateChange;
@@ -200,14 +201,6 @@ namespace FGTools.UI
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
 
-                var presetsBtn = CreateTab(Tab.PresetSelector, SubLevel.Default, tabGroup, () => FGTPresetsGUI, "gui_presets_title", "gui_presets_title");
-                AssignToGroups(presetsBtn.Component, new()
-                    {
-                        { new GroupPolicy(ObjectGroup.Editor, GroupOperation.Interactable), () => false },
-                        { new GroupPolicy(ObjectGroup.Menu, GroupOperation.Interactable), () => true },
-                        { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.Interactable), () => true },
-                        { new GroupPolicy(ObjectGroup.Loading, GroupOperation.Interactable), () => false }
-                    });
 
                 CreateTab(Tab.MediaLoader, SubLevel.Default, tabGroup, () => FGTMediaGUI, "gui_media_tools_title", "gui_media_tools_title");
 
@@ -239,7 +232,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-                DrawPresetSelector();
                 DrawMediaLoader();
                 DrawIMG2FGC();
                 DrawMisc();
@@ -1311,48 +1303,6 @@ namespace FGTools.UI
             credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
             Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
             UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
-        }
-
-        void DrawPresetSelector()
-        {
-            var pS = FGTBase.FGTServiceManager.GetService<PresetsService>();
-
-            FGTPresetsGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Presets", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTPresetsGUI, minHeight: 25, flexibleHeight: 0);
-
-            TryDrawUI(() => FGTTargetSettings.CosmeticPresets, FGTPresetsGUI, new(() =>
-            {
-                GameObject presetsDropGroup = UIFactory.CreateHorizontalGroup(FGTPresetsGUI, "presetsDropGroup", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(presetsDropGroup, minHeight: 30, flexibleHeight: 0);
-                GameObject presetsDrop = UIFactory.CreateDropdown(presetsDropGroup, "presetsDrop", out Dropdown presetDrop, $"{LocalizedStr("dropdown_placeholder")}", 14, pS.OnPresetsDropSelect, null);
-                UIFactory.SetLayoutElement(presetsDropGroup, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
-
-                GameObject presetBtns = UIFactory.CreateHorizontalGroup(FGTPresetsGUI, "presetBtns", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                UIFactory.SetLayoutElement(presetBtns, minHeight: 25, flexibleHeight: 0);
-                ButtonRef usePresetBtn = UIFactory.CreateButton(presetBtns, "usePresetBtn", $"{LocalizedStr("gui_use_preset")}", null);
-                usePresetBtn.OnClick += pS.TryUsePreset;
-                UIFactory.SetLayoutElement(usePresetBtn.GameObject, 30, 20, null, 0, null, null, null);
-                ButtonRef newPresetBtn = UIFactory.CreateButton(presetBtns, "newPresetBtn", $"{LocalizedStr("gui_new_preset")}", new Color(0.2f, 0.3f, 0.2f));
-                newPresetBtn.OnClick += pS.MakeNewPresetPopup;
-                UIFactory.SetLayoutElement(usePresetBtn.GameObject, 30, 20, null, 0, null, null, null);
-                ButtonRef delPresetBtn = UIFactory.CreateButton(presetBtns, "delPresetBtn", $"{LocalizedStr("gui_delete_preset")}", GUIRed);
-                delPresetBtn.OnClick += pS.TryDeletePreset;
-                UIFactory.SetLayoutElement(delPresetBtn.GameObject, 30, 20, null, 0, null, null, null);
-
-                GameObject presetInfoZone = UIFactory.CreateHorizontalGroup(FGTPresetsGUI, "presetInfoZone", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                GameObject hell = UIFactory.CreateScrollView(presetInfoZone, "PRESETINFO", out GameObject content, out AutoSliderScrollbar scrollBar, new(0.1f, 0.1f, 0.1f));
-                UIFactory.SetLayoutElement(hell, flexibleHeight: 9999, minHeight: 250);
-                Transform settingsList = hell.GetComponent<ScrollRect>().content.transform;
-                Text presetInfo = UIFactory.CreateLabel(settingsList.gameObject, "presetInfo", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerLeft, default, true, 14);
-
-                pS.SetUIReferences([presetDrop,
-                    presetInfo]);
-
-                Text bottomLine = UIFactory.CreateLabel(FGTPresetsGUI, "creditsInfo_2", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerCenter, default, true, 14);
-                UIFactory.SetLayoutElement(bottomLine.gameObject, preferredHeight: 1000, flexibleHeight: 9999, flexibleWidth: 9999);
-            }));
-
-
         }
 
         void RefreshEverything(bool onlyCleanup = false)
