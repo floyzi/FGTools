@@ -102,17 +102,18 @@ namespace FGTools.UI
             public Dictionary<GroupPolicy, Func<bool>> StatePerGroup;
         }
 
-        public struct TabMeta
+        internal struct TabMeta
         {
-            public Tab Tab;
-            public SubLevel SubLevel;
-
-            public TabMeta Copy()
+            internal Tab Tab;
+            internal SubLevel SubLevel;
+            internal UITab TabObject;
+            internal TabMeta Copy()
             {
                 return new TabMeta()
                 {
                     SubLevel = SubLevel,
-                    Tab = Tab
+                    Tab = Tab,
+                    TabObject = TabObject
                 };
             }
         }
@@ -127,8 +128,8 @@ namespace FGTools.UI
         public static NewGUI Instance;
         Dictionary<Tab, TabControlledElement> Tabs = new();
         List<UIControlledElement> ControlledObjects = new();
-        public TabMeta CurrentTab;
-        public TabMeta PreviousTab;
+        internal TabMeta CurrentTab;
+        internal TabMeta PreviousTab;
 
         //ui controlled elements
         //ButtonRef showPlayBtn;
@@ -168,10 +169,9 @@ namespace FGTools.UI
         Text TabHoverText;
         bool HoveringOnTab;
 
-        readonly Dictionary<Tab, UITab> _tabMap = new()
-        {
-            { Tab.RoundLoader, new RoundLoaderTab() }
-        };
+        readonly List<UITab> _tabMap = [
+            new RoundLoaderTab()
+            ];
         internal event Action<TabMeta> OnTabChanged;
         internal event Action<FGTStateManager.ToolsState> OnStateChange;
 
@@ -190,9 +190,9 @@ namespace FGTools.UI
 
                 foreach (var tab in _tabMap)
                 {
-                    var t = CreateTab(tab.Key, SubLevel.Default, tabGroup, () => tab.Value.ControlledObject, "gui_cms_loader", "gui_cms_loader");
-                    tab.Value.TabButton = t.Component;
-                    AssignToGroups(t.Component, tab.Value.StatePerGroup, tab.Value.OnStateChange);
+                    var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, "gui_cms_loader", "gui_cms_loader");
+                    tab.TabButton = t.Component;
+                    AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
 
 
@@ -245,7 +245,7 @@ namespace FGTools.UI
 
                 foreach (var tab in _tabMap)
                 {
-                    tab.Value.Draw(ContentRoot);
+                    tab.Draw(ContentRoot);
                 }
 
                 DrawShowLoader();
@@ -1536,7 +1536,7 @@ namespace FGTools.UI
             {
                 foreach (var tab in _tabMap)
                 {
-                    tab.Value.Refresh();
+                    tab.Refresh();
                 }
 
          
@@ -1600,7 +1600,8 @@ namespace FGTools.UI
             CurrentTab = new()
             {
                 SubLevel = tabLevel,
-                Tab = selectedTab
+                Tab = selectedTab,
+                TabObject = _tabMap.FirstOrDefault(x => x.Tab == selectedTab)
             };
 
             OnTabChanged.Invoke(CurrentTab);
@@ -1622,7 +1623,7 @@ namespace FGTools.UI
 
         internal T GetTab<T>(Tab tab) where T : UITab
         {
-            return _tabMap[tab] as T;
+            return _tabMap.FirstOrDefault(x => x.Tab == tab) as T;
         }    
 
         void StateChange(FGTStateManager.ToolsState state)
@@ -1664,7 +1665,7 @@ namespace FGTools.UI
                 if (HoveringOnTab)
                     TabHoverText.transform.position = Input.mousePosition + (Vector3.up * 15);
 
-                _tabMap[CurrentTab.Tab].Update();
+                CurrentTab.TabObject.Update();
 
                 if (CurrentTab.Tab == Tab.Misc)
                 {
