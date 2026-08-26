@@ -177,6 +177,7 @@ namespace FGTools.UI
             new LANMultiplayTab(),
 #endif
             new PresetsTab(),
+            new MediaLoaderTab(),
         ];
         internal event Action<TabMeta> OnTabChanged;
         internal event Action<FGTStateManager.ToolsState> OnStateChange;
@@ -200,9 +201,6 @@ namespace FGTools.UI
                     tab.TabButton = t.Component;
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
-
-
-                CreateTab(Tab.MediaLoader, SubLevel.Default, tabGroup, () => FGTMediaGUI, "gui_media_tools_title", "gui_media_tools_title");
 
                 var img2fgc = CreateTab(Tab.IMG2FGCLoader, SubLevel.Default, tabGroup, () => FGTImg2FGCGUI, "gui_img2fgc_tab", "gui_img2fgc");
                 AssignToGroups(img2fgc.Component, new()
@@ -232,7 +230,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-                DrawMediaLoader();
                 DrawIMG2FGC();
                 DrawMisc();
                 DrawFGCAutosaves();
@@ -429,170 +426,8 @@ namespace FGTools.UI
             }
         }
 
-        GameObject mediaFGPosGrp;
-        InputFieldRef posX;
-        InputFieldRef posY;
-        InputFieldRef posZ;
+       
 
-        InputFieldRef imgLocalLoad;
-        InputFieldRef imgRemoteLoad;
-
-        ButtonRef imagesBtn;
-        GameObject mediaTab;
-        void DrawMediaLoader()
-        {
-            FGTMediaGUI = UIFactory.CreateVerticalGroup(ContentRoot, "MediaTools", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTMediaGUI, minHeight: 30, flexibleHeight: 0);
-
-            GameObject mediaTabs = UIFactory.CreateHorizontalGroup(FGTMediaGUI, "Tabs", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(mediaTabs, minHeight: 25, flexibleHeight: 0);
-            imagesBtn = UIFactory.CreateButton(mediaTabs, $"Button_Img", $"{LocalizedStr("gui_img_loader")}");
-
-            TryDrawUI(() => FGTTargetSettings.MediaLoaderImages, FGTMediaGUI, new(() =>
-            {
-                mediaTab = UIFactory.CreateVerticalGroup(FGTMediaGUI, "img", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-                UIFactory.SetLayoutElement(mediaTab, minHeight: 25, flexibleHeight: 0);
-                RuntimeHelper.SetColorBlock(imagesBtn.Component, UniversalUI.EnabledButtonColor, UniversalUI.EnabledButtonColor * 1.2f);
-
-                //IMG NAME INPUT
-                imgLocalLoad = UIFactory.CreateInputField(mediaTab, "imgField", $"{LocalizedStr("inputfield_placeholder")}");
-                imgLocalLoad.Text = FGTBase.FGTServiceManager.GetService<MediaService>().imgPath;
-                imgLocalLoad.OnValueChanged += input =>
-                {
-                    FGTBase.FGTServiceManager.GetService<MediaService>().imgPath = input;
-                };
-                UIFactory.SetLayoutElement(imgLocalLoad.GameObject, 30, 25, null, 0, null, null, null);
-                imgRemoteLoad = UIFactory.CreateInputField(mediaTab, "imgField_web", $"{LocalizedStr("inputfield_placeholder")}");
-                imgRemoteLoad.Text = FGTBase.FGTServiceManager.GetService<MediaService>().url;
-                imgRemoteLoad.OnValueChanged += input =>
-                {
-                    FGTBase.FGTServiceManager.GetService<MediaService>().url = input;
-                };
-                UIFactory.SetLayoutElement(imgRemoteLoad.GameObject, 30, 25, null, 0, null, null, null);
-                imgRemoteLoad.GameObject.SetActive(false);
-
-
-                //BTN ACTS
-                GameObject btnActs = UIFactory.CreateHorizontalGroup(mediaTab, "btnActs", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-
-                ButtonRef loadBtn = UIFactory.CreateButton(btnActs, "loadBtn", $"{LocalizedStr("gui_media_load")}", new Color(0.2f, 0.3f, 0.2f));
-                loadBtn.OnClick += () =>
-                {
-                    if (!FGTBase.FGTServiceManager.GetService<MediaService>().urlLoad)
-                        CoroutineRunner.Instance.StartCoroutine(FGTBase.FGTServiceManager.GetService<MediaService>().LoadImage(Launcher.ImgDir + FGTBase.FGTServiceManager.GetService<MediaService>().imgPath).WrapToIl2Cpp());
-                    else
-                        CoroutineRunner.Instance.StartCoroutine(FGTBase.FGTServiceManager.GetService<MediaService>().LoadImage(FGTBase.FGTServiceManager.GetService<MediaService>().url).WrapToIl2Cpp());
-                };
-                UIFactory.SetLayoutElement(loadBtn.GameObject, 30, 25, null, 0, null, null, null);
-                ButtonRef dirBtn = UIFactory.CreateButton(btnActs, "dirBtn", $"{LocalizedStr("gui_folder")}", null);
-                dirBtn.OnClick += () =>
-                {
-                    Application.OpenURL(Launcher.ImgDir);
-                };
-                UIFactory.SetLayoutElement(dirBtn.GameObject, 30, 25, null, 0, null, null, null);
-                ButtonRef destAllBtn = UIFactory.CreateButton(btnActs, "destAllBtn", $"{LocalizedStr("gui_destroy_all")}", GUIRed);
-                destAllBtn.OnClick += () =>
-                {
-                    void pop(bool wasOk)
-                    {
-                        if (wasOk)
-                        {
-                            foreach (GameObject obj in Resources.FindObjectsOfTypeAll<GameObject>())
-                            {
-                                if (obj.name.StartsWith("Loaded Image"))
-                                    UnityEngine.Object.Destroy(obj.gameObject);
-                            }
-                        }
-                    }
-                    AreYouSurePopup($"{LocalizedStr("gui_del_images_act")}", popAct: new Action<bool>(pop));
-                };
-                UIFactory.SetLayoutElement(destAllBtn.GameObject, 30, 25, null, 0, null, null, null);
-
-                GameObject btnActsRow2 = UIFactory.CreateHorizontalGroup(mediaTab, "btnActsRow2", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-
-                ButtonRef flzRuImg = UIFactory.CreateButton(btnActsRow2, "flzruImg", $"{LocalizedStr("gui_flzru_img")}", null);
-                flzRuImg.OnClick += () =>
-                {
-                    var oS = OnlineCheck;
-                    var randConfig = oS.FGTContent.RandomImages;
-
-                    if (!oS.FGTContent.RandomImages.Enabled)
-                        return;
-
-                    string url;
-                    string urlBase = oS.FGTContent.RandomImages.Url;
-                    if (randConfig.TotalImages != -1)
-                    {
-                        int randVal = UnityEngine.Random.Range(0, randConfig.TotalImages);
-                        if (randConfig.BannedImages != null && randConfig.BannedImages.Contains(randVal))
-                            randVal = randConfig.Fallback;
-                        url = $"{urlBase}{randVal}.png";
-                    }
-                    else
-                        url = $"{urlBase}_146.png";
-
-                    CoroutineRunner.Instance.StartCoroutine(FGTBase.FGTServiceManager.GetService<MediaService>().LoadImage(url, false, true).WrapToIl2Cpp());
-                };
-                UIFactory.SetLayoutElement(flzRuImg.GameObject, 30, 25, null, 0, null, null, null);
-
-                GameObject t = UIFactory.CreateHorizontalGroup(mediaTab, "t", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-                GameObject asCube = UIFactory.CreateToggle(t, "asCube", out Toggle asCube_toggle, out Text asCube_t);
-                UIFactory.SetLayoutElement(asCube.gameObject, minWidth: 170, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 0);
-                asCube_t.text = $"{LocalizedStr("gui_as_cube")}";
-                asCube_toggle.isOn = false;
-                asCube_toggle.onValueChanged.AddListener((val) => { FGTBase.FGTServiceManager.GetService<MediaService>().asCube = val; });
-                GameObject nearFG = UIFactory.CreateToggle(t, "nearFG", out Toggle nearFG_toggle, out Text nearFG_t);
-                UIFactory.SetLayoutElement(nearFG, flexibleWidth: 9999);
-                nearFG_t.text = $"{LocalizedStr("gui_near_fg")}";
-                nearFG_toggle.isOn = true;
-                nearFG_toggle.onValueChanged.AddListener((val) => { FGTBase.FGTServiceManager.GetService<MediaService>().imgLoadNearFG = val; });
-                GameObject viaURL = UIFactory.CreateToggle(t, "viaURL", out Toggle viaURL_toggle, out Text viaURL_t);
-                UIFactory.SetLayoutElement(viaURL, flexibleWidth: 9999);
-                viaURL_t.text = $"{LocalizedStr("gui_url_load")}";
-                viaURL_toggle.isOn = false;
-                viaURL_toggle.onValueChanged.AddListener((val) => { FGTBase.FGTServiceManager.GetService<MediaService>().urlLoad = val; });
-
-                mediaFGPosGrp = UIFactory.CreateVerticalGroup(mediaTab, "mediaFGPosGrp", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-                posX = UIFactory.CreateInputField(mediaFGPosGrp, "X", $"{LocalizedStr("inputfield_placeholder")}");
-                posX.Text = FGTBase.FGTServiceManager.GetService<MediaService>().transX.ToString();
-                posX.OnValueChanged += input =>
-                {
-                    if (float.TryParse(input, out float x))
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transX = x;
-                };
-                UIFactory.SetLayoutElement(posX.Component.gameObject, 30, 25, null, 0, null, null, null);
-                posY = UIFactory.CreateInputField(mediaFGPosGrp, "Y", $"{LocalizedStr("inputfield_placeholder")}");
-                posY.Text = FGTBase.FGTServiceManager.GetService<MediaService>().transY.ToString();
-                posY.OnValueChanged += input =>
-                {
-                    if (float.TryParse(input, out float y))
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transY = y;
-                };
-                UIFactory.SetLayoutElement(posY.Component.gameObject, 30, 25, null, 0, null, null, null);
-                posZ = UIFactory.CreateInputField(mediaFGPosGrp, "Z", $"{LocalizedStr("inputfield_placeholder")}");
-                posZ.Text = FGTBase.FGTServiceManager.GetService<MediaService>().transZ.ToString();
-                posZ.OnValueChanged += input =>
-                {
-                    if (float.TryParse(input, out float z))
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transZ = z;
-                };
-                UIFactory.SetLayoutElement(posZ.Component.gameObject, 30, 25, null, 0, null, null, null);
-
-                GameObject followFgPos = UIFactory.CreateToggle(mediaFGPosGrp, "followFgPos", out Toggle followFgPos_toggle, out Text followFgPos_t);
-                UIFactory.SetLayoutElement(followFgPos.gameObject, minWidth: 170, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 0);
-                followFgPos_t.text = $"{LocalizedStr("gui_follow_fg_pos")}";
-                followFgPos_toggle.isOn = true;
-                followFgPos_toggle.onValueChanged.AddListener((val) => { FGTBase.FGTServiceManager.GetService<MediaService>().followFGPos = val; });
-
-                Text showInfo = UIFactory.CreateLabel(mediaFGPosGrp, "desc", $"X/Y/Z", TextAnchor.LowerCenter, default, true, 14);
-                UIFactory.SetLayoutElement(showInfo.gameObject, minHeight: 25, flexibleHeight: 0);
-                mediaFGPosGrp.gameObject.SetActive(false);
-
-                Text desc = UIFactory.CreateLabel(mediaTab, "desc", $"\n{LocalizedStr("gui_imgloader_desc")}\n\n - {LocalizedStr("gui_imgloader_desc_01")}\n - {LocalizedStr("gui_imgloader_desc_02")}", TextAnchor.LowerCenter, default, true, 14);
-                //UIFactory.SetLayoutElement(desc.previewTheme, minHeight: 25, flexibleHeight: 0);
-            }));
-
-        }
         void DrawIMG2FGC()
         {
             FGTImg2FGCGUI = UIFactory.CreateVerticalGroup(ContentRoot, "IMG2FGC", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
@@ -1482,34 +1317,7 @@ namespace FGTools.UI
 
                 if (CurrentTab.Tab == Tab.MediaLoader)
                 {
-                    if (!FGTBase.FGTServiceManager.GetService<MediaService>().imgLoadNearFG && mediaFGPosGrp != null && !mediaFGPosGrp.activeSelf)
-                        mediaFGPosGrp.gameObject.SetActive(true);
-                    else if (FGTBase.FGTServiceManager.GetService<MediaService>().imgLoadNearFG && mediaFGPosGrp != null && mediaFGPosGrp.activeSelf)
-                        mediaFGPosGrp.gameObject.SetActive(false);
-
-                    if (FGTBase.FGTServiceManager.GetService<MediaService>().urlLoad && imgRemoteLoad.GameObject != null && imgLocalLoad.GameObject.activeSelf)
-                    {
-                        imgLocalLoad.GameObject.SetActive(false);
-                        imgRemoteLoad.GameObject.SetActive(true);
-                    }
-                    else if (!FGTBase.FGTServiceManager.GetService<MediaService>().urlLoad && imgLocalLoad.GameObject != null && imgRemoteLoad.GameObject.activeSelf)
-                    {
-                        imgLocalLoad.GameObject.SetActive(true);
-                        imgRemoteLoad.GameObject.SetActive(false);
-                    }
-
-                    if (FGTBase.FGTServiceManager.GetService<MediaService>().followFGPos && FallGuyBehaviour._instance != null && FallGuyBehaviour._instance.FallGuy != null)
-                    {
-                        var x = FallGuyBehaviour._instance.FallGuy.transform.position.x;
-                        var y = FallGuyBehaviour._instance.FallGuy.transform.position.y;
-                        var z = FallGuyBehaviour._instance.FallGuy.transform.position.z;
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transX = x;
-                        posX.Text = x.ToString();
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transY = y;
-                        posY.Text = y.ToString();
-                        FGTBase.FGTServiceManager.GetService<MediaService>().transZ = z;
-                        posZ.Text = z.ToString();
-                    }
+                    
                 }
             }
             catch

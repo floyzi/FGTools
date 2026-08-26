@@ -1,18 +1,12 @@
 ﻿using FGTools.Content;
 using FGTools.Services;
 using FGTools.Services.Logic;
-using FGTools.States.Logic;
 using FGTools.UI.Tabs.Logic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
-using static FGTools.UI.NewGUI;
 using static FGTools.Services.LocalizationService;
+using static FGTools.UI.NewGUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -57,11 +51,13 @@ namespace FGTools.UI.Tabs
 
                 UIFactory.SetLayoutElement(delPresetBtn.GameObject, 30, 20, null, 0, null, null, null);
 
-                GameObject presetInfoZone = UIFactory.CreateHorizontalGroup(ControlledObject, "presetInfoZone", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                GameObject hell = UIFactory.CreateScrollView(presetInfoZone, "PRESETINFO", out GameObject content, out var scrollBar, new(0.1f, 0.1f, 0.1f));
-                UIFactory.SetLayoutElement(hell, flexibleHeight: 9999, minHeight: 250);
-                Transform settingsList = hell.GetComponent<ScrollRect>().content.transform;
-                Text presetInfo = UIFactory.CreateLabel(settingsList.gameObject, "presetInfo", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerLeft, default, true, 14);
+                var presetInfoZone = UIFactory.CreateHorizontalGroup(ControlledObject, "presetInfoZone", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
+                
+                var infoScroll = UIFactory.CreateScrollView(presetInfoZone, "PRESETINFO", out GameObject content, out var scrollBar, new(0.1f, 0.1f, 0.1f));
+                UIFactory.SetLayoutElement(infoScroll, flexibleHeight: 9999, minHeight: 250);
+
+                var info = infoScroll.GetComponent<ScrollRect>().content.transform;
+                var presetInfo = UIFactory.CreateLabel(info.gameObject, "presetInfo", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerLeft, default, true, 14);
 
                 Service.SetUIReferences(
                 [
@@ -69,7 +65,7 @@ namespace FGTools.UI.Tabs
                     presetInfo
                 ]);
 
-                Text bottomLine = UIFactory.CreateLabel(ControlledObject, "creditsInfo_2", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerCenter, default, true, 14);
+                var bottomLine = UIFactory.CreateLabel(ControlledObject, "creditsInfo_2", $"{LocalizedStr("gui_presets_desc")}", TextAnchor.LowerCenter, default, true, 14);
                 UIFactory.SetLayoutElement(bottomLine.gameObject, preferredHeight: 1000, flexibleHeight: 9999, flexibleWidth: 9999);
             }));
 

@@ -30,7 +30,7 @@ namespace FGTools.UI
             {
                 if (wasok)
                 {
-                    List<string> writeInfo = new List<string>();
+                    List<string> writeInfo = [];
                     string outputfile = Path.Combine(Application.persistentDataPath, "output.txt");
                     if (File.Exists(outputfile))
                         File.Delete(outputfile);

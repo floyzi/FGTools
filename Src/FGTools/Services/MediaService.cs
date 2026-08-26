@@ -24,7 +24,7 @@ namespace FGTools.Services
         public float transX;
         public float transY;
         public float transZ;
-        public bool followFGPos = true;
+        public bool FollowFGPos = true;
         public bool asCube;
         public bool urlLoad;
         public string url = "http://";
