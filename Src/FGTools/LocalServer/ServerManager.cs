@@ -34,6 +34,7 @@ using Levels.Rollout;
 using Levels.ScoreZone;
 using Levels.TimeAttack;
 using Mediatonic.Networking;
+using Mediatonic.Tools.Utils;
 using SRF;
 using System;
 using System.Collections;
@@ -159,19 +160,12 @@ namespace FGTools.LocalServer
         void OnRoundStart(GameMessageServerStartGame e)
         {
             if (LocalServerService.IsUserAloneAndHost && ConfigManager.FastLoad.Value)
-            {
-                CoroutineRunner.Instance.StartCoroutine(_fastLoad().WrapToIl2Cpp());
-            }
-        }
-
-        IEnumerator _fastLoad()
-        {
-            yield return new WaitForSeconds(0.15f);
-            Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent());
+                CoroutineRunner.Instance.ExecuteAfterPredicate(new Func<bool>(() => CGM._gameSession.IsCountdownOrPlaying), new Action(() => { Broadcaster.Instance.Broadcast(new IntroCountdownEndedEvent()); }));
         }
 
         void OnIntroEnd()
         {
+
         }
 
         void OnRoundStart()

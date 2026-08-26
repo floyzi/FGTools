@@ -355,6 +355,12 @@ namespace FGTools.LocalServer.Patches
             return false;
         }
 
+        [HarmonyPatch(typeof(ClientGameManager), nameof(ClientGameManager.StartPreparationPhaseAudio)), HarmonyPrefix]
+        static bool StartPreparationPhaseAudio()
+        {
+            return !ConfigManager.FastLoad.Value;
+        }
+
         [HarmonyPatch(typeof(MPGNetObjectManager), nameof(MPGNetObjectManager.SetupNetObjectOnGameObject)), HarmonyPostfix]
         static void SetupNetObjectOnGameObject(MPGNetObjectManager __instance, GameObject go, GameMessageServerSpawnObject msg)
         {
