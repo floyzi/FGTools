@@ -48,7 +48,7 @@ namespace FGTools.States
         public string LatestError;
         public bool ShouldSkipErrors;
         float TargetTime = 0;
-        internal FGToolsUI.NewGUI ToolsUI;
+        internal NewGUI ToolsUI;
 
         public override void OnStateSet()
         {
@@ -226,7 +226,7 @@ namespace FGTools.States
 
         public override void UpdateState()
         {
-            var guiInst = FGToolsUI.NewGUI.Instance;
+            var guiInst = NewGUI.Instance;
 
 #if !PROD
             if (!StaticWatermark)

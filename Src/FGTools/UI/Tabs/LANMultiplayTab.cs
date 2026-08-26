@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FGTools.UI
+namespace FGTools.UI.Tabs
 {
-    internal class FGTConfigManager
+    internal class LANMultiplayTab
     {
     }
 }

@@ -480,14 +480,14 @@ namespace FGTools.Services
                 IncreaseRateLimit();
                 FraggleCommonManager.Instance.FraggleLevelRepository.RequestFraggleLevelData(new(code, new Il2CppSystem.Nullable<int>(0)), new Action<FraggleLevelData>((FraggleLevelData data) =>
                 {
-                    preloadedDTO = (data != null) ? data.LevelInfoDto : null;
-                    FGToolsUI.NewGUI.Instance.levelInfo.text = FGToolsUI.NewGUI.ParseLevelDTO(preloadedDTO);
+                    preloadedDTO = data?.LevelInfoDto;
+                    NewGUI.Instance.levelInfo.text = NewGUI.ParseLevelDTO(preloadedDTO);
                     if (data.LevelInfoDto != null)
                         FGTServiceManager.GetService<StatisticsService>().AddFGCHistoryRound(code);
                 }), null);
             }
             else
-                FGToolsUI.NewGUI.Instance.levelInfo.text = $"{ThrowRateLimitText()}";
+                NewGUI.Instance.levelInfo.text = $"{ThrowRateLimitText()}";
         }
 
         public void LoadFGCRound(string code, LevelInfoDto preloadedDto, bool userRequest)

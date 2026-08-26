@@ -359,7 +359,7 @@ namespace FGTools.Services
         public void MakeNewPresetPopup()
         {
             AddCMSString("preset_holder", $"{LocalizedStr("preset_holder")}");
-            UniversalUI.SetUIActive(UniverseGUID, false); FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(false); StateManager.InternalState.LoaderUIToggle = false;
+            UniversalUI.SetUIActive(UniverseGUID, false); NewGUI.Instance.UIRoot.gameObject.SetActive(false); StateManager.InternalState.LoaderUIToggle = false;
             string presetName = "";
 
             var ModalMessageDataDisclaimer = new ModalMessageWithInputFieldData
@@ -379,7 +379,7 @@ namespace FGTools.Services
 
                     InitPresetsDrop();
                     UniversalUI.SetUIActive(UniverseGUID, true);
-                    FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
+                    NewGUI.Instance.UIRoot.gameObject.SetActive(true);
                     StateManager.InternalState.LoaderUIToggle = true;
                 }),
                 InputTextPlaceholder = "preset_holder",

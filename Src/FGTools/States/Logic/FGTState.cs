@@ -81,6 +81,7 @@ namespace FGTools.States.Logic
             }
         }
     }
+
     public abstract class FGTState : FGTBase, IFGTState
     {
         public abstract void OnSceneLoaded(Scene scene, LoadSceneMode mode);

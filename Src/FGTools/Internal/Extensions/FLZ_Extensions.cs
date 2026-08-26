@@ -140,8 +140,8 @@ namespace FGTools.Internal.Extensions
 
             if (data.HideGUIType > 0)
             {
-                if (FGToolsUI.NewGUI.Instance != null && FGToolsUI.NewGUI.Instance.UIRoot != null)
-                    FGToolsUI.NewGUI.Instance.ToggleUI(false);
+                if (NewGUI.Instance != null && NewGUI.Instance.UIRoot != null)
+                    NewGUI.Instance.ToggleUI(false);
             }
 
             data.OnClick += new Action<bool>(wasok =>
@@ -150,7 +150,7 @@ namespace FGTools.Internal.Extensions
                 {
                     if (!wasok)
                     {
-                        FGToolsUI.NewGUI.Instance.ToggleUI(true);
+                        NewGUI.Instance.ToggleUI(true);
                     }
                     return;
                 }
@@ -158,7 +158,7 @@ namespace FGTools.Internal.Extensions
                 if (data.HideGUIType != ModalHideGUIType.KeepHidden)
                 {
                     UniversalUI.SetUIActive(UniverseGUID, true);
-                    FGToolsUI.NewGUI.Instance.UIRoot.gameObject.SetActive(true);
+                    NewGUI.Instance.UIRoot.gameObject.SetActive(true);
                     FGTStateManager._stateManager.InternalState.LoaderUIToggle = true;
                 }
             });

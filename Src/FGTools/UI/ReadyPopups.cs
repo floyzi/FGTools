@@ -7,25 +7,16 @@ using FGClient.UI;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
-using FMODUnity;
 using Il2CppInterop.Runtime.Attributes;
-using Sentry.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Threading;
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UniverseLib;
-using UniverseLib.UI;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.Services.OnlineCheckService;
-using static FGTools.UI.FGToolsUI;
 
 
 namespace FGTools.UI

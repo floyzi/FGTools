@@ -86,8 +86,8 @@ namespace FGTools.Services
                 }
                 else
                 {
-                    if (FGToolsUI.NewGUI.Instance != null)
-                        FGToolsUI.NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
+                    if (NewGUI.Instance != null)
+                        NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
                     CurrHistoryPage = 0;
                 }
             }
@@ -131,17 +131,17 @@ namespace FGTools.Services
         {
             if (HistoryPages.Count > 0)
             {
-                FGToolsUI.NewGUI.Instance.DisplayInfo.text = $"{LocalizedStr("gui_page")} {CurrHistoryPage + 1} {LocalizedStr("gui_out_of")} {HistoryPages.Count}";
+                NewGUI.Instance.DisplayInfo.text = $"{LocalizedStr("gui_page")} {CurrHistoryPage + 1} {LocalizedStr("gui_out_of")} {HistoryPages.Count}";
                 int ab = CurrHistoryPage + 1 * HistoryPages[CurrHistoryPage].Count;
                 List<string> sortedList = new([.. HistoryPages[CurrHistoryPage]]);
                 sortedList.Reverse();
-                FGToolsUI.NewGUI.Instance.RoundHistoryTXT.text = string.Join("\n", sortedList.ToArray().Select((line, index) => $"{ab -= 1}. | {line}"));
-                FGToolsUI.NewGUI.Instance.HistoryPlus.Component.interactable = CurrHistoryPage + 1 != HistoryPages.Count;
-                FGToolsUI.NewGUI.Instance.HistoryMinus.Component.interactable = CurrHistoryPage > 0;
-                FGToolsUI.NewGUI.Instance.HistoryActions.gameObject.SetActive(FGToolsUI.NewGUI.Instance.CurrentTab.Tab == FGToolsUI.NewGUI.Tab.Misc && FGToolsUI.NewGUI.Instance.roundHistory.gameObject.activeSelf);
+                NewGUI.Instance.RoundHistoryTXT.text = string.Join("\n", sortedList.ToArray().Select((line, index) => $"{ab -= 1}. | {line}"));
+                NewGUI.Instance.HistoryPlus.Component.interactable = CurrHistoryPage + 1 != HistoryPages.Count;
+                NewGUI.Instance.HistoryMinus.Component.interactable = CurrHistoryPage > 0;
+                NewGUI.Instance.HistoryActions.gameObject.SetActive(NewGUI.Instance.CurrentTab.Tab == NewGUI.Tab.Misc && NewGUI.Instance.roundHistory.gameObject.activeSelf);
             }
             else
-                FGToolsUI.NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
+                NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
         }
 
         public void AddFGCHistoryRound(string code)
@@ -151,7 +151,7 @@ namespace FGTools.Services
 
             currentStats.FGCSearchHistory.Add(code);
 
-            FGToolsUI.NewGUI.Instance.RefreshFGCHistory(code);
+            NewGUI.Instance.RefreshFGCHistory(code);
             Save();
         }
 
