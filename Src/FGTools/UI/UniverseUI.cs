@@ -1,5 +1,6 @@
 ﻿extern alias wle;
 
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
@@ -18,6 +19,7 @@ using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States;
 using FGTools.States.Logic;
+using Il2CppSystem.Runtime.Remoting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,6 +44,7 @@ using static FGTools.Services.MenuThemeService;
 using static FGTools.States.Logic.FGTStateManager;
 using static FGTools.UI.ReadyPopups;
 using static Il2CppSystem.Globalization.TimeSpanFormat;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace FGTools.UI
 {
@@ -1996,13 +1999,40 @@ namespace FGTools.UI
                     langAuthor.gameObject.SetActive(false);
             }
 
+            internal class EntryInfo(CachedConfigEntry cached)
+            {
+                public CachedConfigEntry Cached { get; } = cached; public ConfigEntryBase RefEntry;
+                public bool IsHidden { get; internal set; }
+
+                internal GameObject content;
+            }
+
+            List<EntryInfo> confEntries;
+
+            void SearchConfig(string q)
+            {
+                q = q.ToLower();
+                foreach (var entry in confEntries)
+                {
+                    bool val = (string.IsNullOrEmpty(q)
+                                    || entry.RefEntry.Definition.Key.ToLower().Contains(q)
+                                    || (entry.RefEntry.Description?.Description?.Contains(q) ?? false))
+                               && (!entry.IsHidden);
+
+                    entry.content.SetActive(val);
+                }
+            }
             void DrawConfig()
             {
-
+                confEntries = [];
                 FGTConfigGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Config", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(FGTConfigGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
+                var search = UIFactory.CreateInputField(FGTConfigGUI, "configGUI", LocalizedStr("gui_search"));
+                search.OnValueChanged += SearchConfig;
+                UIFactory.SetLayoutElement(search.GameObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 25);
                 GameObject content = UIFactory.CreateScrollView(FGTConfigGUI, "configGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
                 UIFactory.SetLayoutElement(content, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
+                var scroll = content.GetComponent<ScrollRect>().content.gameObject;
 
                 Dictionary<string, List<ConfigEntryBase>> dict = new()
                 {
@@ -2021,11 +2051,19 @@ namespace FGTools.UI
                 }
 
                 // Create actual entry editors
-                foreach (KeyValuePair<string, List<ConfigEntryBase>> ctg in dict)
+                foreach (var ctg in dict)
                 {
+                    if (!string.IsNullOrEmpty(ctg.Key))
+                    {
+                        var bg = UIFactory.CreateHorizontalGroup(scroll, "TitleBG", true, true, true, true, 0, default, new Color(0.07f, 0.07f, 0.07f));
+
+                        var title = UIFactory.CreateLabel(bg, $"Title_{ctg.Key}", ctg.Key, TextAnchor.MiddleCenter, default, true, 17);
+                        UIFactory.SetLayoutElement(title.gameObject, minHeight: 30, minWidth: 200, flexibleWidth: 9999);
+                    }
+
                     foreach (ConfigEntryBase configEntry in ctg.Value)
                     {
-                        CachedConfigEntry cache = new(configEntry, content.GetComponent<ScrollRect>().content.gameObject);
+                        CachedConfigEntry cache = new(configEntry, scroll);
                         cache.Enable();
 
                         //configsToCached.Add(configEntry, cache);
@@ -2050,27 +2088,21 @@ namespace FGTools.UI
                             }
                         }
 
-                     
 
-                        //info.Entries.Add(new EntryInfo(cache)
-                        //{
-                        //    RefEntry = configEntry,
-                        //    content = obj,
-                        //    IsHidden = advanced
-                        //});
+                        confEntries.Add(new EntryInfo(cache)
+                        {
+                            RefEntry = configEntry,
+                            content = obj,
+                            IsHidden = advanced
+                        });
                     }
                 }
 
                 // hide buttons for completely-hidden categories.
-                //if (!info.Entries.Any(it => !it.IsHidden))
-                //{
-                //    btn.Component.gameObject.SetActive(false);
-                //    info.isCompletelyHidden = true;
-                //}
-
+               
                 content.SetActive(true);
 
-           
+               
             }
 
             void DrawCredits()
