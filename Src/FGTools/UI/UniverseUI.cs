@@ -173,6 +173,7 @@ namespace FGTools.UI
             new MediaLoaderTab(),
             new ImgInFgcTab(),
             new MiscTab(),
+            new FGCLocalSavesTab(),
         ];
 
         internal event Action<TabMeta> OnTabChanged;
@@ -198,7 +199,6 @@ namespace FGTools.UI
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
 
-                CreateTab(Tab.FGCAutosaves, SubLevel.Default, tabGroup, () => FGTAutosavesGUI, "gui_fgc_local_autosaves", "gui_fgc_local_autosaves");
                 CreateTab(Tab.Config, SubLevel.Default, tabGroup, () => FGTConfigGUI, "gui_config", "gui_config");
                 CreateTab(Tab.Credits, SubLevel.Default, tabGroup, () => FGTCreditsGUI, "gui_credits", "gui_credits");
             }
@@ -216,7 +216,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-                DrawFGCAutosaves();
                 DrawCredits();
                 DrawConfig();
 
@@ -380,96 +379,6 @@ namespace FGTools.UI
             var failTitle = UIFactory.CreateLabel(group, "failTitle", LocalizedStr("gui_disabled_feature"), TextAnchor.MiddleCenter);
             UIFactory.SetLayoutElement(failTitle.gameObject, minHeight: 25, flexibleHeight: 0);
         }
-
-
-
-      
-
-        Dropdown SavedLevels;
-        Dropdown LevelSaves;
-        void DrawFGCAutosaves()
-        {
-            var saves = FGTBase.FGTServiceManager.GetService<FGC_LocalSavesService>();
-            FGTAutosavesGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Autosaves", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTAutosavesGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-
-            TryDrawUI(() => FGTTargetSettings.FGCLocalSaves, FGTAutosavesGUI, new(() =>
-            {
-
-                var nosaves = UIFactory.CreateLabel(FGTAutosavesGUI, "nosaves", $"{LocalizedStr("gui_local_save_no_saves")}", TextAnchor.UpperCenter, default, true, 14);
-                UIFactory.SetLayoutElement(nosaves.gameObject, 0, 20);
-
-                GameObject dropdowns = UIFactory.CreateHorizontalGroup(FGTAutosavesGUI, "dropdowns", true, false, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-
-                //levels
-                GameObject savedLevels = UIFactory.CreateDropdown(dropdowns, "savedLevels", out SavedLevels, $"{LocalizedStr("dropdown_placeholder")}", 14, saves.OnLevelSelect, null);
-                UIFactory.SetLayoutElement(savedLevels, minHeight: 25, flexibleHeight: 0);
-
-                //saves
-                GameObject levelSaves = UIFactory.CreateDropdown(dropdowns, "levelSaves", out LevelSaves, $"{LocalizedStr("dropdown_placeholder")}", 14, saves.OnSaveSelect, null);
-                UIFactory.SetLayoutElement(levelSaves, minHeight: 25, flexibleHeight: 0);
-
-                UIFactory.SetLayoutElement(dropdowns, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                GameObject loadBtnGroup = UIFactory.CreateHorizontalGroup(FGTAutosavesGUI, "btnGroup", true, false, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                var loadbtn = UIFactory.CreateButton(loadBtnGroup, "LoadSave", LocalizedStr("gui_local_save_load"));
-                loadbtn.OnClick = () => { saves.TryToLoadSelectedSave(); };
-                UIFactory.SetLayoutElement(loadbtn.GameObject, minHeight: 25, flexibleHeight: 0);
-                UIFactory.SetLayoutElement(loadBtnGroup, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-
-                GameObject SaveInfoGroup = UIFactory.CreateHorizontalGroup(FGTAutosavesGUI, "SaveInfoGroup", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-
-                GameObject hell = UIFactory.CreateScrollView(SaveInfoGroup, "showRounds", out GameObject content, out AutoSliderScrollbar scrollBar, new(0.1f, 0.1f, 0.1f));
-                UIFactory.SetLayoutElement(hell, flexibleHeight: 9999, minHeight: 120);
-                Transform settingsList = hell.GetComponent<ScrollRect>().content.transform;
-                Text showlist = UIFactory.CreateLabel(settingsList.gameObject, "saveInfo", $"{LocalizedStr("gui_local_save_info_placeholder")}", TextAnchor.LowerLeft, default, true, 14);
-
-                GameObject icoGrp = UIFactory.CreateVerticalGroup(SaveInfoGroup, "Image", false, false, true, true, 0, new Vector4(0, 0, 0, 0), childAlignment: TextAnchor.UpperLeft);
-                Image showIco = UIFactory.CreateUIObject("gradient", icoGrp).AddComponent<Image>();
-                UIFactory.SetLayoutElement(showIco.gameObject, minHeight: 170, preferredHeight: 170, flexibleHeight: 170, flexibleWidth: 270, preferredWidth: 270, minWidth: 270);
-
-                GameObject genericActions = UIFactory.CreateHorizontalGroup(FGTAutosavesGUI, "genericActions", true, false, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                var newSave = UIFactory.CreateButton(genericActions, "newSave", LocalizedStr("gui_local_save_create"));
-                newSave.OnClick = () => { saves.TryAutosaveLevel(); };
-                UIFactory.SetLayoutElement(newSave.GameObject, minHeight: 25, flexibleHeight: 0);
-
-                var delAll = UIFactory.CreateButton(genericActions, "delAll", LocalizedStr("gui_local_save_del_all"), GUIRed);
-                delAll.OnClick = () => { saves.TryDeleteEverything(); };
-                UIFactory.SetLayoutElement(delAll.GameObject, minHeight: 25, flexibleHeight: 0);
-
-                UIFactory.SetLayoutElement(genericActions, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                GameObject saveActions = UIFactory.CreateHorizontalGroup(FGTAutosavesGUI, "saveActions", true, false, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                var delLevel = UIFactory.CreateButton(saveActions, "delLevel", LocalizedStr("gui_local_save_del_level"), GUIRed);
-                delLevel.OnClick = () => { saves.TryDeleteLevel(); };
-                UIFactory.SetLayoutElement(delLevel.GameObject, minHeight: 25, flexibleHeight: 0);
-
-                var delSave = UIFactory.CreateButton(saveActions, "delSave", LocalizedStr("gui_local_save_del_save"), GUIRed);
-                delSave.OnClick = () => { saves.TryDeleteSave(); };
-                UIFactory.SetLayoutElement(delSave.GameObject, minHeight: 25, flexibleHeight: 0);
-
-                UIFactory.SetLayoutElement(saveActions, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
-
-                saves.SetUIReferences([SavedLevels,
-                    LevelSaves,
-                    showIco,
-                    showlist,
-                    SaveInfoGroup,
-                    loadBtnGroup,
-                    genericActions,
-                    newSave.Component,
-                    nosaves,
-                    dropdowns,
-                    saveActions,
-                    delLevel.Component,
-                    delSave.Component]);
-
-                GameObject placeholder42 = UIFactory.CreateLabel(FGTAutosavesGUI, "ShowLoaderDesc", $"{LocalizedStr("gui_fgc_local_autosaves_desc")}", TextAnchor.LowerCenter, default, true, 14).gameObject;
-                UIFactory.SetLayoutElement(placeholder42.gameObject, preferredHeight: 9999, flexibleHeight: 200, flexibleWidth: 200);
-            }));
-        }
-
 
         internal class EntryInfo(CachedConfigEntry cached)
         {
