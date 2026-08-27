@@ -174,6 +174,8 @@ namespace FGTools.UI
             new ImgInFgcTab(),
             new MiscTab(),
             new FGCLocalSavesTab(),
+            new CreditsTab(),
+            
         ];
 
         internal event Action<TabMeta> OnTabChanged;
@@ -216,7 +218,6 @@ namespace FGTools.UI
                     tab.Draw(ContentRoot);
                 }
 
-                DrawCredits();
                 DrawConfig();
 
                 TabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
@@ -481,36 +482,6 @@ namespace FGTools.UI
             content.SetActive(true);
 
 
-        }
-
-        void DrawCredits()
-        {
-            FGTCreditsGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Credits", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTCreditsGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-            GameObject scrollview = UIFactory.CreateScrollView(FGTCreditsGUI, "creditsGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
-            UIFactory.SetLayoutElement(scrollview, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
-
-            var sb = new StringBuilder();
-
-            foreach (var credit in OnlineCheck.FGTContent.Credits)
-            {
-                sb.AppendLine($"<b>{LocalizedStr(credit.Value.Id).ToUpper()}</b>\n");
-
-                foreach (var actualCredit in credit.Value.Credits)
-                {
-                    if (actualCredit.Perfom != string.Empty)
-                        sb.AppendLine($"{actualCredit.Subject} - {actualCredit.Perfom}");
-                    else
-                        sb.AppendLine($"{actualCredit.Subject}");
-                }
-
-                sb.AppendLine();
-            }
-
-            Text credits = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo", $"{sb.ToString().Trim()}", TextAnchor.LowerCenter, default, true, 14);
-            credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
-            Text bottomLine = UIFactory.CreateLabel(FGTCreditsGUI, "creditsInfo_2", $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
-            UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
         }
 
         internal void RefreshEverything(bool onlyCleanup = false)
