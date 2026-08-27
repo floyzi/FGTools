@@ -37,7 +37,7 @@ namespace FGTools.UI.Tabs
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
             #region LOCAL MULTIPLAYER DEV
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.LocalMultiplayer, ControlledObject, new(() =>
+            TryDrawUI(() => FGTTargetSettings.LocalMultiplayer, ControlledObject, new(() =>
             {
                 var fields = UIFactory.CreateHorizontalGroup(ControlledObject, "HostFields", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(fields, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);

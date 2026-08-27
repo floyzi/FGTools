@@ -36,7 +36,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.CosmeticPresets, ControlledObject, new(() =>
+            TryDrawUI(() => FGTTargetSettings.CosmeticPresets, ControlledObject, new(() =>
             {
                 GameObject presetsDropGroup = UIFactory.CreateHorizontalGroup(ControlledObject, "presetsDropGroup", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(presetsDropGroup, minHeight: 30, flexibleHeight: 0);

@@ -62,7 +62,7 @@ namespace FGTools.UI.Tabs
             if (Config.Config.InGameTheme.Value != LocalizedStr("gui_default"))
                 theme = themeService.CurrentTheme;
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.CustomThemes, MiscContent, new(() =>
+            TryDrawUI(() => FGTTargetSettings.CustomThemes, MiscContent, new(() =>
             {
                 var holder = UIFactory.CreateUIObject("ThemeSwitcher", MiscContent);
                 var vert = holder.AddComponent<VerticalLayoutGroup>();
@@ -260,7 +260,7 @@ namespace FGTools.UI.Tabs
             //LOCALIZATION
             Text langTitle = UIFactory.CreateLabel(MiscContent, "langTitle", LocalizedStr("gui_localization"), TextAnchor.UpperCenter);
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.LangSwitcher, MiscContent, new(() =>
+            TryDrawUI(() => FGTTargetSettings.LangSwitcher, MiscContent, new(() =>
             {
                 GameObject langRow = UIFactory.CreateHorizontalGroup(MiscContent, "Selection Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                 UIFactory.CreateDropdown(langRow, "Languages", out _langDropdown, "", 14, PickLanguage);
@@ -303,7 +303,7 @@ namespace FGTools.UI.Tabs
             GameObject roundHistory = null;
             GameObject historyActions = null;
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.Statistics, MiscContent, new(() =>
+            TryDrawUI(() => FGTTargetSettings.Statistics, MiscContent, new(() =>
             {
                 var statService = FGTServiceManager.GetService<StatisticsService>();
        

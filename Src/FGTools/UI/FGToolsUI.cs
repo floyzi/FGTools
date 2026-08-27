@@ -322,20 +322,6 @@ namespace FGTools.UI
             FGTBase.StateManager.InternalState.LoaderUIToggle = state;
         }
 
-        internal void TryDrawUI(Func<bool> condition, GameObject group, Action onValid)
-        {
-            if (condition())
-            {
-                onValid();
-                return;
-            }
-
-            FGTLog(LogLevel.Warning, GetType(), $"Refused to draw content of {group.name}, feature disabled");
-
-            var failTitle = UIFactory.CreateLabel(group, "failTitle", LocalizedStr("gui_disabled_feature"), TextAnchor.MiddleCenter);
-            UIFactory.SetLayoutElement(failTitle.gameObject, minHeight: 25, flexibleHeight: 0);
-        }
-
         internal void RefreshEverything()
         {
             FGTLog(LogLevel.Info, GetType(), "Trying to refresh everything...");

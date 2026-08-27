@@ -28,7 +28,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.FGCLocalSaves, ControlledObject, new(() =>
+            TryDrawUI(() => FGTTargetSettings.FGCLocalSaves, ControlledObject, new(() =>
             {
 
                 var nosaves = UIFactory.CreateLabel(ControlledObject, "nosaves", $"{LocalizedStr("gui_local_save_no_saves")}", TextAnchor.UpperCenter, default, true, 14);

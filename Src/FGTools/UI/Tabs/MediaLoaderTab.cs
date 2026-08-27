@@ -50,7 +50,7 @@ namespace FGTools.UI.Tabs
             UIFactory.SetLayoutElement(mediaTabs, minHeight: 25, flexibleHeight: 0);
             _imagesBtn = UIFactory.CreateButton(mediaTabs, $"Button_Img", $"{LocalizedStr("gui_img_loader")}");
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.MediaLoaderImages, ControlledObject, new(() =>
+            TryDrawUI(() => FGTTargetSettings.MediaLoaderImages, ControlledObject, new(() =>
             {
                 _mediaTab = UIFactory.CreateVerticalGroup(ControlledObject, "img", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(_mediaTab, minHeight: 25, flexibleHeight: 0);

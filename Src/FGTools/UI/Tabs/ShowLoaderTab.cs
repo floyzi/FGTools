@@ -38,7 +38,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.ShowLoader, ControlledObject, new(() =>
+            TryDrawUI(() => FGTTargetSettings.ShowLoader, ControlledObject, new(() =>
             {
                 var sL = FGTBase.FGTServiceManager.GetService<ShowLoaderService>();
 

@@ -133,7 +133,7 @@ namespace FGTools.UI.Tabs
             InputFieldRef inputFieldRef = null;
             Text levelInfo = null;
 
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, unityLoaderGUI, new(() =>
+            TryDrawUI(() => FGTTargetSettings.RoundLoader, unityLoaderGUI, new(() =>
             {
                 var searchbarGroup = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "Search", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
                 FGToolsUI.Instance.AssignToGroups(searchbarGroup, new()
@@ -358,7 +358,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - GAMEPLAY
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, gameplayGUI, new(() =>
+            TryDrawUI(() => FGTTargetSettings.RoundLoader, gameplayGUI, new(() =>
             {
                 GameObject title1 = UIFactory.CreateHorizontalGroup(gameplayGUI_Content, "variantSelector", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(title1, minHeight: 20, flexibleHeight: 0);
@@ -458,7 +458,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - CREATIVE
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, fgcGUI, new(() =>
+            TryDrawUI(() => FGTTargetSettings.RoundLoader, fgcGUI, new(() =>
             {
 #if DEV_BUILD
                 string code = "4184-8071-9230";
@@ -551,7 +551,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - ROUND RULES
-            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundRules, loadOptionsGUI_Content, new(() =>
+            TryDrawUI(() => FGTTargetSettings.RoundRules, loadOptionsGUI_Content, new(() =>
             {
                 var latestOptions = FGTBase.FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions();
 
