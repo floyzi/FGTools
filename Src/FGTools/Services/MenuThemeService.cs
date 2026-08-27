@@ -145,6 +145,7 @@ namespace FGTools.Services
         List<string> WebThemesIds = [];
         static FallGuysTheme DefaultTheme;
         internal static Material BackgroudMaterial;
+        public Theme CurrentTheme;
 
         public override void RegisterService()
         {
@@ -749,6 +750,12 @@ namespace FGTools.Services
 
         }
 
-        public Theme CurrentTheme;
+        public void OnUIDestroy()
+        {
+        }
+
+        public void OnUICreated()
+        {
+        }
     }
 }

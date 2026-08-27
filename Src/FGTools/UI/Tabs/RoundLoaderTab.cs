@@ -784,9 +784,9 @@ namespace FGTools.UI.Tabs
         List<GameObject> fgc_history = new();
         void LoadFGCHistory()
         {
-            if (FGTBase.FGTServiceManager.GetService<StatisticsService>().currentStats != null && FGTBase.FGTServiceManager.GetService<StatisticsService>().currentStats.FGCSearchHistory != null)
+            if (FGTBase.FGTServiceManager.GetService<StatisticsService>().CurrentStats != null && FGTBase.FGTServiceManager.GetService<StatisticsService>().CurrentStats.FGCSearchHistory != null)
             {
-                foreach (string code in FGTBase.FGTServiceManager.GetService<StatisticsService>().currentStats.FGCSearchHistory)
+                foreach (string code in FGTBase.FGTServiceManager.GetService<StatisticsService>().CurrentStats.FGCSearchHistory)
                 {
                     var a = UnityEngine.Object.Instantiate(fgcHistoryPrefab);
                     a.transform.GetChild(0).gameObject.GetComponent<Text>().text = code;

@@ -510,5 +510,13 @@ namespace FGTools.Services
         public void RefreshUI()
         {
         }
+
+        public void OnUIDestroy()
+        {
+        }
+
+        public void OnUICreated()
+        {
+        }
     }
 }

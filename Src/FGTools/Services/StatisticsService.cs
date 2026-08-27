@@ -1,4 +1,9 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using FG.Common.CMS;
+using FGTools.Services.Logic;
+using FGTools.UI;
+using FGTools.UI.Tabs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,23 +11,37 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using UnityEngine;
-using static FGTools.Internal.Extensions.FLZ_Extensions;
 using UnityEngine.SceneManagement;
-using static FGTools.Services.MenuThemeService;
-using FG.Common.CMS;
+using UnityEngine.UI;
+using UniverseLib.UI.Models;
+using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
+using static FGTools.Services.MenuThemeService;
 using static FGTools.Services.StatisticsService;
-using FGTools.Services.Logic;
 using static FGTools.States.Logic.FGTStateManager;
-using BepInEx.Logging;
-using FGTools.UI;
-using FGTools.UI.Tabs;
+using static FGTools.UI.NewGUI;
 namespace FGTools.Services
 {
-    internal class StatisticsService : FGTService
+    internal class StatisticsService : FGTService, IFGTGUIHelper
     {
-        public StatJSON currentStats;
-        public List<List<string>> HistoryPages = [];
+        public class StatJSON
+        {
+            public float TimeInGame { get; set; }
+            public int TotalRoundsLoaded { get; set; }
+            public int GameLaunchedTimes { get; set; }
+            public int TotalAttemptsSp { get; set; }
+            public float TimeInMenu { get; set; }
+            public float TimeInFGC { get; set; }
+            public int QualTotal { get; set; }
+            public int ElimTotal { get; set; }
+            public int WinTotal { get; set; }
+            public int PowUsages { get; set; }
+            public string StatsUser { get; set; }
+            public List<string> RoundHistory { get; set; }
+            public List<string> FGCSearchHistory { get; set; }
+            public int CollectablePickup { get; set; }
+        }
+
         public enum RoundResult
         {
             NewRound,
@@ -32,21 +51,40 @@ namespace FGTools.Services
             Leave
         }
 
+        public StatJSON CurrentStats;
+        public List<List<string>> HistoryPages = [];
+
+        public string ProcessedRoundID = "none";
+        public readonly float SaveTime = 300f;
+        public float TimeElapsed = 0;
+        float _roundLength;
+        Round _currentRound;
+        Round _previousRound;
+        int _currPage;
+
+        ButtonRef HistoryPlus;
+        ButtonRef HistoryMinus;
+        Text RoundHistoryTXT;
+        Text DisplayInfo;
+        GameObject RoundHistory;
+        GameObject HistoryActions;
+        ButtonRef toggleHistory;
+
         public override void RegisterService()
         {
             Init(false);
-            currentStats.GameLaunchedTimes++;
+            CurrentStats.GameLaunchedTimes++;
         }
 
         public void Init(bool cleanup)
         {
-            FGTLog(LogLevel.Info, base.GetType(), $"init: cleanup = {cleanup}");
+            FGTLog(LogLevel.Info, GetType(), $"init: cleanup = {cleanup}");
             if (cleanup && File.Exists(Launcher.StatsFile))
             {
                 File.Delete(Launcher.StatsFile);
             }
             if (File.Exists(Launcher.StatsFile))
-                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
+                CurrentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
             else
             {
                 var newStats = new StatJSON
@@ -65,7 +103,7 @@ namespace FGTools.Services
                 };
                 var json = JsonSerializer.Serialize(newStats);
                 File.AppendAllText(Launcher.StatsFile, json);
-                currentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
+                CurrentStats = JsonSerializer.Deserialize<StatJSON>(File.ReadAllText(Launcher.StatsFile));
             }
 
             RefreshHistoryPages();
@@ -73,57 +111,48 @@ namespace FGTools.Services
 
         void RefreshHistoryPages()
         {
-            if (HistoryPages != null)
-            {
-                HistoryPages.Clear();
-                if (currentStats != null && currentStats.RoundHistory != null && currentStats.RoundHistory.Count > 0)
-                {
-                    for (int i = 0; i < currentStats.RoundHistory.Count; i += 50)
-                    {
-                        HistoryPages.Add(currentStats.RoundHistory.GetRange(i, Math.Min(50, currentStats.RoundHistory.Count - i)));
-                    }
+            if (HistoryPages == null) return;
 
-                    CurrHistoryPage = HistoryPages.Count - 1;
-                }
-                else
+            HistoryPages.Clear();
+
+            if (CurrentStats != null && CurrentStats.RoundHistory != null && CurrentStats.RoundHistory.Count > 0)
+            {
+                for (int i = 0; i < CurrentStats.RoundHistory.Count; i += 50)
                 {
-                    if (NewGUI.Instance != null)
-                        NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
-                    CurrHistoryPage = 0;
+                    HistoryPages.Add(CurrentStats.RoundHistory.GetRange(i, Math.Min(50, CurrentStats.RoundHistory.Count - i)));
                 }
+
+                _currPage = HistoryPages.Count - 1;
             }
+            else
+            {
+                HistoryActions.gameObject.SetActive(false);
+                _currPage = 0;
+            }
+
         }
 
         public void Save()
         {
-            var stats = JsonSerializer.Serialize(currentStats);
+            var stats = JsonSerializer.Serialize(CurrentStats);
             File.WriteAllText(Launcher.StatsFile, stats);
             FGTLog(LogLevel.Info, base.GetType(), "Save");
         }
 
-
-        public string processedRoundID = "none";
-        public readonly float SaveTime = 300f;
-        public float timeElapsed = 0;
-        float roundLength;
-        Round currentRound;
-        Round previousRound;
-        int CurrHistoryPage;
-
         public void HistoryNavForward()
         {
-            if (CurrHistoryPage < HistoryPages.Count - 1)
+            if (_currPage < HistoryPages.Count - 1)
             {
-                CurrHistoryPage++;
+                _currPage++;
                 LoadPage();
             }
         }
 
         public void HistoryNavBack()
         {
-            if (CurrHistoryPage > 0)
+            if (_currPage > 0)
             {
-                CurrHistoryPage--;
+                _currPage--;
                 LoadPage();
             }
         }
@@ -132,23 +161,23 @@ namespace FGTools.Services
         {
             if (HistoryPages.Count > 0)
             {
-                NewGUI.Instance.DisplayInfo.text = $"{LocalizedStr("gui_page")} {CurrHistoryPage + 1} {LocalizedStr("gui_out_of")} {HistoryPages.Count}";
-                int ab = CurrHistoryPage + 1 * HistoryPages[CurrHistoryPage].Count;
-                List<string> sortedList = new([.. HistoryPages[CurrHistoryPage]]);
+                DisplayInfo.text = $"{LocalizedStr("gui_page")} {_currPage + 1} {LocalizedStr("gui_out_of")} {HistoryPages.Count}";
+                int ab = _currPage + 1 * HistoryPages[_currPage].Count;
+                List<string> sortedList = new([.. HistoryPages[_currPage]]);
                 sortedList.Reverse();
-                NewGUI.Instance.RoundHistoryTXT.text = string.Join("\n", sortedList.ToArray().Select((line, index) => $"{ab -= 1}. | {line}"));
-                NewGUI.Instance.HistoryPlus.Component.interactable = CurrHistoryPage + 1 != HistoryPages.Count;
-                NewGUI.Instance.HistoryMinus.Component.interactable = CurrHistoryPage > 0;
-                NewGUI.Instance.HistoryActions.gameObject.SetActive(NewGUI.Instance.CurrentTab.Tab == NewGUI.Tab.Misc && NewGUI.Instance.roundHistory.gameObject.activeSelf);
+                RoundHistoryTXT.text = string.Join("\n", sortedList.ToArray().Select((line, index) => $"{ab -= 1}. | {line}"));
+                HistoryPlus.Component.interactable = _currPage + 1 != HistoryPages.Count;
+                HistoryMinus.Component.interactable = _currPage > 0;
+                HistoryActions.gameObject.SetActive(NewGUI.Instance.CurrentTab.Tab == NewGUI.Tab.Misc && RoundHistory.gameObject.activeSelf);
             }
             else
-                NewGUI.Instance.HistoryActions.gameObject.SetActive(false);
+                HistoryActions.gameObject.SetActive(false);
         }
 
         public void AddFGCHistoryRound(string code)
         {
-            currentStats.FGCSearchHistory ??= [];
-            currentStats.FGCSearchHistory.Add(code);
+            CurrentStats.FGCSearchHistory ??= [];
+            CurrentStats.FGCSearchHistory.Add(code);
 
             NewGUI.Instance.GetTab<RoundLoaderTab>(NewGUI.Tab.RoundLoader).RefreshFGCHistory(code);
 
@@ -157,12 +186,12 @@ namespace FGTools.Services
 
         public void ProcessNewRound(RoundResult result)
         {
-            if (currentRound != null)
-                previousRound = currentRound;
+            if (_currentRound != null)
+                _previousRound = _currentRound;
        
-            if (currentStats != null && previousRound != null && processedRoundID != currentRound.Id)
+            if (CurrentStats != null && _previousRound != null && ProcessedRoundID != _currentRound.Id)
             {
-                processedRoundID = previousRound.Id;
+                ProcessedRoundID = _previousRound.Id;
                 string resultString = "Undefined";
                 switch (result)
                 {
@@ -184,10 +213,11 @@ namespace FGTools.Services
 
                 }
 
-                string outstr = $"{CleanStr(previousRound.DisplayName.Text)} (<color={previousRound.Archetype.TagColour}>{previousRound.Archetype.Name.ToUpper()}</color>) | {LocalizedStr("gui_date")}: <color=grey>{DateTime.Now}</color> | {LocalizedStr("round_length")}: <color=grey>{TimeSpan.FromSeconds(roundLength):mm':'ss}</color> | {LocalizedStr("gui_result")}: {resultString}";
-                if (currentStats.RoundHistory == null)
-                    currentStats.RoundHistory = new();
-                currentStats.RoundHistory.Add(outstr);
+                string outstr = $"{CleanStr(_previousRound.DisplayName.Text)} (<color={_previousRound.Archetype.TagColour}>{_previousRound.Archetype.Name.ToUpper()}</color>) | {LocalizedStr("gui_date")}: <color=grey>{DateTime.Now}</color> | {LocalizedStr("round_length")}: <color=grey>{TimeSpan.FromSeconds(_roundLength):mm':'ss}</color> | {LocalizedStr("gui_result")}: {resultString}";
+                
+                CurrentStats.RoundHistory ??= [];
+                CurrentStats.RoundHistory.Add(outstr);
+
                 RefreshHistoryPages();
                 Save();
             }
@@ -195,39 +225,42 @@ namespace FGTools.Services
 
         public void SetNewRound(Round newRound)
         {
-            currentRound = newRound;
+            _currentRound = newRound;
             //processedRoundID = newRound.Id;
         }
-        public void ResetTimer() => roundLength = 0;
+        public void ResetTimer() => _roundLength = 0;
         public void ValidateStats(string username)
         {
-            var user = currentStats.StatsUser;
+            var user = CurrentStats.StatsUser;
             if (user != null && user != "DEFAULT" && user != username)
                 Init(true);
             else
-                currentStats.StatsUser = username;
+                CurrentStats.StatsUser = username;
         }
 
         public override void UpdateService()
         {
-            if (currentStats != null)
+            if (CurrentStats.RoundHistory == null || CurrentStats.RoundHistory.Count == 0)
+                RoundHistoryTXT.text = LocalizedStr("gui_nothing2see");
+
+            if (CurrentStats != null)
             {
-                currentStats.TimeInGame += Time.unscaledDeltaTime;
+                CurrentStats.TimeInGame += Time.unscaledDeltaTime;
 
                 if (StateManager.FGTCurrentState == ToolsState.InCreative)
-                    currentStats.TimeInFGC += Time.unscaledDeltaTime;
+                    CurrentStats.TimeInFGC += Time.unscaledDeltaTime;
 
                 if (SceneManager.GetActiveScene().name == "MainMenu")
-                    currentStats.TimeInMenu += Time.unscaledDeltaTime;
+                    CurrentStats.TimeInMenu += Time.unscaledDeltaTime;
 
 
                 if (StateManager.FGTCurrentState == ToolsState.GameActive)
-                    roundLength += Time.unscaledDeltaTime;
+                    _roundLength += Time.unscaledDeltaTime;
 
-                timeElapsed += Time.unscaledDeltaTime;
-                if (timeElapsed >= SaveTime)
+                TimeElapsed += Time.unscaledDeltaTime;
+                if (TimeElapsed >= SaveTime)
                 {
-                    timeElapsed = 0;
+                    TimeElapsed = 0;
                     Save();
                 }
             }
@@ -235,25 +268,47 @@ namespace FGTools.Services
 
         void OnApplicationQuit() => Save();
 
+        void OnTabChanged(TabMeta tab)
+        {
+            if (toggleHistory == null || RoundHistory == null)
+                return;
+
+            if (tab.Tab != Tab.Misc && RoundHistory.gameObject.activeSelf)
+            {
+                toggleHistory.ButtonText.text = LocalizedStr("gui_open_rhistory") + " ▼";
+                RoundHistory.SetActive(false);
+                HistoryActions.gameObject.SetActive(false);
+            }
+        }
+
         public override void DrawGUI()
         {
         }
-    }
-    public class StatJSON
-    {
-        public float TimeInGame { get; set; }
-        public int TotalRoundsLoaded { get; set; }
-        public int GameLaunchedTimes { get; set; }
-        public int TotalAttemptsSp { get; set; }
-        public float TimeInMenu { get; set; }
-        public float TimeInFGC { get; set; }
-        public int QualTotal { get; set; }
-        public int ElimTotal { get; set; }
-        public int WinTotal { get; set; }
-        public int PowUsages { get; set; }
-        public string StatsUser { get; set; }
-        public List<string> RoundHistory { get; set; }
-        public List<string> FGCSearchHistory { get; set; }
-        public int CollectablePickup { get; set; }
+
+        public void SetUIReferences(object[] data)
+        {
+            RoundHistoryTXT = (Text)data[0];
+            HistoryMinus = (ButtonRef)data[1];
+            DisplayInfo = (Text)data[2];
+            HistoryPlus = (ButtonRef)data[3];
+            toggleHistory = (ButtonRef)data[4];
+            RoundHistory = (GameObject)data[5];
+            HistoryActions = (GameObject)data[6];
+        }
+
+        public void RefreshUI()
+        {
+
+        }
+
+        public void OnUIDestroy()
+        {
+            NewGUI.Instance.OnTabChanged -= OnTabChanged;
+        }
+
+        public void OnUICreated()
+        {
+            NewGUI.Instance.OnTabChanged += OnTabChanged;
+        }
     }
 }

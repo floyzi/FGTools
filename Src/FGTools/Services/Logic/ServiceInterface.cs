@@ -19,6 +19,8 @@ namespace FGTools.Services.Logic
     internal interface IFGTGUIHelper
     {
         void SetUIReferences(object[] data);
+        void OnUIDestroy();
+        void OnUICreated();
         void RefreshUI();
     }
 }

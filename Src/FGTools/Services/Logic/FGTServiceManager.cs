@@ -112,11 +112,33 @@ namespace FGTools.Services.Logic
 
         public void OnGUIRefresh()
         {
-            foreach ( var service in Services)
+            foreach (var service in Services)
             {
                 if (service is IFGTGUIHelper helper)
                 {
                     helper.RefreshUI();
+                }
+            }
+        }
+
+        public void OnGUICreated()
+        {
+            foreach (var service in Services)
+            {
+                if (service is IFGTGUIHelper helper)
+                {
+                    helper.OnUICreated();
+                }
+            }
+        }
+
+        public void OnGUIDestroyed()
+        {
+            foreach (var service in Services)
+            {
+                if (service is IFGTGUIHelper helper)
+                {
+                    helper.OnUIDestroy();
                 }
             }
         }

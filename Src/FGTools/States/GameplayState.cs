@@ -134,7 +134,7 @@ namespace FGTools.States
             if (FGTTargetSettings.UpdateNotification && oS.FGTContent.Config.OutdatedVersions != null && oS.FGTContent.Config.OutdatedVersions.Contains(currVer))
                 CreateNotification(LocalizedStr("msg_outdated_ver_title"), LocalizedStr("msg_outdated_ver_short", [oS.FGTContent.Meta.FgtVersion]), FGT_Warning_Color);
 
-            FGTServiceManager.GetService<StatisticsService>().currentStats.TotalRoundsLoaded++;
+            FGTServiceManager.GetService<StatisticsService>().CurrentStats.TotalRoundsLoaded++;
             FGBehaviour.OnGameplayBegin();
 
             FGTLog(LogLevel.Info, "OnIntroCountdownEnded", "Gameplay begins...");

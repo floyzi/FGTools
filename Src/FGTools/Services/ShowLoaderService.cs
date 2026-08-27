@@ -242,5 +242,13 @@ namespace FGTools.Services
         public override void UpdateService()
         {
         }
+
+        public void OnUIDestroy()
+        {
+        }
+
+        public void OnUICreated()
+        {
+        }
     }
 }

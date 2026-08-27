@@ -839,5 +839,13 @@ namespace FGTools.Services
             RefreshRoundsInfo();
             PopulateRounds();
         }
+
+        public void OnUIDestroy()
+        {
+        }
+
+        public void OnUICreated()
+        {
+        }
     }
 }

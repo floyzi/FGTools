@@ -403,5 +403,13 @@ namespace FGTools.Services
         {
             InitPresetsDrop();
         }
+
+        public void OnUIDestroy()
+        {
+        }
+
+        public void OnUICreated()
+        {
+        }
     }
 }
