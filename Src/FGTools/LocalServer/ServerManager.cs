@@ -428,7 +428,9 @@ namespace FGTools.LocalServer
                     //for (int j = 0; j < itmCount / spawns.Count && j < pair.Value.Count; j++)
                     for (int j = 0; j < pair.Value.Count && itmCount > 0; j++)
                     {
-                        var targetObject = spawner.ItemPrefab.GetComponent<NetworkAwareGeneric>().SpawnObject;
+                        var spawn = pair.Value[j];
+
+                        var targetObject = GameObject.Instantiate(spawner.ItemPrefab.GetComponent<NetworkAwareGeneric>().SpawnObject, spawn.position, spawn.rotation);
 
                         if (!targetObject.TryGetComponent<MPGNetObject>(out var netObj))
                             netObj = targetObject.gameObject.AddComponent<MPGNetObject>();
@@ -437,7 +439,6 @@ namespace FGTools.LocalServer
                         netObj.NetID = GlobalGameStateClient.Instance.NetObjectManager.GetNextNetID();
                         netObj.GameObjectHash = netObj.GenerateGameObjectHash(NetObjectCreationMode.Spawn);
 
-                        var spawn = pair.Value[j];
                         netObj.SpawnPrefab(spawn.position, spawn.rotation, spawn.localScale);
 
                         itmCount--;
