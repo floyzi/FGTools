@@ -11,6 +11,7 @@ using UnityEngine.UI;
 using UniverseLib.UI;
 using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
+using FGTools.Config;
 
 namespace FGTools.UI.Tabs
 {
@@ -51,7 +52,7 @@ namespace FGTools.UI.Tabs
 
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-            var search = UIFactory.CreateInputField(ControlledObject, "configGUI", LocalizedStr("gui_search"));
+            var search = UIFactory.CreateInputField(ControlledObject, "configGUI", LocalizedStr("gui_config_search"));
             search.OnValueChanged += SearchConfig;
             UIFactory.SetLayoutElement(search.GameObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 25);
             GameObject content = UIFactory.CreateScrollView(ControlledObject, "configGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
@@ -63,7 +64,7 @@ namespace FGTools.UI.Tabs
                 { "", new List<ConfigEntryBase>() }
             };
 
-            foreach (var entry in Launcher.BepConfig.Keys)
+            foreach (var entry in Config.Config.ConfigFile.Keys)
             {
                 string sec = entry.Section;
                 sec ??= "";
@@ -71,7 +72,7 @@ namespace FGTools.UI.Tabs
                 if (!dict.ContainsKey(sec))
                     dict.Add(sec, []);
 
-                dict[sec].Add(Launcher.BepConfig[entry]);
+                dict[sec].Add(Config.Config.ConfigFile[entry]);
             }
 
             foreach (var ctg in dict)
@@ -120,7 +121,10 @@ namespace FGTools.UI.Tabs
 
             content.SetActive(true);
 
-            Launcher.BepConfig.SettingChanged += ConfigFile_SettingChanged;
+            Config.Config.ConfigFile.SettingChanged += ConfigFile_SettingChanged;
+
+            Text bottomLine = UIFactory.CreateLabel(ControlledObject, "config_credits", LocalizedStr("gui_config_credits"), TextAnchor.LowerCenter, default, true, 14);
+            UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
         }
 
         private void ConfigFile_SettingChanged(object sender, SettingChangedEventArgs e)
@@ -143,7 +147,7 @@ namespace FGTools.UI.Tabs
 
         internal override void Destroy()
         {
-            Launcher.BepConfig.SettingChanged -= ConfigFile_SettingChanged;
+            Config.Config.ConfigFile.SettingChanged -= ConfigFile_SettingChanged;
         }
     }
 }

@@ -93,7 +93,6 @@ namespace FGTools
         internal static bool HarmonyPatched;
         internal static bool FGCHarmonyPatched;
         internal static bool ThemesHarmonyPatched;
-        internal static ConfigFile BepConfig;
 
         internal static string DisplayName 
         { 
@@ -187,8 +186,7 @@ namespace FGTools
                 monoMain.AddComponent<FGTBehaviour>();
                 monoMain.hideFlags = HideFlags.HideAndDontSave;
 
-                BepConfig = Config;
-                LoadCFG(BepConfig);
+                LoadCFG(Config);
 
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<FallGuyBehaviour>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<FGTController>();

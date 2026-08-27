@@ -326,7 +326,7 @@ namespace FGTools.UI.Tabs
                         roundHistory.gameObject.SetActive(false);
                         historyActions.SetActive(false);
                     }
-                    FGTBase.FGTServiceManager.GetService<StatisticsService>().LoadPage();
+                    FGTServiceManager.GetService<StatisticsService>().LoadPage();
                 };
 
                 roundHistory = UIFactory.CreateScrollView(MiscContent, "roundHistory", out GameObject historycontent, out _, new(0.1f, 0.1f, 0.1f));
@@ -385,7 +385,7 @@ namespace FGTools.UI.Tabs
             ButtonRef saveBtn2 = UIFactory.CreateButton(MiscContent, "Refresh", $"{LocalizedStr("gui_refresh_config")}", new Color(0.2f, 0.3f, 0.2f));
             Text refreshDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_0"), TextAnchor.MiddleLeft);
             UIFactory.SetLayoutElement(saveBtn2.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
-            saveBtn2.OnClick += () => { Config.Config.CFG.Reload(); };
+            saveBtn2.OnClick += () => { Config.Config.ConfigFile.Reload(); };
             ButtonRef saveBtn3 = UIFactory.CreateButton(MiscContent, "RefreshGUI", $"{LocalizedStr("gui_refresh_gui")}", new Color(0.2f, 0.3f, 0.2f));
             Text refreshGUIDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_1"), TextAnchor.MiddleLeft);
             UIFactory.SetLayoutElement(saveBtn3.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
@@ -396,7 +396,7 @@ namespace FGTools.UI.Tabs
             ButtonRef saveBtn4 = UIFactory.CreateButton(MiscContent, "OpenConfig", $"{LocalizedStr("gui_open_config")}", new Color(0.2f, 0.3f, 0.2f));
             Text openCfgDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_2"), TextAnchor.MiddleLeft);
             UIFactory.SetLayoutElement(saveBtn4.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
-            saveBtn4.OnClick += () => { Application.OpenURL(Config.Config.CFG.ConfigFilePath); };
+            saveBtn4.OnClick += () => { Application.OpenURL(Config.Config.ConfigFile.ConfigFilePath); };
             ButtonRef saveBtn5 = UIFactory.CreateButton(MiscContent, "ClearEvents", $"{LocalizedStr("gui_clear_evt")}", new Color(0.2f, 0.3f, 0.2f));
             Text clearEventsDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_4"), TextAnchor.MiddleLeft);
             UIFactory.SetLayoutElement(saveBtn5.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
