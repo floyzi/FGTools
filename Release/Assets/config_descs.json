@@ -27,7 +27,7 @@
     "speedrun_old_mode": "If enabled, pressing continue in \"Speedrun Continue Popup\" will make the whole scene reload",
     "random_music": "If enabled, music will be selected randomly for every round",
     "dive_sens": "360 divers will enjoy this :eyes:",
-    "old_char_phys": "Revert all character physic related changes that mediatonic made in 10.9.1 update (NOTE: if you want to disable this, you must to restart your game)",
+    "old_char_phys": "Reverts all Fall Guy physic related changes that Mediatonic made in 10.9.1 update",
     "speedrun_mode": "Enable speedrun mode?",
     "speedrun_restart_cd": "An amount of time in seconds that you need to hold ResetRunHotkey button in order to reset your run",
     "speedrun_stats_ui": "Enables UI with run stats",
@@ -41,7 +41,7 @@
     "inf_powerup": "If enabled, you will have infinite uses of Power Up",
     "powerup_length": "The duration of Power Up",
     "powerup_cd": "Cooldown between powerup uses",
-    "powerup_amount": "Power Up usages | only if \"Infinite Usages\" is false! (max: 255)",
+    "powerup_amount": "Power Up usages, only if \"Infinite Usages\" is false! (max: 255)",
     "fgc_autosaves": "If enabled, your level will autosave at time you selected",
     "fgc_time_between_autosaves": "Amount of time that between autosaves",
     "fgc_show_autosave_timer": "If enabled, time to autosave will display in left bottom corner of the screen",
@@ -51,5 +51,7 @@
     "disable_checkpoints": "A pretty much self explaining thing",
     "fgc_local_saves": "If enabled, every autosave will result in creating locally stored level copy that you can always return to",
     "download_mirror": "Source that will be used to fetch FGTools content, highly recommended to keep it on \"Auto\", some sources may have older content version",
-    "download_mirror_override": "Custom source that will be used for content fetcheing, when set \"Download Source\" setting will be ignored, keep it blank until you know what you're doing"
+    "download_mirror_override": "Custom source that will be used for content fetcheing, when set \"Download Source\" setting will be ignored, keep it blank unless you know what you're doing",
+    "speedrun_background_timer": "If enabled, speedrun timer will be paused when app is not in focus",
+    "fast_load": "If enabled rounds loaded via round loader will automatically skip intro and countdown"
 }

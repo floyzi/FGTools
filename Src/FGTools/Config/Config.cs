@@ -163,6 +163,7 @@ namespace FGTools.Config
         public static ConfigEntry<bool> OldSPContinue { get; set; }
         public static ConfigEntry<bool> SPInstaStart { get; set; }
         public static ConfigEntry<bool> RespawnAtCheckpoint { get; set; }
+        public static ConfigEntry<bool> PauseTimerInBackground { get; set; }
 
         //RANDOM ROUNDS
         public static ConfigEntry<RandomRoundsFilter> RoundsFilter { get; set; }
@@ -379,6 +380,8 @@ namespace FGTools.Config
             SPInstaStart = ConfigFile.Bind(SPSect, "Instantly Start", false, GetDesc("speedrun_insta_start"));
 
             RespawnAtCheckpoint = ConfigFile.Bind(SPSect, "Respawn At Checkpoint", false, GetDesc("speedrun_checkpoint_res"));
+
+            PauseTimerInBackground = ConfigFile.Bind(SPSect, "Pause Timer In Background", true, GetDesc("speedrun_background_timer"));
             #endregion
 
             #region POWERUPS

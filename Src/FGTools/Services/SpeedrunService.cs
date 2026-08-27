@@ -605,6 +605,8 @@ namespace FGTools.Services
 
         public override void OnAppFocus(bool focus)
         {
+            if (!Config.Config.PauseTimerInBackground.Value) return;
+
             if (SpeedrunState == RunState.Running)
                 TriggerTimer(focus);
         }
