@@ -1,22 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Levels.PixelPerfect.PixelPerfectBoard;
-using UnityEngine.UI;
+﻿using FGTools.Services;
+using FGTools.Services.Logic;
+using System;
 using UnityEngine;
-using UniverseLib.UI.Panels;
+using UnityEngine.UI;
 using UniverseLib.UI;
 using UniverseLib.UI.Models;
-using static FGTools.Services.LocalizationService;
-using FGClient.Customiser;
-using Events;
-using FGClient;
-using FGTools.Services;
-using FGTools.Services.Logic;
+using UniverseLib.UI.Panels;
 using UniverseLib.UI.Widgets;
-using FGTools.Config;
+using static FGTools.Services.LocalizationService;
 namespace FGTools.UI
 {
     public class SearchPanel : PanelBase
@@ -34,7 +25,7 @@ namespace FGTools.UI
         public override int MinHeight => 235;
         public override Vector2 DefaultAnchorMin => new(0.25f, 0.25f);
         public override Vector2 DefaultAnchorMax => new(0.75f, 0.75f);
-        public override Vector2 DefaultPosition => new Vector2(-Screen.width / 2f, Screen.height / 2f);
+        public override Vector2 DefaultPosition => new(-Screen.width / 2f, Screen.height / 2f);
         public override bool CanDragAndResize => false;
 
         Text Result;
