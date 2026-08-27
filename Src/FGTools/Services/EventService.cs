@@ -151,5 +151,15 @@ namespace FGTools.Services
         public override void DrawGUI()
         {
         }
+
+        public override void OnAppFocus(bool focus)
+        {
+
+        }
+
+        public override void OnAppQuit()
+        {
+
+        }
     }
 }

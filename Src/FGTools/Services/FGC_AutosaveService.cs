@@ -132,5 +132,15 @@ namespace FGTools.Services
                 GUI.Label(labelRect, label);
             }
         }
+
+        public override void OnAppFocus(bool focus)
+        {
+
+        }
+
+        public override void OnAppQuit()
+        {
+
+        }
     }
 }

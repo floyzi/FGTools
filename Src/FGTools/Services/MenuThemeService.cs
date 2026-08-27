@@ -757,5 +757,15 @@ namespace FGTools.Services
         public void OnUICreated()
         {
         }
+
+        public override void OnAppFocus(bool focus)
+        {
+
+        }
+
+        public override void OnAppQuit()
+        {
+
+        }
     }
 }

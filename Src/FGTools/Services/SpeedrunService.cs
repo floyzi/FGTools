@@ -323,12 +323,6 @@ namespace FGTools.Services
             _display.TryTimeAttackPulseTimer(new(102, null));
         }
 
-        void OnApplicationFocus(bool hasFocus)
-        {
-            if (SpeedrunState == RunState.Running)
-                TriggerTimer(hasFocus);
-        }
-
         public void TriggerTimer(bool on)
         {
             _allowTimerBeActive = on;
@@ -611,6 +605,16 @@ namespace FGTools.Services
                 return latestSave.saveData[forScene];
             else
                 return -1f;
+        }
+
+        public override void OnAppFocus(bool focus)
+        {
+            if (SpeedrunState == RunState.Running)
+                TriggerTimer(focus);
+        }
+
+        public override void OnAppQuit()
+        {
         }
     }
 }

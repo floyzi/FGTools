@@ -122,5 +122,9 @@ namespace FGTools.Internal.Behaviours
             FGTBase.StateManager?.DrawGUI();
 #endif
         }
+
+        void OnApplicationFocus(bool focused) => FGTBase.FGTServiceManager?.AppFocus(focused);
+
+        void OnApplicationQuit() => FGTBase.FGTServiceManager?.AppQuit();
     }
 }

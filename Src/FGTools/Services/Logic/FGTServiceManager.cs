@@ -98,6 +98,26 @@ namespace FGTools.Services.Logic
             catch (Exception e) { timeSinceLastErrror = 0; SetErrorString(e); errorCatch = true; }
         }
 
+        public void AppFocus(bool focus)
+        {
+            try
+            {
+                foreach (var service in Services)
+                    service.OnAppFocus(focus);
+            }
+            catch (Exception e) { timeSinceLastErrror = 0; SetErrorString(e); errorCatch = true; }
+        }
+
+        public void AppQuit()
+        {
+            try
+            {
+                foreach (var service in Services)
+                    service.OnAppQuit();
+            }
+            catch (Exception e) { timeSinceLastErrror = 0; SetErrorString(e); errorCatch = true; }
+        }
+
         void SetErrorString(Exception ex)
         {
             latestError = $"\nMessage: {ex.Message}" +

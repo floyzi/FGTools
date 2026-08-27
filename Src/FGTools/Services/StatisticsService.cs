@@ -266,8 +266,6 @@ namespace FGTools.Services
             }
         }
 
-        void OnApplicationQuit() => Save();
-
         void OnTabChanged(TabMeta tab)
         {
             if (toggleHistory == null || RoundHistory == null)
@@ -309,6 +307,15 @@ namespace FGTools.Services
         public void OnUICreated()
         {
             FGToolsUI.Instance.OnTabChanged += OnTabChanged;
+        }
+
+        public override void OnAppFocus(bool focus)
+        {
+        }
+
+        public override void OnAppQuit()
+        {
+            Save();
         }
     }
 }

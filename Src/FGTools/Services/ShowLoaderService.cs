@@ -1,25 +1,21 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using FG.Common.CMS;
+using FGTools.Content;
+using FGTools.Services.Logic;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using FG.Common.CMS;
-using FGTools.Services.Logic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
+using UniverseLib;
+using UniverseLib.UI.Models;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.Extensions.FLZ_UIExtensions;
-using static FGTools.UI.ReadyPopups;
 using static FGTools.Services.LocalizationService;
-using UnityEngine.Localization.SmartFormat.Core.Parsing;
-using UnityEngine.Networking;
-using System.Collections;
-using UniverseLib.UI.Models;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using System.Linq;
-using BepInEx.Logging;
-using UniverseLib;
-using FG.Common.Definition;
-using FallGuys.Client.Protocol.ShowSelector.GetShowSelector;
-using FGTools.Content;
+using static FGTools.UI.ReadyPopups;
 
 namespace FGTools.Services
 {
@@ -248,6 +244,14 @@ namespace FGTools.Services
         }
 
         public void OnUICreated()
+        {
+        }
+
+        public override void OnAppFocus(bool focus)
+        {
+        }
+
+        public override void OnAppQuit()
         {
         }
     }
