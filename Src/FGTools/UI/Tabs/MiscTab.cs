@@ -476,7 +476,7 @@ namespace FGTools.UI.Tabs
                         {
                             OnlineCheck.DownloadNewLang(_selectedLang, new(() =>
                             {
-                                NewGUI.Instance.RefreshEverything(true);
+                                NewGUI.Instance.RefreshEverything();
                                 FGTServiceManager.OnGUIDestroyed();
 
                                 NewGUI.Instance.UIRoot.hideFlags = HideFlags.HideAndDontSave;

@@ -1,41 +1,23 @@
 ﻿extern alias wle;
-using BepInEx.Configuration;
 using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using FG.Common;
-using FG.Common.CMS;
-using FGClient;
 using FGClient.UI;
-using FGTools.Content;
 using FGTools.Internal;
-using FGTools.Internal.Behaviours;
-using FGTools.Services;
-using FGTools.Services.Logic;
-using FGTools.States;
 using FGTools.States.Logic;
-using FGTools.UI.ConfigManager.UI;
 using FGTools.UI.Tabs;
 using FGTools.UI.Tabs.Logic;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UniverseLib;
 using UniverseLib.UI;
 using UniverseLib.UI.Models;
 using UniverseLib.UI.Panels;
-using UniverseLib.UI.Widgets;
-using wle::Wushu.LevelEditor.Runtime.UI.LevelBrowser;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.Services.MenuThemeService;
 using static FGTools.States.Logic.FGTBase;
-using static FGTools.UI.ReadyPopups;
 
 namespace FGTools.UI
 {
@@ -124,45 +106,19 @@ namespace FGTools.UI
         public override Vector2 DefaultAnchorMin => new(0.05f, 0.05f);
         public override Vector2 DefaultAnchorMax => new(0.35f, 0.35f);
         public override bool CanDragAndResize => true;
+        public override Vector2 DefaultPosition => new(-350, 400);
 
-        public static NewGUI Instance;
-        Dictionary<Tab, TabControlledElement> Tabs = new();
-        List<UIControlledElement> ControlledObjects = new();
+        internal static NewGUI Instance;
         internal TabMeta CurrentTab;
         internal TabMeta PreviousTab;
 
-        //ui controlled elements
-        //ButtonRef showPlayBtn;
+        readonly Dictionary<Tab, TabControlledElement> _createdTabs = [];
+        readonly List<UIControlledElement> _controlledObjects = [];
+        readonly Queue<Action> _pendindTabs = new();
+        Text _tabHoverText;
+        bool _hoveringOnTab;
 
-        GameObject FGTShowLoaderGUI;
-        GameObject FGTLocalMultiplayerGUI;
-        GameObject FGTPresetsGUI;
-        GameObject FGTMediaGUI;
-        GameObject FGTImg2FGCGUI;
-        GameObject FGTMiscGUI;
-        GameObject FGTAutosavesGUI;
-        GameObject FGTCreditsGUI;
-        GameObject FGTConfigGUI;
-
-        //GameObject RLG_Gameplay;
-
-        //GameObject gameplayGUI_Content;
-        //Text rl_desc;
-        //ButtonRef additiveButton;
-     
-        
-      
-   
-        //GameObject loadingBtnsFGC;
-
-    
-        public override Vector2 DefaultPosition => new Vector2(-350, 400);
-        readonly Queue<Action> PendindTabs = new();
-
-        Text TabHoverText;
-        bool HoveringOnTab;
-
-        readonly List<UITab> _tabMap = 
+        readonly List<UITab> _registredTabs = 
         [
             new RoundLoaderTab(),
             new ShowLoaderTab(),
@@ -194,7 +150,7 @@ namespace FGTools.UI
                 var tabGroup = UIFactory.CreateHorizontalGroup(ContentRoot, "Tabs", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(tabGroup, minHeight: 25, flexibleHeight: 0);
 
-                foreach (var tab in _tabMap)
+                foreach (var tab in _registredTabs)
                 {
                     var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, "todo", "todo");
                     tab.TabButton = t.Component;
@@ -210,16 +166,17 @@ namespace FGTools.UI
             {
                 FGTLog(LogLevel.Info, GetType(), "Trying to draw UI elements...");
 
-                foreach (var tab in _tabMap)
+                foreach (var tab in _registredTabs)
                 {
                     tab.Draw(ContentRoot);
                 }
 
-                TabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
-                TabHoverText.rectTransform.sizeDelta = new(500, 100);
-                TabHoverText.gameObject.AddComponent<Outline>();
-                CanvasGroup popupGroup = TabHoverText.gameObject.AddComponent<CanvasGroup>();
-                popupGroup.blocksRaycasts = false;
+                _tabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
+                _tabHoverText.rectTransform.sizeDelta = new(500, 100);
+                _tabHoverText.gameObject.AddComponent<Outline>();
+
+                var hoverGroup = _tabHoverText.gameObject.AddComponent<CanvasGroup>();
+                hoverGroup.blocksRaycasts = false;
             }
             catch (Exception e)
             {
@@ -230,9 +187,9 @@ namespace FGTools.UI
             {
                 FGTLog(LogLevel.Info, GetType(), "Finalizing...");
 
-                while (PendindTabs.Count > 0)
+                while (_pendindTabs.Count > 0)
                 {
-                    var val = PendindTabs.Dequeue();
+                    var val = _pendindTabs.Dequeue();
                     val.Invoke();
                 }
 
@@ -251,7 +208,7 @@ namespace FGTools.UI
         {
             if (statePerGroup == null || statePerGroup.Count == 0) return;
 
-            ControlledObjects.Add(new()
+            _controlledObjects.Add(new()
             {
                 ControlledObject = obj,
                 StatePerGroup = statePerGroup,
@@ -261,7 +218,7 @@ namespace FGTools.UI
 
         void ToggleGroup(ObjectGroup group)
         {
-            foreach (var obj in ControlledObjects)
+            foreach (var obj in _controlledObjects)
             {
                 var unityObject = obj.ControlledObject as UnityEngine.Object;
 
@@ -296,9 +253,9 @@ namespace FGTools.UI
             var tabBtn = UIFactory.CreateButton(tabGroup, $"Button_{tab}", $"{LocalizedStr(localizedTabName)}");
             tabBtn.OnClick += () => { GoToTab(tab, tabLevel); };
 
-            PendindTabs.Enqueue(() =>
+            _pendindTabs.Enqueue(() =>
             {
-                Tabs.Add(tab, new()
+                _createdTabs.Add(tab, new()
                 {
                     TabButton = tabBtn,
                     TabContainer = tabControlledObject(),
@@ -321,14 +278,14 @@ namespace FGTools.UI
 
             entry.callback.AddListener((data) =>
             {
-                HoveringOnTab = true;
-                TabHoverText.text = LocalizedStr(localizedTabName);
+                _hoveringOnTab = true;
+                _tabHoverText.text = LocalizedStr(localizedTabName);
             });
 
             exit.callback.AddListener((data) =>
             {
-                HoveringOnTab = false;
-                TabHoverText.text = "";
+                _hoveringOnTab = false;
+                _tabHoverText.text = "";
             });
 
             trigger.triggers.Add(entry);
@@ -350,10 +307,10 @@ namespace FGTools.UI
 
         internal void ToggleUI(bool state)
         {
-            if (HoveringOnTab)
+            if (_hoveringOnTab)
             {
-                HoveringOnTab = false;
-                TabHoverText.text = null;
+                _hoveringOnTab = false;
+                _tabHoverText.text = null;
             }
 
             UniversalUI.SetUIActive(UniverseGUID, state);
@@ -376,30 +333,25 @@ namespace FGTools.UI
             UIFactory.SetLayoutElement(failTitle.gameObject, minHeight: 25, flexibleHeight: 0);
         }
 
-        internal void RefreshEverything(bool onlyCleanup = false)
+        internal void RefreshEverything()
         {
-            if (!onlyCleanup)
-                FGTLog(LogLevel.Info, GetType(), "Trying to refresh everything");
+            FGTLog(LogLevel.Info, GetType(), "Trying to refresh everything...");
+
             try
             {
-                foreach (var tab in _tabMap)
+                foreach (var tab in _registredTabs)
                 {
                     tab.Refresh();
                 }
 
-         
-                FGTBase.FGTServiceManager.OnGUIRefresh();
-
-                if (!onlyCleanup)
-                {
-
-                }
+                FGTServiceManager.OnGUIRefresh();
 
             }
             catch (Exception ex)
             {
                 FGTLog(LogLevel.Fatal, GetType(), $"An error occured with this action: {ex.Message}");
             }
+
             FGTLog(LogLevel.Info, GetType(), $"Complete!");
         }
 
@@ -411,14 +363,14 @@ namespace FGTools.UI
 
         internal void GoToTab(Tab selectedTab, SubLevel tabLevel, bool shouldChangeTitle = true, bool silent = false)
         {
-            var tab = Tabs[selectedTab];
+            var tab = _createdTabs[selectedTab];
             if (tab.TabContainer == null)
             {
                 FGTLog(LogLevel.Error, GetType(), $"Can't find tab for {selectedTab} on {tabLevel}");
                 return;
             }
 
-            var groupTabs = Tabs.ToList().FindAll(x => x.Value.TabLevel == tabLevel);
+            var groupTabs = _createdTabs.ToList().FindAll(x => x.Value.TabLevel == tabLevel);
             if (groupTabs == null || groupTabs.Count == 0)
             {
                 FGTLog(LogLevel.Error, GetType(), $"Can't find any tabs on {tabLevel}");
@@ -440,7 +392,7 @@ namespace FGTools.UI
             if (silent)
                 return;
 
-            var title = Tabs[selectedTab].TabTitle;
+            var title = _createdTabs[selectedTab].TabTitle;
             if (shouldChangeTitle && !string.IsNullOrEmpty(title))
                 UpdateTitle(LocalizedStr(title));
 
@@ -449,7 +401,7 @@ namespace FGTools.UI
             {
                 SubLevel = tabLevel,
                 Tab = selectedTab,
-                TabObject = _tabMap.FirstOrDefault(x => x.Tab == selectedTab)
+                TabObject = _registredTabs.FirstOrDefault(x => x.Tab == selectedTab)
             };
 
             OnTabChanged.Invoke(CurrentTab);
@@ -457,7 +409,7 @@ namespace FGTools.UI
 
         internal T GetTab<T>(Tab tab) where T : UITab
         {
-            return _tabMap.FirstOrDefault(x => x.Tab == tab) as T;
+            return _registredTabs.FirstOrDefault(x => x.Tab == tab) as T;
         }    
 
         void StateChange(FGTStateManager.ToolsState state)
@@ -496,20 +448,10 @@ namespace FGTools.UI
         {
             try
             {
-                if (HoveringOnTab)
-                    TabHoverText.transform.position = Input.mousePosition + (Vector3.up * 15);
+                if (_hoveringOnTab)
+                    _tabHoverText.transform.position = Input.mousePosition + (Vector3.up * 15);
 
                 CurrentTab.TabObject.Update();
-
-                if (CurrentTab.Tab == Tab.Misc)
-                {
-                   
-                }
-
-                if (CurrentTab.Tab == Tab.MediaLoader)
-                {
-                    
-                }
             }
             catch
             {
