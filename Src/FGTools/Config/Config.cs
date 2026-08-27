@@ -1,9 +1,12 @@
 ﻿using BepInEx.Configuration;
 using BepInEx.Logging;
+using Cinemachine;
+using FG.Common;
 using FGTools.Services;
 using FGTools.States.Logic;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
@@ -180,17 +183,16 @@ namespace FGTools.Config
         public static ConfigEntry<float> TargetFGCSaveTime { get; set; }
         public static ConfigEntry<bool> ShowAutosaveTimer { get; set; }
         public static ConfigEntry<bool> EnableLocalAutosaves { get; set; }
-        public static ConfigEntry<bool> PauseTimerExplore { get; set; }
 
         //SOURCES
         public static ConfigEntry<MirrorType> ContentMirror { get; set; }
         public static ConfigEntry<string> ContentSourceOverride { get; set; }
 
-        static Dictionary<string, string> Descs = [];
+        static Dictionary<string, string> _cfgDescs = [];
 
         static string GetDesc(string key)
         {
-            if (Descs.TryGetValue(key, out string value))
+            if (_cfgDescs.TryGetValue(key, out string value))
                 return value;
 
             return $"Missing: {key}";
@@ -201,7 +203,7 @@ namespace FGTools.Config
             ConfigFile = bepCfg;
             FGTLog(LogLevel.Info, "LoadCFG", "Started parsing config...");
 
-            Descs = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Launcher.StaticConfigDescs));
+            _cfgDescs = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Launcher.StaticConfigDescs));
 
             #region DEFAULT
             LangFileName = ConfigFile.Bind(OptionsSect, "Localization File Name", "en", "Name of folder that will be used for FGTools localization");
@@ -309,8 +311,7 @@ namespace FGTools.Config
 
             InvisibleCheckpoint = ConfigFile.Bind(GPSect, "Invisible Checkpoint", false, GetDesc("hide_checkpoint"));
             InvisibleCheckpoint.SettingChanged += (sender, args) => {
-                if (StateManager.IsInGameplay)
-                  FGBehaviour.CurrentGPState.Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
+                if (StateManager.IsInGameplay) FGBehaviour.CurrentGPState.Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
             };
             RealHardMode = ConfigFile.Bind(GPSect, "Hard Mode", false, GetDesc("hard_mode"));
 
@@ -322,7 +323,7 @@ namespace FGTools.Config
 
             ColliderView = ConfigFile.Bind(GPSect, "Collider View", false, GetDesc("collider_view"));
             ColliderView.SettingChanged += (sender, args) => {
-                ConfigAction();
+                UpdateColliderView();
             };
 
             RandomizeRings = ConfigFile.Bind(GPSect, "Random Roll Levels Rings", false, GetDesc("random_rings"));
@@ -428,6 +429,18 @@ namespace FGTools.Config
             ContentMirror = ConfigFile.Bind(FGCSect, "Download Source", MirrorType.Auto, GetDesc("download_mirror"));
             ContentSourceOverride = ConfigFile.Bind(FGCSect, "Download Source Override", string.Empty, GetDesc("download_mirror_override"));
             #endregion
+        }
+
+        internal static void UpdateColliderView()
+        {
+            var cam = Resources.FindObjectsOfTypeAll<CinemachineBrain>().FirstOrDefault();
+            if (cam != null)
+            {
+                if (ColliderView.Value)
+                    cam.gameObject.AddComponent<ColliderCameraView>();
+                else if (cam.gameObject.TryGetComponent<ColliderCameraView>(out var comp))
+                    GameObject.Destroy(comp);
+            }
         }
     }
 }

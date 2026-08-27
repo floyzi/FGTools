@@ -67,9 +67,8 @@ namespace FGTools.UI
 
         public static void ConfigAction(bool quit = false)
         {
-
-            string title = LocalizedStr("gui_restart_title");
-            string desc = LocalizedStr("gui_restart_desc");
+            var title = LocalizedStr("gui_restart_title");
+            var desc = LocalizedStr("gui_restart_desc");
 
             if (!quit)
             {
@@ -77,12 +76,11 @@ namespace FGTools.UI
                 desc = LocalizedStr("gui_reload_desc");
             }
 
-            void OnClickedPopUp(bool wasok)
+            DoModal(new(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>((wasOk) =>
             {
-                if (wasok)
+                if (wasOk)
                 {
-                    if (quit)
-                        Application.Quit();
+                    if (quit) Application.Quit();
                     else if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.Menu)
                     {
                         if (StateManager.CurrentRound != null)
@@ -90,10 +88,13 @@ namespace FGTools.UI
                         else
                             FGTServiceManager.GetService<RoundLoaderService>().LoadRandomCms();
                     }
+                    else
+                    {
+                        GlobalGameStateClient.Instance.ReloadGame(false);
+                        FGTStateManager.StateManager.InternalState.OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+                    }
                 }
-            }
-
-            DoModal(new(title, desc, UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>(OnClickedPopUp), hideLvl: ModalHideGUIType.ShowOnCancel));
+            }), hideLvl: ModalHideGUIType.ShowOnCancel));
         }
 
         public static void SpeedrunContinePopup(float bestTime, bool fromWinScreen = false, VictoryScreenViewModel player = null)

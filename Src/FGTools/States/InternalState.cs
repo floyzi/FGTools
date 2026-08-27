@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Logging;
+using Cinemachine;
 using FG.Common;
 using FG.Common.Audio;
 using FG.Common.CMS;
@@ -139,14 +140,8 @@ namespace FGTools.States
                     }
                 }
 
-                if (ColliderView.Value)
-                {
-                    foreach (Camera cam in Resources.FindObjectsOfTypeAll<Camera>())
-                    {
-                        if (cam.gameObject.GetComponent<ColliderCameraView>() == null)
-                            cam.gameObject.AddComponent<ColliderCameraView>();
-                    }
-                }
+                UpdateColliderView();
+
                 if (FGTServiceManager.GetService<RoundLoaderService>() != null && !FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad)
                 {
                     if (SpeedrunMode.Value)
@@ -183,18 +178,19 @@ namespace FGTools.States
                         foreach (COMMON_GravityModifierVolume gravZone in Resources.FindObjectsOfTypeAll<COMMON_GravityModifierVolume>())
                             gravZone._playAudio = true;
                 }
+
                 if (activeScene.StartsWith("FallGuy_Fraggle"))
                 {
                     if (!LocalServerService.IsServerInOperation) return; 
 
                     if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative && !StateManager.IsFGC)
                     {
-                        FGTLog(LogLevel.Info, base.GetType(), "Loading into FGC");
+                        FGTLog(LogLevel.Info, GetType(), "Loading into FGC");
                         StateManager.HandleFGTState(FGTStateManager.ToolsState.InCreative);
                     }
                     else if (StateManager.IsFGC && StateManager.FGTCurrentState != FGTStateManager.ToolsState.GPFGCLoading)
                     {
-                        FGTLog(LogLevel.Info, base.GetType(), "FGC Gameplay loading");
+                        FGTLog(LogLevel.Info, GetType(), "FGC Gameplay loading");
                         StateManager.HandleFGTState(FGTStateManager.ToolsState.GPFGCLoading);
                     }
                 }
