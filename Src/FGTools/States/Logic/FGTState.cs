@@ -45,7 +45,7 @@ namespace FGTools.States.Logic
         {
             get
             {
-                return FallGuyBehaviour._instance;
+                return FallGuyBehaviour.Instance;
             }
         }
 

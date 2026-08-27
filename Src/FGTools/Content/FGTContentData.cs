@@ -22,14 +22,14 @@ namespace FGTools.Content
         public FGTCreditsData Credits;
         public FGTLangCodes LangCodes;
         public FGTTargetSettingsData TargetSettings;
-        public string ContentVersion => contentVersion;
-        string contentVersion = string.Empty;
+        public string ContentVersion => _version;
+        readonly string _version = string.Empty;
 
         public FGTContentData(string json)
         {
             var doc = JsonDocument.Parse(json);
 
-            contentVersion = doc.RootElement.GetProperty("meta").GetProperty("content_version").GetString();
+            _version = doc.RootElement.GetProperty("meta").GetProperty("content_version").GetString();
 
             foreach (var field in this.GetType().GetFields())
             {
@@ -173,4 +173,4 @@ namespace FGTools.Content
             FGTTargetSettings.Load(TargetSettings);
         }
     }
-    }
+}

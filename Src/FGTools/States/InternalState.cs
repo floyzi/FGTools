@@ -60,10 +60,8 @@ namespace FGTools.States
             if (StateManager.InternalState.LatestSelections != null)
                 GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections = StateManager.InternalState.LatestSelections;
 
-            if (FallGuyBehaviour._instance != null)
-            {
-                CustomisationManager.Instance.ApplyCustomisationsToFallGuy(FallGuyBehaviour._instance.FallGuy, StateManager.InternalState.LatestSelections, FGTStateManager.FGBehaviour.PlayerTeamId);
-            }
+            if (FallGuyBehaviour.Instance != null)
+                CustomisationManager.Instance.ApplyCustomisationsToFallGuy(FallGuyBehaviour.Instance.gameObject, StateManager.InternalState.LatestSelections, FGBehaviour.PlayerTeamId);
         }
 
         internal static void HandleRandomCosmetics()

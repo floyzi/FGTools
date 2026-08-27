@@ -76,8 +76,8 @@ namespace FGTools.Services
                             imageObject.name = "PINGAS";
                             imageObject.transform.localScale = new Vector3(50, 15, 3);
                             imageObject.transform.rotation = new(1, 1, 180, 1);
-                            imageObject.transform.position = new Vector3(FGBehaviour.FallGuy.transform.position.x, FGBehaviour.FallGuy.transform.position.y, FGBehaviour.FallGuy.transform.position.z - 300f);
-                            imageObject.transform.DOMove(new Vector3(FGBehaviour.FallGuy.transform.position.x, FGBehaviour.FallGuy.transform.position.y, FGBehaviour.FallGuy.transform.position.z + 300f), 8.5f);
+                            imageObject.transform.position = new Vector3(FGBehaviour.transform.position.x, FGBehaviour.transform.position.y, FGBehaviour.transform.position.z - 300f);
+                            imageObject.transform.DOMove(new Vector3(FGBehaviour.transform.position.x, FGBehaviour.transform.position.y, FGBehaviour.transform.position.z + 300f), 8.5f);
                             var bouncer = imageObject.AddComponent<COMMON_Bouncer>();
                             bouncer._allowBounceFromSides = true;
                             bouncer._bounceVelocity = new(20, 20, 20);

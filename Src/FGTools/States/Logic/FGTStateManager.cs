@@ -367,7 +367,7 @@ namespace FGTools.States.Logic
         public void HandleFGState(PlayerState newState)
         {
             if (newState != PlayerState.FreeCam && FGCurrentState == PlayerState.FreeCam)
-                FallGuyBehaviour._instance.fc.ExitFC();
+                FallGuyBehaviour.Instance.FreeCamera.ExitFC();
             FGCurrentState = newState;
 
             switch (newState)
@@ -378,7 +378,7 @@ namespace FGTools.States.Logic
                         CreateNotification(LocalizedStr("msg_tip"), LocalizedStr("msg_tip_fc", [PauseFreeCamHotkey.Value, FreeCamToggleUI.Value]), FGT_Info_Color);
                         FGTServiceManager.GetService<EventService>().SetEventValue("FCTip", true);
                     }
-                    FallGuyBehaviour._instance.fc.EnterFC();
+                    FallGuyBehaviour.Instance.FreeCamera.EnterFC();
                     break;
                 case PlayerState.Finish:
                     HandleFGTState(ToolsState.GameEnded);

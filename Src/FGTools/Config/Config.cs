@@ -87,12 +87,13 @@ namespace FGTools.Config
             MyCDN,
         }
 
-        //LOADER OPTIONS
+        #region LOADER OPTIONS
         public static ConfigEntry<string> LangFileName { get; set; }
         public static ConfigEntry<bool> UseBackupLocale { get; set; }
         public static ConfigEntry<bool> AllowRPC { get; set; }
         public static ConfigEntry<string> InGameTheme { get; set; }
         public static ConfigEntry<bool> AutoSetPreset { get; set; }
+        #endregion
 
         #region HOTKEYS BINDINGS
         public static ConfigEntry<KeyCode> ToggleCusorHotkey { get; set; }

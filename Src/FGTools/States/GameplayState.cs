@@ -82,14 +82,15 @@ namespace FGTools.States
         void OnGameplayBegins()
         {
             StateManager.RoundLoadingAllowed = true;
+
             if (!StateManager.IsFGC)
-                StateManager.HandleFGTState(FGTStateManager.ToolsState.GameActive);
+                StateManager.HandleFGTState(ToolsState.GameActive);
             else
-                StateManager.HandleFGTState(FGTStateManager.ToolsState.FGCGameActive);
+                StateManager.HandleFGTState(ToolsState.FGCGameActive);
 
             StateManager.HandleFGState(PlayerState.Active);
 
-            FGBehaviour.FallGuy.GetComponent<Rigidbody>().isKinematic = false;
+            FGBehaviour.FGCC.RigidBody.isKinematic = false;
 
             if (Spawnpoint == null)
             {
@@ -101,7 +102,7 @@ namespace FGTools.States
                 Spawnpoint.DestroyComponentImmediateIfExists<BoxCollider>();
                 Spawnpoint.GetComponent<MeshRenderer>().enabled = !InvisibleCheckpoint.Value;
                 Spawnpoint.name = "Checkpoint";
-                Spawnpoint.transform.SetPositionAndRotation(FGBehaviour.FallGuy.transform.position, FGBehaviour.FallGuy.transform.rotation);
+                Spawnpoint.transform.SetPositionAndRotation(FGBehaviour.transform.position, FGBehaviour.transform.rotation);
                 Spawnpoint.SetActive(true);
 
                 if (SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled)

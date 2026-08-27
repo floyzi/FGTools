@@ -215,11 +215,11 @@ namespace FGTools.UI.Tabs
                 _imgRemoteLoad.GameObject.SetActive(false);
             }
 
-            if (Service.FollowFGPos && FallGuyBehaviour._instance != null && FallGuyBehaviour._instance.FallGuy != null)
+            if (Service.FollowFGPos && FallGuyBehaviour.Instance != null)
             {
-                var x = FallGuyBehaviour._instance.FallGuy.transform.position.x;
-                var y = FallGuyBehaviour._instance.FallGuy.transform.position.y;
-                var z = FallGuyBehaviour._instance.FallGuy.transform.position.z;
+                var x = FallGuyBehaviour.Instance.transform.position.x;
+                var y = FallGuyBehaviour.Instance.transform.position.y;
+                var z = FallGuyBehaviour.Instance.transform.position.z;
 
                 Service.transX = x;
                 _posX.Text = x.ToString();

@@ -373,7 +373,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(leave.GameObject, 30, 20, null, 0, null, null, null);
 
                 randt = UIFactory.CreateButton(btnRow1, "guiRandTeam", $"{LocalizedStr("gui_move_team")}", null);
-                randt.OnClick += () => { FallGuyBehaviour._instance.UpdateTeam(); };
+                randt.OnClick += () => { FallGuyBehaviour.Instance.UpdateTeam(); };
                 UIFactory.SetLayoutElement(randt.GameObject, 30, 20, null, 0, null, null, null);
                 randt.GameObject.SetActive(false);
 

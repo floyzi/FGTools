@@ -131,8 +131,8 @@ namespace FGTools.UI
             new PresetsTab(),
             new MediaLoaderTab(),
             new ImgInFgcTab(),
-            new MiscTab(),
             new FGCLocalSavesTab(),
+            new MiscTab(),
             new ConfigTab(),
             new CreditsTab(),
         ];

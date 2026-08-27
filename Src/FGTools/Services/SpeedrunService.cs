@@ -291,7 +291,7 @@ namespace FGTools.Services
             _restartButton = GetChild(CGM._inGameUiManager._inGameUiStates[2].gameObject, "ResetTimeAttackLap").GetComponent<SkipRoundButton>();
             _lapTimeText = GetChild(UIManager, "LapTimeText");
             _restartButton?.gameObject.SetActive(false);
-            _restartButton?.SetHoldTimeRequired(Config.Config.SPRespawnCD.Value);
+            _restartButton?.SetHoldTimeRequired(SPRespawnCD.Value);
             var lap = GetChild(UIManager, "PB_UI_TimeAttack_LapTimer");
             if (lap != null)
             {
@@ -339,18 +339,17 @@ namespace FGTools.Services
           
             if (StateManager.IsInGameplay && SpeedrunMode.Value && _allowTimerBeActive)
             {
-
                 if (SpeedrunState == RunState.Running)
                     UpdateTimer(false);
 
-                if (SpeedrunState == RunState.Respawned && FGBehaviour != null && FGBehaviour.FallGuy)
+                if (SpeedrunState == RunState.Respawned && FGBehaviour != null)
                 {
                     if (!SPInstaStart.Value)
                     {
-                        var wheel = FGBehaviour.FGCC.DiveMotorTask;
-                        var chair = FGBehaviour.FGCC.MoveMotorTask;
+                        var dive = FGBehaviour.FGCC.DiveMotorTask;
+                        var move = FGBehaviour.FGCC.MoveMotorTask;
 
-                        if (FGBehaviour.FGCC.CanMove && chair != null && wheel != null && chair.isRequested || wheel.isRequested)
+                        if (FGBehaviour.FGCC.CanMove && move != null && dive != null && move.isRequested || dive.isRequested)
                             HandleState(RunState.Running);
                     }
                     else
@@ -581,10 +580,10 @@ namespace FGTools.Services
             var ez = Resources.FindObjectsOfTypeAll<COMMON_ObjectiveBase>().FirstOrDefault();
             ez?._charactersAchievingObjective.Clear();
 
-            CGM.GetPlayerData(FGBehaviour.FGMPG.NetID).completedLevel = false;
+            CGM.GetPlayerData(FGBehaviour.FGCC.NetObject.NetID).completedLevel = false;
 
             if (SPResetPoints.Value && CGM.GameRules.IsScoringGame)
-                ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGMPG, CGM._soloScoreManager.GetSoloScore(FGBehaviour.FGMPG.NetID) * -1);
+                ServerGameStateActions.Instance.AwardPoints(FGBehaviour.FGCC.NetObject, CGM._soloScoreManager.GetSoloScore(FGBehaviour.FGCC.NetObject.NetID) * -1);
         }
 
         public void DoRunSave()

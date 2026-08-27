@@ -35,26 +35,23 @@ namespace FGTools.Internal.Behaviours
     internal class FallGuyBehaviour : ToolsBehaviour
     {
         public const int PeakId = 102;
-        public static FallGuyBehaviour _instance;
-        public FreeCameraController fc;
-        public GameObject controller;
-        public GameObject FallGuy;
-        public FallGuysCharacterController FGCC;
-        public MPGNetObject FGMPG;
-        public GameplayState CurrentGPState => StateManager.GetState<GameplayState>();
-        public int PlayerTeamId = -1;
-        public bool IsInPseudoZone = false;
+        internal static FallGuyBehaviour Instance;
+        internal FreeCameraController FreeCamera;
+        internal FallGuysCharacterController FGCC;
+        internal GameplayState CurrentGPState => StateManager.GetState<GameplayState>();
+        internal int PlayerTeamId = -1;
+        internal bool IsInPseudoZone = false;
+        internal static int Rand = -1;
 
-        bool delay;
-        float timeRemaining = FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
-        string gamemodeType;
-        public static int Rand = -1;
+        float _nextRespawn;
+        float _timeLeft = FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
+        string _gamemode;
 
         public void Awake()
         {
-            if (_instance != null)
-                Destroy(_instance);
-            _instance = this;
+            if (Instance != null)
+                Destroy(Instance);
+            Instance = this;
 
             PreInit();
         }
@@ -64,11 +61,9 @@ namespace FGTools.Internal.Behaviours
             if (Rand != -1)
                 Rand = -1;
 
-            FallGuy = gameObject;
             FGCC = gameObject.GetComponent<FallGuysCharacterController>();
-            FGMPG = gameObject.GetComponent<MPGNetObject>();
-            fc = gameObject.AddComponent<FreeCameraController>();
-            gamemodeType = CGM._round.Archetype.Id.Split('_')[1];
+            FreeCamera = gameObject.AddComponent<FreeCameraController>();
+            _gamemode = CGM._round.Archetype.Id.Split('_')[1];
             var vfxplayer = gameObject.GetComponent<FallGuyVFXController>();
 
             vfxplayer.InjectCameraScreenController(Resources.FindObjectsOfTypeAll<CameraScreenVFXController>().Last());
@@ -76,7 +71,7 @@ namespace FGTools.Internal.Behaviours
             PreloadPowAudio(Powerup.Value);
             FMODTool.LoadBank("BNK_SFX_TimeAttack");
 
-            FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {gamemodeType}");
+            FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {_gamemode}");
         }
 
         void PreloadPowAudio(SelectedPowerup power)
@@ -163,27 +158,12 @@ namespace FGTools.Internal.Behaviours
         {
             FMODTool.CreateFMODEvent("SFX_TimeAttack_Snapshot_TimeStop", out var _);
             gameObject.GetComponent<Rigidbody>().isKinematic = false;
-            ReDisplaySkipBtns(false);
-        }
-        
-        //crap
-        public void ReDisplaySkipBtns(bool ta)
-        {
-            foreach (var skipBtn in Resources.FindObjectsOfTypeAll<SkipRoundButton>().ToList().FindAll(x => x.gameObject.scene.name == "DontDestroyOnLoad"))
-            {
-                if (ta)
-                {
-                    if (CGM.GameRules.IsTimeAttackGameMode && skipBtn.name.Contains("Reset"))
-                        skipBtn.gameObject.SetActive(true);
-                }
-            }
         }
 
         public void RespawnPlayer(bool ta = false)
         {
-            if (FallGuy != null && StateManager.IsInGameplay && !RealHardMode.Value && !delay)
+            if (FGCC != null && StateManager.IsInGameplay && !RealHardMode.Value && _nextRespawn < Time.time)
             {
-                StartCoroutine(dumbDelay().WrapToIl2Cpp());
                 StateManager.FGCurrentState = PlayerState.Active;
 
                 if (ta)
@@ -196,10 +176,12 @@ namespace FGTools.Internal.Behaviours
                 else
                     FGCC.TeleportMotorFunction.RequestTeleport(CurrentGPState.Spawnpoint.transform.position, CurrentGPState.Spawnpoint.transform.rotation);
 
-                FallGuy.GetComponent<FallGuysCharacterController>().ResetToDefaultState();
-                FallGuy.GetComponent<Rigidbody>().DORestart();
-                FallGuy.gameObject.GetComponent<Rigidbody>().velocity = new Vector3(0, 5, 0);
-                FGTServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.OnRecenterAndSnapCameraNextFrameRequested();
+                FGCC.ResetToDefaultState();
+                FGCC.RigidBody.DORestart();
+                FGCC.RigidBody.velocity = new Vector3(0, 5, 0);
+                CGM.CameraDirector.OnRecenterAndSnapCameraNextFrameRequested();
+
+                _nextRespawn = Time.time + 0.5f;
             }
         }
 
@@ -207,20 +189,21 @@ namespace FGTools.Internal.Behaviours
         {
             if (CGM != null && CGM.GameRules.IsTeamGameMode)
             {
-                if (forceTeam == -2)
-                    PlayerTeamId = Random.Range(0, CGM.GameRules.NumTeamsWanted());
-                MultiplayerStartingPosition randPos = CGM.GameRules.PickStartingPosition(PeakId, 0, PlayerTeamId, 0, false);
+                if (forceTeam == -2) PlayerTeamId = Random.Range(0, CGM.GameRules.NumTeamsWanted());
+
+                var randPos = CGM.GameRules.PickStartingPosition(PeakId, 0, PlayerTeamId, 0, false);
                 FGCC.SetTeamID(PlayerTeamId);
 
                 if (!avoidtp)
                     FGCC.TeleportMotorFunction.RequestTeleport(randPos.transform.position, randPos.transform.rotation);
                 else
-                    FallGuy.transform.SetPositionAndRotation(randPos.transform.position, randPos.transform.rotation);
+                    FGCC.transform.SetPositionAndRotation(randPos.transform.position, randPos.transform.rotation);
 
-                CGM.AssignPlayerToTeam(FGMPG.NetID, PlayerTeamId);
+                CGM.AssignPlayerToTeam(FGCC.NetObject.NetID, PlayerTeamId);
                 var col = CustomisationManager.Instance.GetTeamNameColor(PlayerTeamId);
-                FGCC.GetComponent<FallguyCustomisationHandler>().SetCostumeTeamColours(col);
-                FGCC.GetComponent<FallguyCustomisationHandler>().UpdateBodyColours(col, col);
+
+                FGCC.CustomisationHandler.SetCostumeTeamColours(col);
+                FGCC.CustomisationHandler.UpdateBodyColours(col, col);
             }
         }
 
@@ -269,14 +252,15 @@ namespace FGTools.Internal.Behaviours
 
         private void Update()
         {
+            if (FGCC == null || CGM == null || CGM.CurrentGameSession == null) return;
+
             FreeFlyController();
-
-            if (CGM != null && CGM.CurrentGameSession.CurrentSessionState == GameSession.SessionState.Playing)
+            
+            if (CGM.CurrentGameSession.CurrentSessionState == GameSession.SessionState.Playing)
             {
-                if (timeRemaining > 0)
-                    timeRemaining -= Time.deltaTime;
+                if (_timeLeft > 0) _timeLeft -= Time.deltaTime;
 
-                if (!CGM.GameRules.IsTimeAttackGameMode && !delay)
+                if (!CGM.GameRules.IsTimeAttackGameMode && _nextRespawn < Time.time)
                 {
                     if (Input.GetKeyDown(RespawnHotkey.Value))
                     {
@@ -288,31 +272,30 @@ namespace FGTools.Internal.Behaviours
                 }
                 if (!CGM.GameRules.IsTimeAttackGameMode && StateManager.IsInGameplay)
                 {
-                    if (Input.GetKeyDown(CheckpointHotkey.Value) && FallGuy != null && !RealHardMode.Value && !delay)
+                    if (Input.GetKeyDown(CheckpointHotkey.Value) && !RealHardMode.Value && _nextRespawn < Time.time)
                     {
-                        CurrentGPState.Spawnpoint.transform.position = FallGuy.transform.position;
-                        FallGuy.GetComponent<FallGuysCharacterController>().CharacterEventSystem.RaiseEvent(FGEventFactory.GetVfxCheckpointEvent());
-                        StartCoroutine(dumbDelay().WrapToIl2Cpp());
+                        CurrentGPState.Spawnpoint.transform.position = FGCC.transform.position;
+                        FGCC.CharacterEventSystem.RaiseEvent(FGEventFactory.GetVfxCheckpointEvent());
                     }
 
-                    if (Input.GetKeyDown(ResetCheckpointHotkey.Value) && FallGuy != null && !RealHardMode.Value && !delay)
+                    if (Input.GetKeyDown(ResetCheckpointHotkey.Value) && !RealHardMode.Value && _nextRespawn < Time.time)
                     {
-                        MultiplayerStartingPosition pos = CGM.GameRules.PickRespawnPosition(102, 0, PlayerTeamId, 0, false);
+                        var pos = CGM.GameRules.PickRespawnPosition(102, 0, PlayerTeamId, 0, false);
                         CurrentGPState.Spawnpoint.transform.SetPositionAndRotation(pos.transform.position, pos.transform.rotation);
                     }
                 }
-                if (Input.GetKeyDown(EnterFFM.Value) && FallGuy != null)
+                if (Input.GetKeyDown(EnterFFM.Value))
                 {
                     if (StateManager.FGCurrentState != PlayerState.FreeFly)
                     {
                         InitialCollideWithTag ??= CGM.CameraDirector._closeCameraAvoidance._collideOnlyWithTag;
                         StateManager.HandleFGState(PlayerState.FreeFly);
-                        FallGuy.GetComponent<Rigidbody>().isKinematic = true;
+                        FGCC.RigidBody.isKinematic = true;
                     }
                     else
                     {
                         StateManager.HandleFGState(PlayerState.Active);
-                        FallGuy.GetComponent<Rigidbody>().isKinematic = false;
+                        FGCC.RigidBody.isKinematic = false;
                         CGM.CameraDirector._closeCameraAvoidance._collideOnlyWithTag = InitialCollideWithTag;
                     }
                     FGTServiceManager.Instance.GetService<RoundLoaderService>().RoundCamera.OnRecenterAndSnapCameraNextFrameRequested();
@@ -361,16 +344,5 @@ namespace FGTools.Internal.Behaviours
             
             CGM.CountdownEnds();
         }
-
-
-        [HideFromIl2Cpp]
-        IEnumerator dumbDelay()
-        {
-            delay = true;
-            yield return new WaitForSeconds(RCDelay.Value);
-            delay = false;
-        }
-
-       
     }
 }

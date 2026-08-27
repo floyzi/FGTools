@@ -62,7 +62,7 @@ namespace FGTools.HarmonyPatches
             if (listener == null)
                 return true;
 
-            listener.transform.SetPositionAndRotation(_instance.fc.CAM.transform.position, _instance.fc.CAM.transform.rotation);
+            listener.transform.SetPositionAndRotation(FallGuyBehaviour.Instance.FreeCamera.CAM.transform.position, FallGuyBehaviour.Instance.FreeCamera.CAM.transform.rotation);
             return false;
         }
 
