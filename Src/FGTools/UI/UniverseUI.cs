@@ -174,8 +174,8 @@ namespace FGTools.UI
             new ImgInFgcTab(),
             new MiscTab(),
             new FGCLocalSavesTab(),
+            new ConfigTab(),
             new CreditsTab(),
-            
         ];
 
         internal event Action<TabMeta> OnTabChanged;
@@ -200,9 +200,6 @@ namespace FGTools.UI
                     tab.TabButton = t.Component;
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }
-
-                CreateTab(Tab.Config, SubLevel.Default, tabGroup, () => FGTConfigGUI, "gui_config", "gui_config");
-                CreateTab(Tab.Credits, SubLevel.Default, tabGroup, () => FGTCreditsGUI, "gui_credits", "gui_credits");
             }
             catch (Exception e)
             {
@@ -217,8 +214,6 @@ namespace FGTools.UI
                 {
                     tab.Draw(ContentRoot);
                 }
-
-                DrawConfig();
 
                 TabHoverText = UIFactory.CreateLabel(Launcher.UniverseUIBase.RootObject, "TabTitle", "", TextAnchor.MiddleCenter);
                 TabHoverText.rectTransform.sizeDelta = new(500, 100);
@@ -379,109 +374,6 @@ namespace FGTools.UI
 
             var failTitle = UIFactory.CreateLabel(group, "failTitle", LocalizedStr("gui_disabled_feature"), TextAnchor.MiddleCenter);
             UIFactory.SetLayoutElement(failTitle.gameObject, minHeight: 25, flexibleHeight: 0);
-        }
-
-        internal class EntryInfo(CachedConfigEntry cached)
-        {
-            public CachedConfigEntry Cached { get; } = cached; public ConfigEntryBase RefEntry;
-            public bool IsHidden { get; internal set; }
-
-            internal GameObject content;
-        }
-
-        List<EntryInfo> confEntries;
-
-        void SearchConfig(string q)
-        {
-            q = q.ToLower();
-            foreach (var entry in confEntries)
-            {
-                bool val = (string.IsNullOrEmpty(q)
-                                || entry.RefEntry.Definition.Key.ToLower().Contains(q)
-                                || (entry.RefEntry.Description?.Description?.Contains(q) ?? false))
-                           && (!entry.IsHidden);
-
-                entry.content.SetActive(val);
-            }
-        }
-        void DrawConfig()
-        {
-            confEntries = [];
-            FGTConfigGUI = UIFactory.CreateVerticalGroup(ContentRoot, "Config", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
-            UIFactory.SetLayoutElement(FGTConfigGUI, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-            var search = UIFactory.CreateInputField(FGTConfigGUI, "configGUI", LocalizedStr("gui_search"));
-            search.OnValueChanged += SearchConfig;
-            UIFactory.SetLayoutElement(search.GameObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 25);
-            GameObject content = UIFactory.CreateScrollView(FGTConfigGUI, "configGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
-            UIFactory.SetLayoutElement(content, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
-            var scroll = content.GetComponent<ScrollRect>().content.gameObject;
-
-            var dict = new Dictionary<string, List<ConfigEntryBase>>()
-                {
-                    { "", new List<ConfigEntryBase>() }
-                };
-
-            foreach (var entry in Launcher.BepConfig.Keys)
-            {
-                string sec = entry.Section;
-                sec ??= "";
-
-                if (!dict.ContainsKey(sec))
-                    dict.Add(sec, []);
-
-                dict[sec].Add(Launcher.BepConfig[entry]);
-            }
-
-            foreach (var ctg in dict)
-            {
-                if (!string.IsNullOrEmpty(ctg.Key))
-                {
-                    var bg = UIFactory.CreateHorizontalGroup(scroll, "TitleBG", true, true, true, true, 0, default, new Color(0.07f, 0.07f, 0.07f));
-
-                    var title = UIFactory.CreateLabel(bg, $"Title_{ctg.Key}", ctg.Key, TextAnchor.MiddleCenter, default, true, 17);
-                    UIFactory.SetLayoutElement(title.gameObject, minHeight: 30, minWidth: 200, flexibleWidth: 9999);
-                }
-
-                foreach (var configEntry in ctg.Value)
-                {
-                    CachedConfigEntry cache = new(configEntry, scroll);
-                    cache.Enable();
-
-                    GameObject obj = cache.UIroot;
-
-                    bool advanced = false;
-
-                    if (!advanced)
-                    {
-                        object[] tags = configEntry.Description?.Tags;
-                        if (tags != null && tags.Any())
-                        {
-                            if (tags.Any(it => it is string s && s == "Advanced"))
-                            {
-                                advanced = true;
-                            }
-                            else if (tags.FirstOrDefault(it => it.GetType().Name == "ConfigurationManagerAttributes") is object attributes)
-                            {
-                                advanced = (bool?)attributes.GetType().GetField("IsAdvanced")?.GetValue(attributes) == true;
-                            }
-                        }
-                    }
-
-
-                    confEntries.Add(new EntryInfo(cache)
-                    {
-                        RefEntry = configEntry,
-                        content = obj,
-                        IsHidden = advanced
-                    });
-                }
-            }
-
-            // hide buttons for completely-hidden categories.
-
-            content.SetActive(true);
-
-
         }
 
         internal void RefreshEverything(bool onlyCleanup = false)
