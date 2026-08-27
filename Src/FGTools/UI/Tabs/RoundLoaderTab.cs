@@ -21,7 +21,7 @@ using UniverseLib.UI.Models;
 using UniverseLib.UI.Widgets;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -72,8 +72,8 @@ namespace FGTools.UI.Tabs
         internal override void Draw(GameObject root)
         {
             #region ROUND LOADER - SETUP
-            NewGUI.Instance.OnTabChanged += OnTabChange;
-            NewGUI.Instance.OnStateChange += OnStateChange;
+            FGToolsUI.Instance.OnTabChanged += OnTabChange;
+            FGToolsUI.Instance.OnStateChange += OnStateChange;
 
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
@@ -81,25 +81,25 @@ namespace FGTools.UI.Tabs
             FGTRoundLoaderTabs = UIFactory.CreateHorizontalGroup(root, "FGTRoundLoaderTabs", true, false, true, false, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(FGTRoundLoaderTabs, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
 
-            var mainTab = NewGUI.Instance.CreateTab(Tab.RoundLoader_Main, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => unityLoaderGUI, "gui_loader");
-            var fgcTab = NewGUI.Instance.CreateTab(Tab.RoundLoader_FGC, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => fgcGUI, "gui_creative_loader");
+            var mainTab = FGToolsUI.Instance.CreateTab(Tab.RoundLoader_Main, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => unityLoaderGUI, "gui_loader");
+            var fgcTab = FGToolsUI.Instance.CreateTab(Tab.RoundLoader_FGC, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => fgcGUI, "gui_creative_loader");
 
-            NewGUI.Instance.AssignToGroups(fgcTab.Component, new()
+            FGToolsUI.Instance.AssignToGroups(fgcTab.Component, new()
                 {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.Interactable), () => true },
                     { new GroupPolicy(ObjectGroup.Editor, GroupOperation.Interactable), () => false },
                 });
 
-            var gpTab = NewGUI.Instance.CreateTab(Tab.RoundLoader_InGame, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => gameplayGUI, "gui_ingame_tab");
-            NewGUI.Instance.AssignToGroups(gpTab.GameObject, new()
+            var gpTab = FGToolsUI.Instance.CreateTab(Tab.RoundLoader_InGame, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => gameplayGUI, "gui_ingame_tab");
+            FGToolsUI.Instance.AssignToGroups(gpTab.GameObject, new()
                 {
                     { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
                 });
-            var optionsTab = NewGUI.Instance.CreateTab(Tab.RoundLoader_Options, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => loadOptionsGUI, "gui_round_options");
-            NewGUI.Instance.AssignToGroups(optionsTab.Component, new()
+            var optionsTab = FGToolsUI.Instance.CreateTab(Tab.RoundLoader_Options, SubLevel.RoundLoader, FGTRoundLoaderTabs, () => loadOptionsGUI, "gui_round_options");
+            FGToolsUI.Instance.AssignToGroups(optionsTab.Component, new()
                 {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.Interactable), () => true },
                     { new GroupPolicy(ObjectGroup.Editor, GroupOperation.Interactable), () => false },
@@ -130,10 +130,10 @@ namespace FGTools.UI.Tabs
             InputFieldRef inputFieldRef = null;
             Text levelInfo = null;
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, unityLoaderGUI, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, unityLoaderGUI, new(() =>
             {
                 var searchbarGroup = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "Search", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(searchbarGroup, new()
+                FGToolsUI.Instance.AssignToGroups(searchbarGroup, new()
                 {
                         { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
                         { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
@@ -156,7 +156,7 @@ namespace FGTools.UI.Tabs
                 delList.GameObject.SetActive(false);
 
                 var roundNamesGroup = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "Dropdowns", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(roundNamesGroup, new()
+                FGToolsUI.Instance.AssignToGroups(roundNamesGroup, new()
                 {
                         { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
                         { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => true },
@@ -180,7 +180,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(roundNamesGroup, minHeight: 25, flexibleHeight: 0);
 
                 var loadingBtns = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "LoadButtons", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(loadingBtns, new()
+                FGToolsUI.Instance.AssignToGroups(loadingBtns, new()
             {
                     { new GroupPolicy(ObjectGroup.Results, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Gameplay, GroupOperation.SetActive), () => true },
@@ -192,7 +192,7 @@ namespace FGTools.UI.Tabs
 
                 UIFactory.SetLayoutElement(loadingBtns, minHeight: 25, flexibleHeight: 0);
                 var singleButton = UIFactory.CreateButton(loadingBtns, "single", $"{LocalizedStr("gui_single_load")}", null);
-                NewGUI.Instance.AssignToGroups(singleButton.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(singleButton.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true }
@@ -204,7 +204,7 @@ namespace FGTools.UI.Tabs
 
                 UIFactory.SetLayoutElement(singleButton.GameObject, 30, 20, null, 0, null, null, null);
                 var additiveButton = UIFactory.CreateButton(loadingBtns, "additive", $"{LocalizedStr("gui_additive_load")}", null);
-                NewGUI.Instance.AssignToGroups(additiveButton.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(additiveButton.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true }
@@ -231,7 +231,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(mainTools, minHeight: 25, flexibleHeight: 0);
 
                 var UnityExploreBtn = UIFactory.CreateButton(mainTools, "UnityExploreBtn", $"{LocalizedStr("gui_play_explore_unity")}", null);
-                NewGUI.Instance.AssignToGroups(UnityExploreBtn.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(UnityExploreBtn.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -244,7 +244,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(UnityExploreBtn.GameObject, 30, 20, null, 0, null, null, null);
 
                 var EndlessExploreBtn = UIFactory.CreateButton(mainTools, "EndlessExploreBtn", $"{LocalizedStr("gui_play_explore_endless")}", null);
-                NewGUI.Instance.AssignToGroups(EndlessExploreBtn.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(EndlessExploreBtn.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -265,7 +265,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(EndlessExploreBtn.GameObject, 30, 20, null, 0, null, null, null);
 
                 var RequestRandomRound = UIFactory.CreateButton(mainTools, "NormalExploreBtn", $"{LocalizedStr("gui_random_round")}", null);
-                NewGUI.Instance.AssignToGroups(RequestRandomRound.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(RequestRandomRound.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Explore, GroupOperation.SetActive), () => true },
@@ -282,7 +282,7 @@ namespace FGTools.UI.Tabs
                 RequestRandomRound.GameObject.SetActive(false);
 
                 var upPromptTxt = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "upPromptTxt", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(upPromptTxt.gameObject, new()
+                FGToolsUI.Instance.AssignToGroups(upPromptTxt.gameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -297,7 +297,7 @@ namespace FGTools.UI.Tabs
 
                 var advMode = UIFactory.CreateHorizontalGroup(unityLoaderGUI, "advMode", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(advMode, minHeight: 25, flexibleHeight: 0);
-                NewGUI.Instance.AssignToGroups(advMode.gameObject, new()
+                FGToolsUI.Instance.AssignToGroups(advMode.gameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -355,7 +355,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - GAMEPLAY
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, gameplayGUI, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, gameplayGUI, new(() =>
             {
                 GameObject title1 = UIFactory.CreateHorizontalGroup(gameplayGUI_Content, "variantSelector", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(title1, minHeight: 20, flexibleHeight: 0);
@@ -455,7 +455,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - CREATIVE
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, fgcGUI, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundLoader, fgcGUI, new(() =>
             {
 #if DEV_BUILD
                 string code = "4184-8071-9230";
@@ -492,7 +492,7 @@ namespace FGTools.UI.Tabs
                 //UIFactory.SetLayoutElement(lvlVersion.Component.previewTheme, minWidth: 20, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 0);
 
                 var loadingBtnsFGC = UIFactory.CreateHorizontalGroup(basicGroup, "loadingBtnsFGC", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(loadingBtnsFGC, new()
+                FGToolsUI.Instance.AssignToGroups(loadingBtnsFGC, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -548,7 +548,7 @@ namespace FGTools.UI.Tabs
             #endregion
 
             #region ROUND LOADER - ROUND RULES
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundRules, loadOptionsGUI_Content, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.RoundRules, loadOptionsGUI_Content, new(() =>
             {
                 var latestOptions = FGTBase.FGTServiceManager.GetService<RoundOptionsService>().ReturnLatestOptions();
 

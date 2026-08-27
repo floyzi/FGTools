@@ -18,7 +18,7 @@ using UniverseLib.UI.Models;
 using wle::Wushu.LevelEditor.Runtime.UI.LevelBrowser;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 using static FGTools.UI.ReadyPopups;
 
 namespace FGTools.UI.Tabs
@@ -47,7 +47,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.Img2Fgc, ControlledObject, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.Img2Fgc, ControlledObject, new(() =>
             {
                 //image input file name area
                 GameObject img2fgc_imageName = UIFactory.CreateHorizontalGroup(ControlledObject, "imageNameGroup", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.UI.Tabs

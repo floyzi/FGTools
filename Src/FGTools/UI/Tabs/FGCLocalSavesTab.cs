@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.UI.Tabs
@@ -32,7 +32,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.FGCLocalSaves, ControlledObject, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.FGCLocalSaves, ControlledObject, new(() =>
             {
 
                 var nosaves = UIFactory.CreateLabel(ControlledObject, "nosaves", $"{LocalizedStr("gui_local_save_no_saves")}", TextAnchor.UpperCenter, default, true, 14);

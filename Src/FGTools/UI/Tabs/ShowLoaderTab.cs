@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
 using UniverseLib.UI.Widgets;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.UI.Tabs
@@ -30,7 +30,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.ShowLoader, ControlledObject, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.ShowLoader, ControlledObject, new(() =>
             {
                 var sL = FGTBase.FGTServiceManager.GetService<ShowLoaderService>();
 
@@ -45,7 +45,7 @@ namespace FGTools.UI.Tabs
                 GameObject showLoadBtns = UIFactory.CreateHorizontalGroup(ControlledObject, "loadingBtns", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(showLoadBtns, minHeight: 25, flexibleHeight: 0);
                 var showPlayBtn = UIFactory.CreateButton(showLoadBtns, "play", $"{LocalizedStr("gui_play")}", null);
-                NewGUI.Instance.AssignToGroups(showPlayBtn.GameObject, new()
+                FGToolsUI.Instance.AssignToGroups(showPlayBtn.GameObject, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },
@@ -81,7 +81,7 @@ namespace FGTools.UI.Tabs
                 UIFactory.SetLayoutElement(showIco.gameObject, minHeight: 170, preferredHeight: 170, flexibleHeight: 170, flexibleWidth: 168, preferredWidth: 168, minWidth: 168);
 
                 var SLG_Gameplay = UIFactory.CreateHorizontalGroup(ControlledObject, "ingameUI", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
-                NewGUI.Instance.AssignToGroups(SLG_Gameplay, new()
+                FGToolsUI.Instance.AssignToGroups(SLG_Gameplay, new()
             {
                     { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => false },
                     { new GroupPolicy(ObjectGroup.Loading, GroupOperation.SetActive), () => false },

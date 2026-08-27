@@ -19,7 +19,7 @@ using UniverseLib.UI.Models;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.Services.MenuThemeService;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -59,14 +59,14 @@ namespace FGTools.UI.Tabs
             if (Config.Config.InGameTheme.Value != LocalizedStr("gui_default"))
                 theme = themeService.CurrentTheme;
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.CustomThemes, MiscContent, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.CustomThemes, MiscContent, new(() =>
             {
                 var holder = UIFactory.CreateUIObject("ThemeSwitcher", MiscContent);
                 var vert = holder.AddComponent<VerticalLayoutGroup>();
                 vert.spacing = 2;
                 vert.padding.bottom = 5;
 
-                NewGUI.Instance.AssignToGroups(holder, new()
+                FGToolsUI.Instance.AssignToGroups(holder, new()
                 {
                         { new GroupPolicy(ObjectGroup.Editor, GroupOperation.SetActive), () => false },
                         { new GroupPolicy(ObjectGroup.Menu, GroupOperation.SetActive), () => true },
@@ -257,7 +257,7 @@ namespace FGTools.UI.Tabs
             //LOCALIZATION
             Text langTitle = UIFactory.CreateLabel(MiscContent, "langTitle", LocalizedStr("gui_localization"), TextAnchor.UpperCenter);
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.LangSwitcher, MiscContent, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.LangSwitcher, MiscContent, new(() =>
             {
                 GameObject langRow = UIFactory.CreateHorizontalGroup(MiscContent, "Selection Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                 UIFactory.CreateDropdown(langRow, "Languages", out _langDropdown, "", 14, PickLanguage);
@@ -300,7 +300,7 @@ namespace FGTools.UI.Tabs
             GameObject roundHistory = null;
             GameObject historyActions = null;
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.Statistics, MiscContent, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.Statistics, MiscContent, new(() =>
             {
                 var statService = FGTServiceManager.GetService<StatisticsService>();
        
@@ -388,7 +388,7 @@ namespace FGTools.UI.Tabs
             UIFactory.SetLayoutElement(saveBtn3.Component.gameObject, flexibleWidth: 9999, minHeight: 30, flexibleHeight: 0);
             saveBtn3.OnClick += () =>
             {
-                NewGUI.Instance.RefreshEverything();
+                FGToolsUI.Instance.RefreshEverything();
             };
             ButtonRef saveBtn4 = UIFactory.CreateButton(MiscContent, "OpenConfig", $"{LocalizedStr("gui_open_config")}", new Color(0.2f, 0.3f, 0.2f));
             Text openCfgDesc = UIFactory.CreateLabel(MiscContent, "СonfigActionsTitle", LocalizedStr("gui_config_about_2"), TextAnchor.MiddleLeft);
@@ -476,13 +476,13 @@ namespace FGTools.UI.Tabs
                         {
                             OnlineCheck.DownloadNewLang(_selectedLang, new(() =>
                             {
-                                NewGUI.Instance.RefreshEverything();
+                                FGToolsUI.Instance.RefreshEverything();
                                 FGTServiceManager.OnGUIDestroyed();
 
-                                NewGUI.Instance.UIRoot.hideFlags = HideFlags.HideAndDontSave;
-                                NewGUI.Instance.UIRoot.transform.SetParent(null);
-                                NewGUI.Instance.UIRoot.gameObject.SetActive(false);
-                                NewGUI.Instance = null;
+                                FGToolsUI.Instance.UIRoot.hideFlags = HideFlags.HideAndDontSave;
+                                FGToolsUI.Instance.UIRoot.transform.SetParent(null);
+                                FGToolsUI.Instance.UIRoot.gameObject.SetActive(false);
+                                FGToolsUI.Instance = null;
 
                                 StateManager.LoggedInBefore = false;
                                 FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Launcher.LocalizationDir, _selectedLang, "locale.json"));

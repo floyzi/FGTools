@@ -19,7 +19,7 @@ using static FGTools.Services.LocalizationService;
 using static FGTools.Services.MenuThemeService;
 using static FGTools.Services.StatisticsService;
 using static FGTools.States.Logic.FGTStateManager;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 namespace FGTools.Services
 {
     internal class StatisticsService : FGTService, IFGTGUIHelper
@@ -168,7 +168,7 @@ namespace FGTools.Services
                 RoundHistoryTXT.text = string.Join("\n", sortedList.ToArray().Select((line, index) => $"{ab -= 1}. | {line}"));
                 HistoryPlus.Component.interactable = _currPage + 1 != HistoryPages.Count;
                 HistoryMinus.Component.interactable = _currPage > 0;
-                HistoryActions.gameObject.SetActive(NewGUI.Instance.CurrentTab.Tab == NewGUI.Tab.Misc && RoundHistory.gameObject.activeSelf);
+                HistoryActions.gameObject.SetActive(FGToolsUI.Instance.CurrentTab.Tab == FGToolsUI.Tab.Misc && RoundHistory.gameObject.activeSelf);
             }
             else
                 HistoryActions.gameObject.SetActive(false);
@@ -179,7 +179,7 @@ namespace FGTools.Services
             CurrentStats.FGCSearchHistory ??= [];
             CurrentStats.FGCSearchHistory.Add(code);
 
-            NewGUI.Instance.GetTab<RoundLoaderTab>(NewGUI.Tab.RoundLoader).RefreshFGCHistory(code);
+            FGToolsUI.Instance.GetTab<RoundLoaderTab>(FGToolsUI.Tab.RoundLoader).RefreshFGCHistory(code);
 
             Save();
         }
@@ -303,12 +303,12 @@ namespace FGTools.Services
 
         public void OnUIDestroy()
         {
-            NewGUI.Instance.OnTabChanged -= OnTabChanged;
+            FGToolsUI.Instance.OnTabChanged -= OnTabChanged;
         }
 
         public void OnUICreated()
         {
-            NewGUI.Instance.OnTabChanged += OnTabChanged;
+            FGToolsUI.Instance.OnTabChanged += OnTabChanged;
         }
     }
 }

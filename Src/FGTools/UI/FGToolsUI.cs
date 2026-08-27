@@ -21,7 +21,7 @@ using static FGTools.States.Logic.FGTBase;
 
 namespace FGTools.UI
 {
-    public class NewGUI(UIBase owner) : PanelBase(owner)
+    public class FGToolsUI(UIBase owner) : PanelBase(owner)
     {
         public enum Tab
         {
@@ -108,7 +108,7 @@ namespace FGTools.UI
         public override bool CanDragAndResize => true;
         public override Vector2 DefaultPosition => new(-350, 400);
 
-        internal static NewGUI Instance;
+        internal static FGToolsUI Instance;
         internal TabMeta CurrentTab;
         internal TabMeta PreviousTab;
 

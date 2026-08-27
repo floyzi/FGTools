@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs.Logic
 {

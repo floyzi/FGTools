@@ -227,7 +227,7 @@ namespace FGTools.States
                     {
                         Launcher.UniverseUIBase ??= UniversalUI.RegisterUI(UniverseGUID, null);
 
-                        if (NewGUI.Instance == null)
+                        if (FGToolsUI.Instance == null)
                             StateManager.InternalState.ToolsUI = new(Launcher.UniverseUIBase);
                     }
 #if DEV

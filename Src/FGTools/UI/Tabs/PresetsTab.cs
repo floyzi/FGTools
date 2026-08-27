@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
 using static FGTools.Services.LocalizationService;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -28,7 +28,7 @@ namespace FGTools.UI.Tabs
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.CosmeticPresets, ControlledObject, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.CosmeticPresets, ControlledObject, new(() =>
             {
                 GameObject presetsDropGroup = UIFactory.CreateHorizontalGroup(ControlledObject, "presetsDropGroup", true, true, true, true, 2, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(presetsDropGroup, minHeight: 30, flexibleHeight: 0);

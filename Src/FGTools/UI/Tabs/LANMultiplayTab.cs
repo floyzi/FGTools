@@ -10,7 +10,7 @@ using UnityEngine;
 using UniverseLib.UI;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.UI.NewGUI;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -29,7 +29,7 @@ namespace FGTools.UI.Tabs
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleHeight: 0);
 
             #region LOCAL MULTIPLAYER DEV
-            NewGUI.Instance.TryDrawUI(() => FGTTargetSettings.LocalMultiplayer, ControlledObject, new(() =>
+            FGToolsUI.Instance.TryDrawUI(() => FGTTargetSettings.LocalMultiplayer, ControlledObject, new(() =>
             {
                 var fields = UIFactory.CreateHorizontalGroup(ControlledObject, "HostFields", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(fields, minHeight: 25, flexibleHeight: 25, preferredHeight: 25);
