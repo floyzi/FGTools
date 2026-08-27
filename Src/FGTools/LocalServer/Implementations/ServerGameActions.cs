@@ -11,6 +11,7 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.Services.Logic;
+using FGTools.States;
 using FGTools.States.Logic;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
@@ -389,8 +390,26 @@ namespace FGTools.LocalServer.Implementations
             var cgm = ServerManager.CGM;
             var playerData = cgm.GetPlayerData(fgcc.NetObject.NetID);
 
-            var pos = ServerManager.CGM.GameRules.PickRespawnPosition(playerData.EntityID, playerData.SquadID, playerData.TeamID, playerData.VsGroupID, cgm.IsSquadShow);
-            TeleportNetObject(fgcc.NetObject, pos.transform.position, pos.transform.rotation, SpawnReason.Respawn);
+            var spS = FGTServiceManager.Instance.GetService<SpeedrunService>();
+            bool isNotInSpeedrun = LocalServerService.IsUserAloneAndHost && !Config.Config.SpeedrunMode.Value || spS.IsSepeedrunsDisabled;
+
+            Vector3 pos;
+            Quaternion rot;
+
+            if (playerData.isLocalPlayer && !isNotInSpeedrun && Config.Config.RespawnAtCheckpoint.Value)
+            {
+                var point = FGTStateManager.StateManager.GetState<GameplayState>().Spawnpoint;
+                pos = point.transform.position;
+                rot = point.transform.rotation;
+            }
+            else
+            {
+                var point = ServerManager.CGM.GameRules.PickRespawnPosition(playerData.EntityID, playerData.SquadID, playerData.TeamID, playerData.VsGroupID, cgm.IsSquadShow);
+                pos = point.transform.position;
+                rot = point.transform.rotation;
+            }
+
+            TeleportNetObject(fgcc.NetObject, pos, rot, SpawnReason.Respawn);
         }
 
         void IncreasePlayingTime(float amountInSeconds)

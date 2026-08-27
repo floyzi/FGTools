@@ -69,7 +69,7 @@ namespace FGTools.Services
         string _timerText;
         int _checkpointNum = 0;
         int _lapNum = 0;
-        StringBuilder _stat = new();
+        readonly StringBuilder _stat = new();
         float _previousSaveTime;
         GameObject _timerObject;
         GameObject _checkpointPopup;
@@ -80,13 +80,11 @@ namespace FGTools.Services
         bool _allowTimerBeActive;
         TimeAttackLapDisplay _display;
         string _infoStat;
-        string LatestRunScene;
-        SpeedrunSaveJson latestSave;
-
-        Speedrun CurrentRun;
-        List<Speedrun> RunsHistory = [];
-
-        int AmountOfSpawns = 0;
+        string _latestRunScene;
+        SpeedrunSaveJson _latestSave;
+        Speedrun _currentRun;
+        readonly List<Speedrun> _runsHistory = [];
+        int _amountOfSpawns = 0;
 
         public override void RegisterService()
         {
@@ -115,17 +113,17 @@ namespace FGTools.Services
 
         float FindFastestProgression(int checkpoint)
         {
-            var time = RunsHistory.Where(run => run.CheckpointProgression.TryGetValue(checkpoint, out var prog) && prog.Type == SpeedrunProgressionType.Checkpt).Select(run => run.CheckpointProgression[checkpoint].Value).DefaultIfEmpty().Min();
-            return time == 0 ? CurrentRun.RunningTime : time;
+            var time = _runsHistory.Where(run => run.CheckpointProgression.TryGetValue(checkpoint, out var prog) && prog.Type == SpeedrunProgressionType.Checkpt).Select(run => run.CheckpointProgression[checkpoint].Value).DefaultIfEmpty().Min();
+            return time == 0 ? _currentRun.RunningTime : time;
         }
 
         internal void EndCurrentRun()
         {
-            if (CurrentRun == null)
+            if (_currentRun == null)
                 return;
 
-            RunsHistory.Add(CurrentRun);
-            CurrentRun = null;
+            _runsHistory.Add(_currentRun);
+            _currentRun = null;
         }
 
         void TryToConvertOldData()
@@ -137,14 +135,14 @@ namespace FGTools.Services
             foreach (string line in all)
             {
                 var split = line.Split(':');
-                latestSave.saveData[split[0]] = float.Parse(split[1]);
+                _latestSave.saveData[split[0]] = float.Parse(split[1]);
             }
-            FGTLog(LogLevel.Info, base.GetType(), $"CONVERT: Total lines parsed: {all.Length}. New lines: {latestSave.saveData.Count}");
+            FGTLog(LogLevel.Info, base.GetType(), $"CONVERT: Total lines parsed: {all.Length}. New lines: {_latestSave.saveData.Count}");
             File.Delete(Launcher.RunsData);
             WriteSave();
         }
 
-        void WriteSave() => File.WriteAllText(Launcher.RunsDataNew, JsonSerializer.Serialize<SpeedrunSaveJson>(latestSave));
+        void WriteSave() => File.WriteAllText(Launcher.RunsDataNew, JsonSerializer.Serialize<SpeedrunSaveJson>(_latestSave));
 
         public void LoadData()
         {
@@ -152,11 +150,11 @@ namespace FGTools.Services
             {
                 if (File.Exists(Launcher.RunsDataNew))
                 {
-                    latestSave = JsonSerializer.Deserialize<SpeedrunSaveJson>(File.ReadAllText(Launcher.RunsDataNew));
+                    _latestSave = JsonSerializer.Deserialize<SpeedrunSaveJson>(File.ReadAllText(Launcher.RunsDataNew));
                 }
                 else
                 {
-                    latestSave = new()
+                    _latestSave = new()
                     {
                         saveData = []
                     };
@@ -200,12 +198,12 @@ namespace FGTools.Services
 
         public float ReturnCurrentTime()
         {
-            return CurrentRun.RunningTime;
+            return _currentRun.RunningTime;
         }
 
         public string ReturnLatestScene()
         {
-            return LatestRunScene;
+            return _latestRunScene;
         }
 
         public void SetLatestSceneTime(float data)
@@ -223,7 +221,7 @@ namespace FGTools.Services
             if (StateManager.IsFGC)
                 SpeedrunContinePopup(GetRunTime(CGM._round.Id), winScreen, player);
             else
-                SpeedrunContinePopup(GetRunTime(LatestRunScene), winScreen, player);
+                SpeedrunContinePopup(GetRunTime(_latestRunScene), winScreen, player);
         }
 
         internal void TriggerSpeedrunRestart()
@@ -247,12 +245,12 @@ namespace FGTools.Services
                 _restartButton.gameObject.SetActive(true);
 
             if (!debug)
-                CurrentRun.RunningTime += GameStateView.Instance.SimulationDeltaTime;
+                _currentRun.RunningTime += GameStateView.Instance.SimulationDeltaTime;
             else
-                CurrentRun.RunningTime += Time.deltaTime;
+                _currentRun.RunningTime += Time.deltaTime;
 
             if (SpeedrunState != RunState.Respawned)
-                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(CurrentRun.RunningTime, true)}"); } catch { }
+                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(_currentRun.RunningTime, true)}"); } catch { }
             else
                 try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(0, true)}"); } catch { }
 
@@ -260,7 +258,7 @@ namespace FGTools.Services
 
         internal void PrepareForGameplay()
         {
-            RunsHistory.Clear();
+            _runsHistory.Clear();
 
             LoadUI();
             HandleState(RunState.Respawned);
@@ -365,7 +363,7 @@ namespace FGTools.Services
                 case RunState.Respawned:
                     if (prevState == RunState.Running)
                         EndCurrentRun();
-                    AmountOfSpawns++;
+                    _amountOfSpawns++;
                     TriggerTimer(true);
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt))
                         evt.start();
@@ -379,7 +377,7 @@ namespace FGTools.Services
                         _display._timeAttackLapTimeAnimation.Play("UI_HUD_TimeAttack_LapTime_Base");
                         _display.TryTimeAttackPulseTimer(new(102, null));
                     }
-                    _infoStat = $"{LocalizedStr("gui_attempt")}: <b>{RunsHistory.Count + 1}</b>";
+                    _infoStat = $"{LocalizedStr("gui_attempt")}: <b>{_runsHistory.Count + 1}</b>";
 
                     var name = !StateManager.IsFGC ? SceneManager.GetActiveScene().name : CGM._round.Id;
 
@@ -400,8 +398,8 @@ namespace FGTools.Services
                     FGBehaviour.FGCC.CustomisationHandler.HandleFallGuyVisibility(false);
                     break;
                 case RunState.Running:
-                    CurrentRun = new(RunsHistory.Count + 1);
-                    LatestRunScene = SceneManager.GetActiveScene().name;
+                    _currentRun = new(_runsHistory.Count + 1);
+                    _latestRunScene = SceneManager.GetActiveScene().name;
                     TriggerTimer(true);
 
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt3))
@@ -428,7 +426,7 @@ namespace FGTools.Services
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt4))
                         evt4.stop(STOP_MODE.IMMEDIATE);
 
-                    RunsHistory.Clear();
+                    _runsHistory.Clear();
 
                     TriggerTimer(false);
 
@@ -442,14 +440,14 @@ namespace FGTools.Services
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt5))
                         evt5.stop(STOP_MODE.IMMEDIATE);
 
-                    RunsHistory.Clear();
+                    _runsHistory.Clear();
                     TriggerTimer(false);
                     break;
                 case RunState.TempDisabled:
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt6))
                         evt6.stop(STOP_MODE.IMMEDIATE);
 
-                    RunsHistory.Clear();
+                    _runsHistory.Clear();
                     _timerObject.gameObject.SetActive(false);
                     _restartButton?.gameObject.SetActive(false);
                     TriggerTimer(false);
@@ -459,31 +457,29 @@ namespace FGTools.Services
 
         public override void DrawGUI()
         {
-            if (SpeedrunMode.Value && SpeedrunUI.Value && (SpeedrunState != RunState.TimeAttack || SpeedrunState != RunState.TempDisabled))
+            if (!SpeedrunMode.Value || !SpeedrunUI.Value) return;
+
+            if (SpeedrunState == RunState.Running || SpeedrunState == RunState.Finish)
             {
-                if (SpeedrunState == RunState.Running || SpeedrunState == RunState.Finish)
-                {
-                    var builder = new StringBuilder();
-                    builder.AppendLine($"<b>{LocalizedStr("gui_run_info").ToUpper()}</b>");
-                    builder.AppendLine(_stat.ToString());
-                    builder.AppendLine(_infoStat);
+                var sb = new StringBuilder();
+                sb.AppendLine($"<b>{LocalizedStr("gui_run_info").ToUpper()}</b>");
+                sb.AppendLine(_stat.ToString());
+                sb.AppendLine(_infoStat);
 
-                    string text = builder.ToString();
-                    var labSize = GUI.skin.label.CalcSize(new GUIContent(text));
+                var text = sb.ToString();
+                var labSize = GUI.skin.label.CalcSize(new GUIContent(text));
 
-                    var labelX = Screen.width - 300 + 5 * 2;
-                    var labelY = Screen.height - labSize.y + 5 * 2;
+                var labelX = Screen.width - 300 + 5 * 2;
+                var labelY = Screen.height - labSize.y + 5 * 2;
 
-                    GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
-                    GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
+                GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
+                GUI.Box(new Rect(labelX, labelY, 300 + 5 * 2, labSize.y + 5 * 2), "");
 
-                    GUI.Label(new Rect(labelX + 5, labelY + 5, 300, labSize.y), text);
-                }
+                GUI.Label(new Rect(labelX + 5, labelY + 5, 300, labSize.y), text);
             }
-
         }
 
-        string CalculateTimeDifference(float param1, float param2)
+        static string CalculateTimeDifference(float param1, float param2)
         {
             var dif = param1 - param2;
             var sign = dif == 0 ? string.Empty : (dif > 0 ? "+" : "-");
@@ -502,11 +498,11 @@ namespace FGTools.Services
             {
                 case SpeedrunProgressionType.Checkpt:
                     _checkpointNum += 1;
-                    _stat.AppendLine($"{LocalizedStr("gui_checkpoint")} №{_checkpointNum} ({_timerText}) [{CalculateTimeDifference(CurrentRun.RunningTime, FindFastestProgression((int)zone.uniqueId))}]");
+                    _stat.AppendLine($"{LocalizedStr("gui_checkpoint")} №{_checkpointNum} ({_timerText}) [{CalculateTimeDifference(_currentRun.RunningTime, FindFastestProgression((int)zone.uniqueId))}]");
                     _checkpointPopup?.SetActive(true);
                     _splitTimeText?.SetActive(true);
                     _splitTimeText?.GetComponent<TextMeshProUGUI>().SetText(_timerText);
-                    CurrentRun.AddProgression(type, (int)zone.uniqueId, CurrentRun.RunningTime);
+                    _currentRun.AddProgression(type, (int)zone.uniqueId, _currentRun.RunningTime);
                     break;
                 case SpeedrunProgressionType.Lap:
                     _lapNum += 1;
@@ -528,7 +524,7 @@ namespace FGTools.Services
                     break;
             }
 
-            _previousSaveTime = CurrentRun.RunningTime;
+            _previousSaveTime = _currentRun.RunningTime;
         }
 
         public string ReturnTimeAsString(float time, bool format = false, bool doNotSetTimerText = false, bool useScaleFactor = false, float scale = 80f)
@@ -583,26 +579,26 @@ namespace FGTools.Services
         public void DoRunSave()
         {
             if (!StateManager.IsFGC)
-                SaveRun(LatestRunScene, CurrentRun.RunningTime);
+                SaveRun(_latestRunScene, _currentRun.RunningTime);
             else
-                SaveRun(CGM._round.Id, CurrentRun.RunningTime);
+                SaveRun(CGM._round.Id, _currentRun.RunningTime);
         }
 
         bool IsThereBestTime(string forScene)
         {
-            return latestSave.saveData.ContainsKey(forScene);
+            return _latestSave.saveData.ContainsKey(forScene);
         }
 
         void SaveRun(string scene, float totalTime)
         {
-            latestSave.saveData[scene] = totalTime;
+            _latestSave.saveData[scene] = totalTime;
             WriteSave();
         }
 
         public float GetRunTime(string forScene)
         {
-            if (latestSave.saveData.ContainsKey(forScene))
-                return latestSave.saveData[forScene];
+            if (_latestSave.saveData.ContainsKey(forScene))
+                return _latestSave.saveData[forScene];
             else
                 return -1f;
         }
