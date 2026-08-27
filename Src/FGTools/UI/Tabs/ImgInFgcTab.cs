@@ -181,5 +181,9 @@ namespace FGTools.UI.Tabs
         internal override void Refresh()
         {
         }
+
+        internal override void Destroy()
+        {
+        }
     }
 }

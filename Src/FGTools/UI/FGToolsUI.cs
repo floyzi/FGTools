@@ -358,6 +358,15 @@ namespace FGTools.UI
             FGTLog(LogLevel.Info, GetType(), $"Complete!");
         }
 
+        internal void DestroyTabs()
+        {
+            foreach (var tab in _registredTabs)
+            {
+                tab.Destroy();
+            }
+
+        }
+
         void UpdateTitle(string title)
         {
             if (!string.IsNullOrEmpty(title))

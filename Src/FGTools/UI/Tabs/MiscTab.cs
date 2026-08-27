@@ -480,6 +480,7 @@ namespace FGTools.UI.Tabs
                             OnlineCheck.DownloadNewLang(_selectedLang, new(() =>
                             {
                                 FGToolsUI.Instance.RefreshEverything();
+                                FGToolsUI.Instance.DestroyTabs();
                                 FGTServiceManager.OnGUIDestroyed();
 
                                 FGToolsUI.Instance.UIRoot.hideFlags = HideFlags.HideAndDontSave;
@@ -504,6 +505,11 @@ namespace FGTools.UI.Tabs
 
         internal override void Refresh()
         {
+        }
+
+        internal override void Destroy()
+        {
+
         }
     }
 }

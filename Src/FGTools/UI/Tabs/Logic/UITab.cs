@@ -22,6 +22,7 @@ namespace FGTools.UI.Tabs.Logic
         internal Button TabButton;
         internal abstract void Draw(GameObject root);
         internal abstract void Refresh();
+        internal abstract void Destroy();
         internal virtual void OnStateChange(ObjectGroup group)
         {
 

@@ -109,5 +109,10 @@ namespace FGTools.UI.Tabs
         {
 
         }
+
+        internal override void Destroy()
+        {
+
+        }
     }
 }

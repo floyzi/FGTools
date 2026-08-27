@@ -822,5 +822,10 @@ namespace FGTools.UI.Tabs
 
             LoadFGCHistory();
         }
+
+        internal override void Destroy()
+        {
+
+        }
     }
 }

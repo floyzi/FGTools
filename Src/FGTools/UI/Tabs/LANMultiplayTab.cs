@@ -24,6 +24,11 @@ namespace FGTools.UI.Tabs
         internal override string TabName => "gui_lan_multiplayer";
         internal override string TabTitle => "gui_lan_multiplayer";
 
+        internal override void Destroy()
+        {
+
+        }
+
         internal override void Draw(GameObject root)
         {
             string round2play = "round_gauntlet_01";

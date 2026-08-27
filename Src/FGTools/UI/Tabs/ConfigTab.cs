@@ -119,11 +119,31 @@ namespace FGTools.UI.Tabs
             }
 
             content.SetActive(true);
+
+            Launcher.BepConfig.SettingChanged += ConfigFile_SettingChanged;
+        }
+
+        private void ConfigFile_SettingChanged(object sender, SettingChangedEventArgs e)
+        {
+            try
+            {
+                var a = sender as ConfigEntryBase;
+                _confEntries.FirstOrDefault(x => x.Cached.RefConfig == a).Cached.OnSettingChanged(sender, e);
+            }
+            catch (Exception ex)
+            {
+               
+            }
         }
 
         internal override void Refresh()
         {
 
+        }
+
+        internal override void Destroy()
+        {
+            Launcher.BepConfig.SettingChanged -= ConfigFile_SettingChanged;
         }
     }
 }

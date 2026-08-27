@@ -24,6 +24,11 @@ namespace FGTools.UI.Tabs
         internal override string TabName => "gui_credits";
         internal override string TabTitle => "gui_credits";
 
+        internal override void Destroy()
+        {
+
+        }
+
         internal override void Draw(GameObject root)
         {
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
