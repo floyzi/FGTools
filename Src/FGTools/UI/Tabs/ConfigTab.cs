@@ -31,6 +31,9 @@ namespace FGTools.UI.Tabs
 
         List<EntryInfo> _confEntries;
 
+        internal override string TabName => "gui_config";
+        internal override string TabTitle => "gui_config";
+
         void SearchConfig(string q)
         {
             q = q.ToLower();

@@ -1,12 +1,10 @@
-﻿using System;
+﻿using BepInEx.Configuration;
+using BepInEx.Logging;
+using FGTools.Services;
+using FGTools.States.Logic;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using FGTools.Internal.Behaviours;
-using FGTools.Services;
-using FGTools.States.Logic;
 using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.UI.ReadyPopups;

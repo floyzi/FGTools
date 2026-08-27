@@ -30,6 +30,9 @@ namespace FGTools.UI.Tabs
 
         }
 
+        internal override string TabName => "gui_misc";
+        internal override string TabTitle => "gui_misc";
+
         Dropdown _langDropdown;
         string _selectedLang = null;
         Text _langAuthor;

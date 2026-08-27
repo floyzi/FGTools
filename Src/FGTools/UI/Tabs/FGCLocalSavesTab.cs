@@ -1,18 +1,12 @@
 ﻿using FGTools.Content;
 using FGTools.Services;
 using FGTools.Services.Logic;
-using FGTools.States.Logic;
 using FGTools.UI.Tabs.Logic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UniverseLib.UI;
-using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
+using static FGTools.UI.FGToolsUI;
 
 namespace FGTools.UI.Tabs
 {
@@ -23,9 +17,11 @@ namespace FGTools.UI.Tabs
 
         }
 
-
         Dropdown _savedLevels;
         Dropdown _levelSaves;
+
+        internal override string TabName => "gui_fgc_local_autosaves";
+        internal override string TabTitle => "gui_fgc_local_autosaves";
 
         internal override void Draw(GameObject root)
         {

@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.UI;
-using static FGTools.Services.LocalizationService;
+﻿using UnityEngine.UI;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
+using static FGTools.Services.LocalizationService;
 
 namespace FGTools.Internal.Extensions
 {

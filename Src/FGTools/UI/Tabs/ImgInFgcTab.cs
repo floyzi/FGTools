@@ -42,6 +42,9 @@ namespace FGTools.UI.Tabs
         public bool shouldDeleteBlackPixels = false;
         public bool isDigital = false;
 
+        internal override string TabName => "gui_img2fgc_tab";
+        internal override string TabTitle => "gui_img2fgc";
+
         internal override void Draw(GameObject root)
         {
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));

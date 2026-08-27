@@ -23,6 +23,9 @@ namespace FGTools.UI.Tabs
             };
         }
 
+        internal override string TabName => "gui_presets_title";
+        internal override string TabTitle => "gui_presets_title";
+
         internal override void Draw(GameObject root)
         {
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));

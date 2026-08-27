@@ -21,6 +21,9 @@ using static FGTools.States.Logic.FGTBase;
 
 namespace FGTools.UI
 {
+    //UI is really in a bad shape right now
+    //i am trying to rewrite it but there's a lot to care about here so the progress is really slow
+    //mind ass code!
     public class FGToolsUI(UIBase owner) : PanelBase(owner)
     {
         public enum Tab
@@ -152,7 +155,7 @@ namespace FGTools.UI
 
                 foreach (var tab in _registredTabs)
                 {
-                    var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, "todo", "todo");
+                    var t = CreateTab(tab.Tab, SubLevel.Default, tabGroup, () => tab.ControlledObject, tab.TabName, tab.TabTitle);
                     tab.TabButton = t.Component;
                     AssignToGroups(t.Component, tab.StatePerGroup, tab.OnStateChange);
                 }

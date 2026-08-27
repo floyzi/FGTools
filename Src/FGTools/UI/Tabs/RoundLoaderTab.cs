@@ -31,6 +31,9 @@ namespace FGTools.UI.Tabs
         {
         }
 
+        internal override string TabName => "gui_cms_loader";
+        internal override string TabTitle => "gui_cms_loader";
+
         GameObject FGTRoundLoaderTabs;
         GameObject unityLoaderGUI;
         GameObject fgcGUI;

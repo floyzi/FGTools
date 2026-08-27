@@ -13,8 +13,11 @@ namespace FGTools.UI.Tabs.Logic
 {
     internal abstract class UITab(Tab tab) : FGTBase
     {
-        internal Dictionary<GroupPolicy, Func<bool>> StatePerGroup;
+        internal abstract string TabName { get; }
+        internal abstract string TabTitle { get; }
+
         internal Tab Tab { get; } = tab;
+        internal Dictionary<GroupPolicy, Func<bool>> StatePerGroup;
         internal GameObject ControlledObject;
         internal Button TabButton;
         internal abstract void Draw(GameObject root);

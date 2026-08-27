@@ -29,6 +29,9 @@ namespace FGTools.UI.Tabs
 
         }
 
+        internal override string TabName => "gui_media_tools_title";
+        internal override string TabTitle => "gui_media_tools_title";
+
         ButtonRef _imagesBtn;
         GameObject _mediaTab;
         GameObject _mediaFGPosGrp;
