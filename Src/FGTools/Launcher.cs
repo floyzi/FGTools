@@ -220,8 +220,8 @@ namespace FGTools
                     if (!File.Exists(VariantData))
                         File.Create(VariantData);
 
-                    if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, Definitions.UniverseLib, StringComparison.OrdinalIgnoreCase)))
-                        Log.LogWarning($"Unable to find UniverseLib as loaded dll ({Definitions.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
+                    if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, Constants.UniverseLib, StringComparison.OrdinalIgnoreCase)))
+                        Log.LogWarning($"Unable to find UniverseLib as loaded dll ({Constants.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
 
                     StartUp();
                 }

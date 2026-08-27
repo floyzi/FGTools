@@ -1,6 +1,6 @@
-﻿global using static Definitions;
+﻿global using static Constants;
 using UnityEngine;
-static class Definitions
+static class Constants
 {
     #region URLS
     internal const string DiscordUrl = "https://discord.gg/PEysxvSE3x";
@@ -22,7 +22,7 @@ static class Definitions
 #else
     internal const string DownloadSource = "closed_beta";
 #endif
-    internal readonly static string[] TargetFGVersions = ["21.3.0"];
+    internal readonly static string[] TargetFGVersions = ["21.3.1"];
     internal const long DiscordAppID = 1138469244430979143;
     internal const string CurrentFGBackground = "Generic_UI_SeasonS11Background_Canvas_Variant";
 #endregion
