@@ -7,9 +7,11 @@ using FallGuys.Player.Protocol.Client.Cosmetics;
 using FG.Common;
 using FG.Common.CMS;
 using FG.Common.Definition;
+using FGClient;
 using FGClient.CatapultServices;
 using FGClient.Customiser;
 using FGClient.UI;
+using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
@@ -310,51 +312,7 @@ namespace FGTools.Services
                 rt.anchorMin = new(0, 1);
                 rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -30);
 
-                var input = searchBar.GetComponentInChildren<UICustomTMP_InputField>();
-                var tween = input.GetComponent<TweenOnTMP_InputField>();
-
-                //too lazy to figure out why it does not work properly natively (
-                //this works just fine so why even bother
-                tween.OnMouseHover = new Action<bool>((s) =>
-                {
-                    tween._toggleOn.localScale = Vector3.one;
-
-                    tween._inactiveToggleCanvasGroup.DOSafeFade(s ? 0 : 1, tween._alphaInTime);
-                    tween._activeToggleCanvasGroup.DOSafeFade(s ? 1 : 0, tween._alphaInTime);
-
-                    if (s)
-                    {
-                        AudioManager.PlayOneShot(tween._onSelectAudio);
-                        tween._toggleOn.DOPunchScale(tween._toSize, tween._bounceTime, tween._bounceNumber, tween._bouncePower);
-
-                        input.Select();
-                        input.ActivateInputField();
-                        input.caretWidth = 1;
-
-                        SearchStart();
-                    }
-                    else
-                    {
-                        input.DeactivateInputField();
-                        input.caretWidth = 0;
-
-                        SearchEnd(false);
-                    }
-                });
-
-                input.onEndEdit.AddListener(new Action<string>((s) =>
-                {
-                    SearchEnd(false);
-                }));
-
-                input.onSelect.AddListener(new Action<string>((s) =>
-                {
-                    SearchStart();
-                }));
-
-                input.onValueChanged.AddListener(new Action<string>((s) => {
-                    Search(s, GetSection(), RequestType.Locker, AllCosmetics.Value);
-                }));
+                searchBar.AddComponent<CosmeticSearchBar>();
             }
         }
 
@@ -643,23 +601,6 @@ namespace FGTools.Services
                 }
 
                 Refresh();
-
-                if (finalRes.Count > 0)
-                {
-                    if (reqType == RequestType.Locker) Refresh();
-                    else if (listedRes.Count > 0)
-                    {
-                    }
-                }
-                else
-                {
-                    //if (AllCosmetics.Value)
-                    //    GrantAllCosmetics();
-                    //else
-                    //    RemoveAllCosmetics();
-
-                    //SearchPanel.SetResult($"{LocalizedStr("gui_cosmetics_search_nothing")}");
-                }
             }
             catch (Exception ex)
             {
@@ -710,7 +651,9 @@ namespace FGTools.Services
 
         public void Refresh()
         {
+            ColorSect.RaisePropertyChanged("Options", null, false);
             ColorSect.RefreshSectionData();
+
             PatternsSect.RefreshSectionData();
             EmotesSect.RefreshSectionData();
             FaceSect.RefreshSectionData();

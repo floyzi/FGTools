@@ -196,6 +196,7 @@ namespace FGTools
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<ServerBehaviour>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<ServerControlledObject>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<PrefabSpawnerController>();
+                FLZ_Extensions.TryRegisterTypeInIl2cpp<CosmeticSearchBar>();
 
                 Log.LogMessage($" --- ");
                 Log.LogMessage($"{DisplayName} V{BuildInfo.UI_Version}");
