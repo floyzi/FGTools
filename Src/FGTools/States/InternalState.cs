@@ -236,6 +236,12 @@ namespace FGTools.States
                     Cursor.lockState = Cursor.visible ? CursorLockMode.Locked : CursorLockMode.None;
                     Cursor.visible = !Cursor.visible;
                 }
+
+                if (Input.GetKeyDown(ToggleUIHotkey.Value))
+                {
+                    LoaderUIToggle = !LoaderUIToggle;
+                    guiInst.ToggleUI(LoaderUIToggle);
+                }
             }
         }
 
