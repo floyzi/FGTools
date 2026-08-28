@@ -24,6 +24,7 @@ namespace FGTools.Services
         readonly string[] DebugContent = new string[5];
         internal static bool UIToggle = false;
         readonly float FontSize = 0.0123f;
+        internal bool CanTriggerDebug = true;
 
         bool _displaySaveResult = false;
         float _time = 0;
@@ -65,8 +66,7 @@ namespace FGTools.Services
                 GUI.Box(new Rect(Screen.width - labSize.x - 20, 0, labSize.x + 20, labSize.y + 5), label);
             }
 
-            if (!UIToggle)
-                return;
+            if (!UIToggle) return;
 
             GUIStyle debugStyle = new()
             {
@@ -304,6 +304,8 @@ namespace FGTools.Services
 
         public override void UpdateService()
         {
+            if (!CanTriggerDebug) return;
+
             if (_needSecondPress)
             {
                 _time += Time.unscaledDeltaTime;
@@ -313,6 +315,7 @@ namespace FGTools.Services
                     _time = 0;
                 }
             }
+
             if (Input.GetKeyDown(DebugUIHotkey.Value))
             {
                 if (UIToggle)

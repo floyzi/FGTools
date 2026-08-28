@@ -17,9 +17,11 @@ namespace FGTools.Internal.Behaviours
         CosmeticsService Service;
         Coroutine Delay;
         UICustomTMP_InputField InputField;
+        DebugDisplayService DebugService;
         void Awake()
         {
             Service = FGTServiceManager.GetService<CosmeticsService>();
+            DebugService = FGTServiceManager.GetService<DebugDisplayService>();
 
             InputField = GetComponentInChildren<UICustomTMP_InputField>();
             var tween = InputField.GetComponent<TweenOnTMP_InputField>();
@@ -41,6 +43,7 @@ namespace FGTools.Internal.Behaviours
                     InputField.Select();
                     InputField.ActivateInputField();
                     InputField.caretWidth = 1;
+                    DebugService.CanTriggerDebug = false;
 
                     Service.SearchStart();
                 }
@@ -48,6 +51,7 @@ namespace FGTools.Internal.Behaviours
                 {
                     InputField.DeactivateInputField();
                     InputField.caretWidth = 0;
+                    DebugService.CanTriggerDebug = true;
 
                     Service.SearchEnd(false);
                 }
@@ -55,11 +59,13 @@ namespace FGTools.Internal.Behaviours
 
             InputField.onEndEdit.AddListener(new Action<string>((s) =>
             {
+                DebugService.CanTriggerDebug = true;
                 Service.SearchEnd(false);
             }));
 
             InputField.onSelect.AddListener(new Action<string>((s) =>
             {
+                DebugService.CanTriggerDebug = false;
                 Service.SearchStart();
             }));
 
@@ -79,11 +85,17 @@ namespace FGTools.Internal.Behaviours
 
         void OnDisable()
         {
-            InputField.text = "";
+            Reset();
         }
 
         void OnEnable()
         {
+            Reset();
+        }
+
+        void Reset()
+        {
+            DebugService.CanTriggerDebug = true;
             InputField.text = "";
         }
     }
