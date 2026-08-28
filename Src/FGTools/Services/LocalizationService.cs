@@ -44,12 +44,12 @@ namespace FGTools.Services
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
             {
                 FGTLog(LogLevel.Error, base.GetType(), $"Invalid path \"{path}\" provided to {nameof(ParseLocalization)} !");
-                return new();
+                return [];
             }    
             var locale = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(File.ReadAllText(path));
 
             if (locale == null || locale.Count == 0)
-                return new();
+                return [];
 
             var res = new Dictionary<string, string>();
 
@@ -61,7 +61,7 @@ namespace FGTools.Services
             {
                 if (itm.TryGetValue(Key, out var key) && itm.TryGetValue(Value, out var value))
                 {
-                    res[key] = InitString(value);
+                    res[key] = value.Replace("{loaderName}", Launcher.DisplayName).Replace("{discordUrl}", DiscordUrl).Replace("\"\"", "\"").Trim('\"');
                 }
             }
 
@@ -78,11 +78,9 @@ namespace FGTools.Services
             LocalizedStrings = ParseLocalization(localization);
         }
 
-        static string InitString(string value) => value.Replace("{loaderName}", Launcher.DisplayName).Replace("{discordUrl}", DiscordUrl).Replace("\"\"", "\"").Trim('\"');
-
         public static string LocalizedStr(string key, object[] format = null, bool fromCMS = false)
         {
-            string result = null;
+            string result;
 
             if (LocalizedStrings.ContainsKey(key))
                 result = LocalizedStrings[key];

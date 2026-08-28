@@ -34,10 +34,12 @@ namespace FGTools.UI.Tabs
         internal override string TabTitle => "gui_misc";
 
         Dropdown _langDropdown;
-        string _selectedLang = null;
+        ButtonRef _selectLangButton;
+        string _langOnPreview = null;
         Text _langAuthor;
         Text _statistics;
         Text autosaveInfo;
+
 
         internal override void Draw(GameObject root)
         {
@@ -266,10 +268,11 @@ namespace FGTools.UI.Tabs
                 UIFactory.CreateDropdown(langRow, "Languages", out _langDropdown, "", 14, PickLanguage);
                 UIFactory.SetLayoutElement(_langDropdown.gameObject, 150, 25, 150, 0, 99999);
 
-                LoadLangDropdown();
+                _selectLangButton = UIFactory.CreateButton(langRow, "Select Button", LocalizedStr("gui_select"));
+                UIFactory.SetLayoutElement(_selectLangButton.Component.gameObject, 100, 25, 100, 0, 99999);
+                _selectLangButton.OnClick += TryToSetLang;
 
-                ButtonRef selectLangButton = UIFactory.CreateButton(langRow, "Select Button", LocalizedStr("gui_select"));
-                UIFactory.SetLayoutElement(selectLangButton.Component.gameObject, 100, 25, 100, 0, 99999);
+                LoadLangDropdown();
 
                 //TODO update
                 //ButtonRef localizationHelp = UIFactory.CreateButton(langRow, "Help", "?");
@@ -279,12 +282,12 @@ namespace FGTools.UI.Tabs
                 GameObject langDir = UIFactory.CreateHorizontalGroup(MiscContent, "Lang Dir Row", false, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
                 ButtonRef langDirBtn = UIFactory.CreateButton(langDir, "Dir Button", LocalizedStr("gui_localization_lang_dir"));
                 UIFactory.SetLayoutElement(langDirBtn.Component.gameObject, 100, 25, 100, 0, 99999);
-                langDirBtn.OnClick += () => { Application.OpenURL(Launcher.LocalizationDir + _selectedLang); };
+                langDirBtn.OnClick += () => { Application.OpenURL(Launcher.LocalizationDir + _langOnPreview); };
 
                 _langAuthor = UIFactory.CreateLabel(MiscContent, "langAuthor", LocalizedStr("gui_localization_author_v2"), TextAnchor.UpperCenter);
                 UIFactory.SetLayoutElement(_langAuthor.gameObject, minHeight: 20);
                 _langAuthor.gameObject.SetActive(false);
-                selectLangButton.OnClick += TryToSetLang;
+
                 var warn = UIFactory.CreateLabel(MiscContent, "warn", OnlineCheck.FGTContent.LocaleConfig.ParseOfficialLanguagesStr(LocalizedStr("gui_localization_note")), TextAnchor.LowerCenter);
                 warn.fontSize = 12;
                 warn.fontStyle = FontStyle.Italic;
@@ -449,18 +452,20 @@ namespace FGTools.UI.Tabs
             }
             _langDropdown.AddOptions(target);
             int currLangIndx = KnownLocales.IndexOf(Config.Config.LangFileName.Value.ToUpper());
-            _langDropdown.value = currLangIndx + 1;
+            _langDropdown.value = currLangIndx;
         }
 
         void PickLanguage(int index)
         {
             if (index > 0)
             {
-                _selectedLang = OnlineCheck.FGTContent.LocaleConfig[index - 1].ForLang.ToLower();
+                _langOnPreview = OnlineCheck.FGTContent.LocaleConfig[index - 1].ForLang.ToLower();
+                _selectLangButton.Component.interactable = Config.Config.LangFileName.Value != _langOnPreview;
+
                 if (_langAuthor != null)
                 {
                     _langAuthor.gameObject.SetActive(true);
-                    _langAuthor.text = $"{LocalizedStr("gui_localization_author_v2", [OnlineCheck.FGTContent.LocaleConfig.ReturnTranslateAuthor(_selectedLang), OnlineCheck.FGTContent.LocaleConfig.ReturnLastUpdate(_selectedLang)])}";
+                    _langAuthor.text = $"{LocalizedStr("gui_localization_author_v2", [OnlineCheck.FGTContent.LocaleConfig.ReturnTranslateAuthor(_langOnPreview), OnlineCheck.FGTContent.LocaleConfig.ReturnLastUpdate(_langOnPreview)])}";
                 }
             }
             else
@@ -469,7 +474,7 @@ namespace FGTools.UI.Tabs
 
         void TryToSetLang()
         {
-            if (_selectedLang != null && Config.Config.LangFileName.Value != _selectedLang)
+            if (_langOnPreview != null && Config.Config.LangFileName.Value != _langOnPreview)
             {
                 if (SceneManager.GetActiveScene().name == "MainMenu" && FGTBase.StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
                 {
@@ -477,7 +482,7 @@ namespace FGTools.UI.Tabs
                     {
                         if (wasok)
                         {
-                            OnlineCheck.DownloadNewLang(_selectedLang, new(() =>
+                            OnlineCheck.DownloadNewLang(_langOnPreview, new(() =>
                             {
                                 FGToolsUI.Instance.RefreshEverything();
                                 FGToolsUI.Instance.DestroyTabs();
@@ -489,9 +494,9 @@ namespace FGTools.UI.Tabs
                                 FGToolsUI.Instance = null;
 
                                 StateManager.LoggedInBefore = false;
-                                FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Launcher.LocalizationDir, _selectedLang, "locale.json"));
+                                FGTServiceManager.GetService<LocalizationService>().SetupLocalization(Path.Combine(Launcher.LocalizationDir, _langOnPreview, "locale.json"));
 
-                                Config.Config.LangFileName.Value = _selectedLang;
+                                Config.Config.LangFileName.Value = _langOnPreview;
                                 GlobalGameStateClient.Instance._mainMenuManager.ShowMainMenu(true, true, false);
                             }));
                         }
