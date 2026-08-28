@@ -301,62 +301,6 @@ namespace FGTools.States
             GUI.Label(new Rect((Screen.width - 500f) / 2f, Screen.height - 25f - 2f, 500, 25), $"<b>{watermark}</b>", upper);
         }
 
-        [HideFromIl2Cpp]
-        public IEnumerator PlayVictoryAnim(VictoryScreenViewModel player)
-        {
-            yield return new WaitForSeconds(0.1f);
-            GameObject go = AddressableAssetManager.Instance.LoadAsset<GameObject>(GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections.VictoryPoseOption.AnimationPrefabRef.AssetGUID);
-            if (go != null)
-            {
-                var screen = player.CreateVictoryAnimationProp(go);
-                PlayerMetadata metadata = new(GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections, FGBehaviour.PlayerTeamId, GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName, ClientBuildDetails.Platform, false);
-                player.ConfigureWinnersText(player._localisedStrings.GetString("winner"), Color.white, player._winnerTextOutlineColor);
-                player.SetupSkipPromptRoutine();
-                VictoryScreenViewModel.CharacterData data;
-                Func<GameObject, bool> value = x => x.name == "FallGuy";
-                GameObject prefab = player._config.GetAllLoadedNetworkPrefabs().Find(value);
-                GameObject fallGuy = UnityEngine.Object.Instantiate<GameObject>(prefab, player._fallguySpawnPosition, true);
-                fallGuy.transform.localPosition = Vector3.zero;
-                fallGuy.transform.localRotation = Quaternion.identity;
-                data = new VictoryScreenViewModel.CharacterData(fallGuy);
-                Rigidbody fgRb = fallGuy.GetComponent<Rigidbody>();
-                Transform fgRagdoll = fallGuy.transform.Find("Ragdoll");
-                FallGuysCharacterControllerInput controllerInput = fallGuy.GetComponentInChildren<FallGuysCharacterControllerInput>();
-                data.CustomisationHandler.SetupForVictoryScreen();
-                fgRb.isKinematic = true;
-                data.CharacterController.IsControlledLocally = false;
-                data.CharacterController.enabled = false;
-                controllerInput.enabled = false;
-                fgRagdoll.gameObject.SetActive(false);
-                data.CharacterController.MotorAgent.SetActive(false);
-                player.CustomiseFallguy(fallGuy, data.GeoChildren, metadata.Selections, metadata.TeamId);
-                WinnerInfo winnerInfo = player._winnersInfos.AddWinner(metadata, new(), data.Animator, 0, player._fallguySpawnPosition, true);
-                winnerInfo.UpdateNameplate();
-                var victoryOption = AddressableAssetManager.Instance.LoadAsset<AnimationClip>(GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections.VictoryPoseOption.clipAssetRef.AssetGUID);
-                data.Animator.runtimeAnimatorController.animationClips.AddLast<AnimationClip>(victoryOption);
-                Func<AnimationClip, bool> value1 = x => x.name == "FG_Victory_DefaultGuy";
-                var defanim = data.Animator.runtimeAnimatorController.animationClips.Find(value1);
-                Debug.Log(data.Animator.runtimeAnimatorController.animationClips.Last().name);
-                Debug.Log(victoryOption.name);
-                AnimatorOverrideController animatorOverrideController = new(winnerInfo.Animator.runtimeAnimatorController);
-                animatorOverrideController[defanim] = victoryOption;
-                AnimatorOverrideController overrideController = animatorOverrideController;
-                winnerInfo.Animator.runtimeAnimatorController = overrideController;
-                //FMODTool.PlayFMODEvent(GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections.VictoryPoseOption.AudioEvent, FMODTool.UnloadParam.UnloadOnNewScene);
-                screen.SetActive(true);
-                winnerInfo.Animator.Play("FG_Victory_DefaultGuy");
-                winnerInfo.Animator.Update(0f);
-                player._victoryAnimFinishedTimestamp = Time.time + victoryOption.length;
-
-                //FMODTool.GetEvent(GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections.VictoryPoseOption.AudioEvent).Start();
-            }
-            else
-            {
-                FGTLog(LogLevel.Info, base.GetType(), "Unable to play victory animation, fallback to menu");
-                LeaveMatchPopupManager.Instance.OnClose(true);
-            }
-        }
-
         public override void OnStateExit()
         {
 

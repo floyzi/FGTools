@@ -16,12 +16,13 @@ namespace FGTools.Internal.Behaviours
     {
         CosmeticsService Service;
         Coroutine Delay;
+        UICustomTMP_InputField InputField;
         void Awake()
         {
             Service = FGTServiceManager.GetService<CosmeticsService>();
 
-            var input = GetComponentInChildren<UICustomTMP_InputField>();
-            var tween = input.GetComponent<TweenOnTMP_InputField>();
+            InputField = GetComponentInChildren<UICustomTMP_InputField>();
+            var tween = InputField.GetComponent<TweenOnTMP_InputField>();
 
             //too lazy to figure out why it does not work properly natively (
             //this works just fine so why even bother
@@ -37,32 +38,32 @@ namespace FGTools.Internal.Behaviours
                     AudioManager.PlayOneShot(tween._onSelectAudio);
                     tween._toggleOn.DOPunchScale(tween._toSize, tween._bounceTime, tween._bounceNumber, tween._bouncePower);
 
-                    input.Select();
-                    input.ActivateInputField();
-                    input.caretWidth = 1;
+                    InputField.Select();
+                    InputField.ActivateInputField();
+                    InputField.caretWidth = 1;
 
                     Service.SearchStart();
                 }
                 else
                 {
-                    input.DeactivateInputField();
-                    input.caretWidth = 0;
+                    InputField.DeactivateInputField();
+                    InputField.caretWidth = 0;
 
                     Service.SearchEnd(false);
                 }
             });
 
-            input.onEndEdit.AddListener(new Action<string>((s) =>
+            InputField.onEndEdit.AddListener(new Action<string>((s) =>
             {
                 Service.SearchEnd(false);
             }));
 
-            input.onSelect.AddListener(new Action<string>((s) =>
+            InputField.onSelect.AddListener(new Action<string>((s) =>
             {
                 Service.SearchStart();
             }));
 
-            input.onValueChanged.AddListener(new Action<string>((s) => 
+            InputField.onValueChanged.AddListener(new Action<string>((s) => 
             {
                 if (Delay != null) CoroutineRunner.Instance.StopCoroutine(Delay);
                 Delay = CoroutineRunner.Instance.StartCoroutine(DelayedSearch(s).WrapToIl2Cpp());
@@ -74,6 +75,16 @@ namespace FGTools.Internal.Behaviours
             yield return new WaitForSeconds(0.35f);
             Service.Search(s, Service.GetSection(), RequestType.Locker, Config.Config.AllCosmetics.Value);
             Delay = null;
+        }
+
+        void OnDisable()
+        {
+            InputField.text = "";
+        }
+
+        void OnEnable()
+        {
+            InputField.text = "";
         }
     }
 }
