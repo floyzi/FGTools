@@ -236,20 +236,6 @@ namespace FGTools.States
                     Cursor.lockState = Cursor.visible ? CursorLockMode.Locked : CursorLockMode.None;
                     Cursor.visible = !Cursor.visible;
                 }
-
-                var isInLocker = FGTServiceManager.GetService<CosmeticsService>().IsSomeScreenActive();
-                if (Input.GetKeyDown(ToggleUIHotkey.Value))
-                {
-                    if (isInLocker)
-                    {
-                        FLZ_Extensions.CreateNotification(LocalizationService.LocalizedStr("gui_unavailable"), LocalizationService.LocalizedStr("gui_ui_in_locker"), FGT_Warning_Color);
-                        return;
-                    }
-
-                    LoaderUIToggle = !LoaderUIToggle;
-                    guiInst.ToggleUI(LoaderUIToggle);
-                }
-
             }
         }
 

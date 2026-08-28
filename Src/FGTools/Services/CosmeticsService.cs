@@ -96,7 +96,6 @@ namespace FGTools.Services
         TheatricsMenuFocusableViewModel TheatricsMenuFocusable;
 
         internal static HashSet<string> FavList { get; set; }
-        internal SearchPanel SearchPanel;
         GameObject _searchPrefab;
         bool Loaded;
         bool SearchLoaded;
@@ -249,7 +248,7 @@ namespace FGTools.Services
         }
 
         bool nav = true;
-        public static bool searchActive = false;
+        public static bool _searchActive = false;
 
         void EndLoad()
         {
@@ -313,6 +312,9 @@ namespace FGTools.Services
 
                 var input = searchBar.GetComponentInChildren<UICustomTMP_InputField>();
                 var tween = input.GetComponent<TweenOnTMP_InputField>();
+
+                //too lazy to figure out why it does not work properly natively (
+                //this works just fine so why even bother
                 tween.OnMouseHover = new Action<bool>((s) =>
                 {
                     tween._toggleOn.localScale = Vector3.one;
@@ -349,6 +351,10 @@ namespace FGTools.Services
                 {
                     SearchStart();
                 }));
+
+                input.onValueChanged.AddListener(new Action<string>((s) => {
+                    Search(s, GetSection(), RequestType.Locker, AllCosmetics.Value);
+                }));
             }
         }
 
@@ -371,15 +377,14 @@ namespace FGTools.Services
         {
             if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
             {
-                IsSomeScreenActive();
-                if (searchActive)
+                if (_searchActive)
                     Broadcaster.Instance.RaiseEvent(new NavPromptChanged(new Il2CppSystem.Collections.Generic.Dictionary<NavPrompt, Il2CppSystem.Action>()));
             }
         }
 
         public void SearchStart()
         {
-            searchActive = true;
+            _searchActive = true;
             foreach (var pair in Screens)
             {
                 if (pair.Value.gameObject.activeSelf)
@@ -398,7 +403,7 @@ namespace FGTools.Services
         {
             try
             {
-                searchActive = false;
+                _searchActive = false;
                 var a = Resources.FindObjectsOfTypeAll<CustomiserScreenViewModel>().FirstOrDefault();
                 a?.OnGainFocus();
                 foreach (var pair in Screens)
@@ -414,7 +419,12 @@ namespace FGTools.Services
                     }
                 }
                 if (resetTerm)
-                    SearchPanel.Reset();
+                {
+                    if (AllCosmetics.Value)
+                        GrantAllCosmetics();
+                    else
+                        RemoveAllCosmetics();
+                }   
             }
             catch
             {
@@ -423,33 +433,6 @@ namespace FGTools.Services
                 else
                     RemoveAllCosmetics();
             }
-        }
-
-        bool UIPrevState = true;
-
-        internal bool IsSomeScreenActive()
-        {
-            try
-            {
-                bool res = OutfitMenuViewModel.gameObject.activeSelf || TheatricsMenuViewModel.gameObject.activeSelf || InterfaceMenuViewModel.gameObject.activeSelf;
-
-                if (SearchPanel.UIRoot.gameObject.activeSelf && !res)
-                {
-                    SearchPanel.Reset();
-                    StateManager.InternalState.ToolsUI.ToggleUI(UIPrevState);
-                }
-
-                if (!SearchPanel.UIRoot.gameObject.activeSelf && res)
-                {
-                    UIPrevState = StateManager.InternalState.LoaderUIToggle;
-                    StateManager.InternalState.ToolsUI.ToggleUI(true);
-                    StateManager.InternalState.ToolsUI.UIRoot.gameObject.SetActive(false);
-                }
-                
-                SearchPanel?.UIRoot.gameObject.SetActive(res);
-                return res;
-            }
-            catch { return false; }
         }
 
         public string GetSection()
@@ -472,9 +455,10 @@ namespace FGTools.Services
             HashSet<string> ids = [];
             HashSet<string> fav_ids = [];
             HashSet<string> finalRes = [];
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
             HashSet<string> foundIds = [];
             List<object> listedRes = [];
+
+            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
             try
             {
@@ -658,40 +642,29 @@ namespace FGTools.Services
                         break;
                 }
 
-                SearchEnd(false);
-                SearchPanel.listText.text = $"";
+                Refresh();
+
                 if (finalRes.Count > 0)
                 {
-                    SearchPanel.SetResult($"{LocalizedStr("gui_total_found_items")}: {finalRes.Count}");
-                    if (reqType == RequestType.Locker)
-                        Refresh();
-
+                    if (reqType == RequestType.Locker) Refresh();
                     else if (listedRes.Count > 0)
                     {
-                        for (int i = 0; i < listedRes.Count; i++)
-                        {
-                            string breakline = i == 0 ? "" : "\n";
-                            var item = listedRes[i];
-                            if (item is ItemDefinitionSO itm)
-                                SearchPanel.listText.text += $"{breakline}{i + 1}. {itm.DisplayName} - <color=grey>{itm.ItemId}</color> | {itm.CMSData.ItemRarity.Name.Text}";
-                            else if (item is CMSItemDefinition itm2)
-                                SearchPanel.listText.text += $"{breakline}{i + 1}. {itm2.Name.Text} - <color=grey>{itm2.Id}</color> | {itm2.ItemRarity.Name.Text}";
-                        }
                     }
                 }
                 else
                 {
-                    if (AllCosmetics.Value)
-                        GrantAllCosmetics();
-                    else
-                        RemoveAllCosmetics();
+                    //if (AllCosmetics.Value)
+                    //    GrantAllCosmetics();
+                    //else
+                    //    RemoveAllCosmetics();
 
-                    SearchPanel.SetResult($"{LocalizedStr("gui_cosmetics_search_nothing")}");
+                    //SearchPanel.SetResult($"{LocalizedStr("gui_cosmetics_search_nothing")}");
                 }
             }
             catch (Exception ex)
             {
-                SearchPanel.SetResult($"{LocalizedStr($"gui_cosmetics_search_err\n{ex}")}");
+                Console.WriteLine(ex);
+                //SearchPanel.SetResult($"{LocalizedStr($"gui_cosmetics_search_err\n{ex}")}");
             }
 
         }
@@ -730,6 +703,7 @@ namespace FGTools.Services
                 cos.Punchlines = UserPunchlines;
                 cos.Emoticons = UserEmoticons;
                 cos.Phrases = UserPhrases;
+
                 Refresh();
             }
         }

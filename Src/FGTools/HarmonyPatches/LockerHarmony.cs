@@ -41,7 +41,6 @@ namespace FGTools.HarmonyPatches
             }
 
             File.WriteAllText(Launcher.CustomFavList, JsonSerializer.Serialize(CosmeticsService.FavList));
-            FGTServiceManager.GetService<CosmeticsService>().SearchPanel.Reset();
         }
 
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
@@ -49,8 +48,6 @@ namespace FGTools.HarmonyPatches
         {
             if (pageIndex != 0)
                 FGTServiceManager.GetService<CosmeticsService>().SearchEnd(true);
-
-            FGTServiceManager.GetService<CosmeticsService>().SearchPanel.ChangeTitle($"{LocalizedStr("gui_cosmetics_search")} | {LocalizedStr("gui_cosmetics_search_for")}: {__instance.CurrentSectionText.ToUpper()}");
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
