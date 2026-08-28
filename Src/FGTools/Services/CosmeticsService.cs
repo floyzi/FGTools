@@ -1,5 +1,6 @@
 ﻿using BepInEx.Logging;
 using Catapult.Modules.Items.Protocol.Dtos;
+using Coffee.UIParticleInternal;
 using DG.Tweening;
 using Epic.OnlineServices;
 using Events;
@@ -241,6 +242,7 @@ namespace FGTools.Services
                 //SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
 
                 Loaded = true;
+
                 if (AllCosmetics.Value)
                     GrantAllCosmetics();
                 else
@@ -409,6 +411,15 @@ namespace FGTools.Services
         //i hate this actually
         public void Search(string req, string type, RequestType reqType, bool allCosmetics)
         {
+            if (string.IsNullOrEmpty(req))
+            {
+                if (AllCosmetics.Value)
+                    GrantAllCosmetics();
+                else
+                    RemoveAllCosmetics();
+                return;
+            }
+
             var term = req.ToUpper();
             HashSet<string> ids = [];
             HashSet<string> fav_ids = [];
@@ -651,19 +662,52 @@ namespace FGTools.Services
 
         public void Refresh()
         {
-            ColorSect.RaisePropertyChanged("Options", null, false);
-            ColorSect.RefreshSectionData();
+            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
-            PatternsSect.RefreshSectionData();
-            EmotesSect.RefreshSectionData();
-            FaceSect.RefreshSectionData();
-            UpperCostumeSect.RefreshSectionData();
-            LowerCostumeSect.RefreshSectionData();
-            NameplateSect.RefreshSectionData();
-            VictorySect.RefreshSectionData();
-            NicknameSect.RefreshSectionData();
-            EmoticonsSect.RefreshSectionData();
-            PhrasesSect.RefreshSectionData();
+            var hasColors = cos.ColourSchemes.Count > 0;
+            ColorSect._gridOptionSelection._contentRect.gameObject.SetActive(hasColors);
+            if (hasColors) ColorSect.RefreshSectionData();
+
+            var hasPatterns = cos.Patterns.Count > 0;
+            PatternsSect._gridOptionSelection._contentRect.gameObject.SetActive(hasPatterns);
+            if (hasPatterns) PatternsSect.RefreshSectionData();
+
+            var hasEmotes = cos.Emotes.Count > 0;
+            EmotesSect._gridOptionSelection._contentRect.gameObject.SetActive(hasEmotes);
+            if (hasEmotes) EmotesSect.RefreshSectionData();
+
+            var hasFaceplates = cos.Faceplates.Count > 0;
+            FaceSect._gridOptionSelection._contentRect.gameObject.SetActive(hasFaceplates);
+            if (hasFaceplates) FaceSect.RefreshSectionData();
+
+            var hasUppers = cos.UpperCostumePieces.Count > 0;
+            UpperCostumeSect._gridOptionSelection._contentRect.gameObject.SetActive(hasUppers);
+            if (hasUppers) UpperCostumeSect.RefreshSectionData();
+
+            var hasLowers = cos.LowerCostumePieces.Count > 0;
+            LowerCostumeSect._gridOptionSelection._contentRect.gameObject.SetActive(hasLowers);
+            if (hasLowers) LowerCostumeSect.RefreshSectionData();
+
+            var hasNameplates = cos.Nameplates.Count > 0;
+            NameplateSect._gridOptionSelection._contentRect.gameObject.SetActive(hasNameplates);
+            if (hasNameplates) NameplateSect.RefreshSectionData();
+
+            var hasPunchlines = cos.Punchlines.Count > 0;
+            VictorySect._gridOptionSelection._contentRect.gameObject.SetActive(hasPunchlines);
+            if (hasPunchlines) VictorySect.RefreshSectionData();
+
+            var hasNicknames = cos.Nicknames.Count > 0;
+            NicknameSect._gridOptionSelection._contentRect.gameObject.SetActive(hasNicknames);
+            if (hasNicknames) NicknameSect.RefreshSectionData();
+
+            var hasEmoticons = cos.Emoticons.Count > 0;
+            EmoticonsSect._gridOptionSelection._contentRect.gameObject.SetActive(hasEmoticons);
+            if (hasEmoticons) EmoticonsSect.RefreshSectionData();
+
+            var hasPhrases = cos.Phrases.Count > 0;
+            PhrasesSect._gridOptionSelection._contentRect.gameObject.SetActive(hasPhrases);
+            if (hasPhrases) PhrasesSect.RefreshSectionData();
+
         }
 
         static ItemDto CMSDefinitionToItemDto(CMSItemDefinition itemDefinition)

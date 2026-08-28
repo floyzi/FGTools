@@ -71,7 +71,7 @@ namespace FGTools.Internal.Behaviours
 
         IEnumerator DelayedSearch(string s)
         {
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.35f);
             Service.Search(s, Service.GetSection(), RequestType.Locker, Config.Config.AllCosmetics.Value);
             Delay = null;
         }
