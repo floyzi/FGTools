@@ -117,6 +117,8 @@ namespace FGTools.HarmonyPatches
         static void BuildCatapultConfig(CatapultServicesManager __instance, ref CatapultGatewayConnection.Config __result)
         {
             PlatformServices.Instance._antiCheatClientService.Cast<EOSAntiCheatService>().AllowOnlinePlay = true;
+            //__result.LoginServerHost = new("http://127.0.0.1:10002/api/v1", -1);
+            //__result.GatewayServerHost = new WebSocketNetworkHost("127.0.0.1", 10003, false).Cast<INetworkHost>();
             __result.Platform = "switch";
         }
 

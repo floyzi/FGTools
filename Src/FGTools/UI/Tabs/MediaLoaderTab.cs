@@ -114,29 +114,35 @@ namespace FGTools.UI.Tabs
 
                 GameObject btnActsRow2 = UIFactory.CreateHorizontalGroup(_mediaTab, "btnActsRow2", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
 
-                ButtonRef flzRuImg = UIFactory.CreateButton(btnActsRow2, "flzruImg", $"{LocalizedStr("gui_flzru_img")}", null);
-                flzRuImg.OnClick += () =>
+                if (OnlineCheck.FGTContent.RandomImages.Enabled)
                 {
-                    var randConfig = OnlineCheck.FGTContent.RandomImages;
-
-                    if (!OnlineCheck.FGTContent.RandomImages.Enabled)
-                        return;
-
-                    string url;
-                    string urlBase = OnlineCheck.FGTContent.RandomImages.Url;
-                    if (randConfig.TotalImages != -1)
+                    var funPic = UIFactory.CreateButton(btnActsRow2, "flzruImg", $"{LocalizedStr("gui_flzru_img")}", null);
+                    funPic.OnClick += () =>
                     {
-                        int randVal = UnityEngine.Random.Range(0, randConfig.TotalImages);
-                        if (randConfig.BannedImages != null && randConfig.BannedImages.Contains(randVal))
-                            randVal = randConfig.Fallback;
-                        url = $"{urlBase}{randVal}.png";
-                    }
-                    else
-                        url = $"{urlBase}_146.png";
+                        var randConfig = OnlineCheck.FGTContent.RandomImages;
+                        string url;
+                        string urlBase = OnlineCheck.FGTContent.RandomImages.Url;
 
-                    CoroutineRunner.Instance.StartCoroutine(Service.LoadImage(url, false, true).WrapToIl2Cpp());
-                };
-                UIFactory.SetLayoutElement(flzRuImg.GameObject, 30, 25, null, 0, null, null, null);
+                        if (OnlineCheck.FGTContent.RandomImages.LegacyFormat)
+                        {
+                            if (randConfig.TotalImages != -1)
+                            {
+                                int randVal = UnityEngine.Random.Range(0, randConfig.TotalImages);
+                                if (randConfig.BannedImages != null && randConfig.BannedImages.Contains(randVal))
+                                    url = randConfig.Fallback;
+                                else
+                                    url = $"{urlBase}{randVal}.png";
+                            }
+                            else
+                                url = randConfig.Fallback;
+                        }
+                        else
+                            url = randConfig.Url;
+
+                        CoroutineRunner.Instance.StartCoroutine(Service.LoadImage(url, false, true).WrapToIl2Cpp());
+                    };
+                    UIFactory.SetLayoutElement(funPic.GameObject, 30, 25, null, 0, null, null, null);
+                }
 
                 GameObject t = UIFactory.CreateHorizontalGroup(_mediaTab, "t", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 GameObject asCube = UIFactory.CreateToggle(t, "asCube", out var asCube_toggle, out var asCube_t);

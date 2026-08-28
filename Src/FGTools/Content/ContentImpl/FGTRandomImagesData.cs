@@ -12,13 +12,20 @@ namespace FGTools.Content.ContentImpl
     {
         [FGTField("enabled")]
         public bool Enabled { get; set; }
-        [FGTField("url_base")]
+
+        [FGTField("legacy_format")]
+        public bool LegacyFormat { get; set; }
+
+        [FGTField("url")]
         public string Url { get; set; }
+
         [FGTField("total_images")]
         public int TotalImages { get; set; }
+
         [FGTField("banned_images")]
         public List<int> BannedImages { get; set; }
+
         [FGTField("fallback")]
-        public int Fallback { get; set; }
+        public string Fallback { get; set; }
     }
 }
