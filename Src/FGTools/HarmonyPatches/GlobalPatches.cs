@@ -66,11 +66,16 @@ namespace FGTools.HarmonyPatches
             return false;
         }
 
-        [HarmonyPatch(typeof(BootSplashScreenViewModel), nameof(BootSplashScreenViewModel.Awake)), HarmonyPostfix]
-        static void Awake(BootSplashScreenViewModel __instance)
+        [HarmonyPatch(typeof(BootSplashScreenViewModel), nameof(BootSplashScreenViewModel.Awake)), HarmonyPrefix]
+        static bool Awake(BootSplashScreenViewModel __instance)
         {
+            __instance._slideTime = 0.75f;
+            __instance._slideFadeTime = 0.25f;
+
             if (File.Exists(Launcher.Splash))
                 __instance._slides.Add(GetSpriteFromFile(Launcher.Splash, 1920, 1080));
+
+            return true;
         }
 
         [HarmonyPatch(typeof(LoadingScreenViewModel), nameof(LoadingScreenViewModel.Update)), HarmonyPostfix]

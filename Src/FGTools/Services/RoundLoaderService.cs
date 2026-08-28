@@ -1,21 +1,10 @@
 ﻿extern alias wle;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using Events;
 using FG.Common;
-using FG.Common.Audio;
-using FG.Common.Character.MotorSystem;
 using FG.Common.CMS;
 using FG.Common.Definition;
 using FG.Common.Fraggle;
 using FGClient;
-using FGClient.Rendering.XRay;
 using FGClient.UI;
 using FGClient.UI.Core;
 using FGTools.Content;
@@ -24,15 +13,17 @@ using FGTools.Internal.Behaviours;
 using FGTools.Services.Logic;
 using FGTools.States;
 using FGTools.States.Logic;
-using FGTools.UI;
-using Il2CppInterop.Runtime.Attributes;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UniverseLib;
 using UniverseLib.UI.Models;
-using static FG.Common.GameStateMachine;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Internal.Extensions.FLZ_UIExtensions;
@@ -40,7 +31,6 @@ using static FGTools.Services.LocalizationService;
 using static FGTools.Services.SpeedrunService;
 using static FGTools.States.Logic.FGTStateManager;
 using static FGTools.UI.ReadyPopups;
-using static GameStateEvents;
 using Random = UnityEngine.Random;
 
 namespace FGTools.Services
@@ -403,7 +393,6 @@ namespace FGTools.Services
                 NetworkGameData.ClearCurrentGameOptions();
                 isXtremeRound = StateManager.CurrentRound.Id.Contains("xtreme");
 
-
                 if (RandomMusic.Value)
                 {
                     StateManager.CurrentRound.IngameMusicEvent = null;
@@ -412,24 +401,19 @@ namespace FGTools.Services
 
                 if (mode == LoadSceneMode.Additive)
                 {
-                    StateManager.RoundLoadingAllowed = true;
                     Addressables.LoadScene(StateManager.CurrentRound.GetSceneName(), LoadSceneMode.Additive);
+                    StateManager.RoundLoadingAllowed = true;
                 }
                 else
                 {
                     Resources.FindObjectsOfTypeAll<UICanvas>().FirstOrDefault().RemoveAllScreens();
-                    StateManager.HandleFGTState(FGTStateManager.ToolsState.RoundLoading);
+                    StateManager.HandleFGTState(ToolsState.RoundLoading);
 
                     if (!StateManager.CurrentRound.IsUGC())
                     {
                         var stats = FGTServiceManager.GetService<StatisticsService>();
 
-                        //HideMenus();
-                        //SetupForRound(StateManager.CurrentRound);
-
                         StateManager.DropActiveState();
-                        //StateManager.GameLoading = new StateGameLoading(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData(), GamePermission.Player, false, false);
-                        //GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(StateManager.GameLoading.Cast<IGameState>());
 
                         FGTServiceManager.GetService<LocalServerService>().SingleplayerGame(StateManager.CurrentRound);
 

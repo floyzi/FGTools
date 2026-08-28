@@ -13,6 +13,7 @@ using FGTools.Content.ContentImpl;
 using FGTools.Internal.Extensions;
 using FGTools.Services.Logic;
 using FGTools.States;
+using FGTools.UI;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Localisation;
 using System;
@@ -28,6 +29,7 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.Localization.SmartFormat.Core.Output;
 using UnityEngine.Networking;
+using UniverseLib.UI;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
@@ -660,6 +662,7 @@ namespace FGTools.Services
                 CheckCompleteAtLeastOnce = true;
 
             ResetRequest();
+
             yield return new WaitForEndOfFrame();
 
             if (FGTContent != null && FGTContent.Newsfeeds != null)
@@ -668,7 +671,23 @@ namespace FGTools.Services
                     CreateNewNewsfeed(newsfeed);
             }
 
-            FinishLogin();
+            CheckInProgress = false;
+
+            PopupManager.Instance.HideActivePopup();
+
+            CatapultAnalyticsClient.Boot.BootCompleteEvent.TrackEvent();
+            GlobalGameStateClient.Instance.BootTimeLogger?.BootComplete();
+
+            if (CatapultGatewayConnection.Instance.TryGetAccountId(out string accountId))
+                Broadcaster.Instance.Broadcast(new LoginSuccessfulEvent(accountId, TitleScreenViewModel.CameFromSplashScreen));
+
+            yield return new WaitForEndOfFrame();
+
+            StateManager.CreateUIIfNeeded();
+
+            yield return new WaitForEndOfFrame();
+
+            GlobalGameStateClient.Instance._mainMenuManager.OnTitleScreenComplete();
         }
 
         IEnumerator DownloadProgress(UnityWebRequestAsyncOperation operation, string progress_bar_id, string special_msg = null)
@@ -725,19 +744,6 @@ namespace FGTools.Services
         {
             Request?.Dispose();
             Request = null;
-        }
-
-        void FinishLogin()
-        {
-            CheckInProgress = false;
-
-            Resources.FindObjectsOfTypeAll<PopupManager>().FirstOrDefault().HideActivePopup();
-            Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault().OnTitleScreenComplete();
-            CatapultAnalyticsClient.Boot.BootCompleteEvent.TrackEvent();
-            GlobalGameStateClient.Instance.BootTimeLogger?.BootComplete();
-
-            if (CatapultGatewayConnection.Instance.TryGetAccountId(out string accountId))
-                Broadcaster.Instance.Broadcast(new LoginSuccessfulEvent(accountId, TitleScreenViewModel.CameFromSplashScreen));
         }
 
         public bool TryBuildChangelog(string ver, out string changelog)

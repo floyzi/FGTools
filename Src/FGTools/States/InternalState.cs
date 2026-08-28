@@ -125,18 +125,20 @@ namespace FGTools.States
 
         public override void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            string activeScene = SceneManager.GetActiveScene().name;
+            var activeScene = SceneManager.GetActiveScene().name;
+
             FMODTool.UnloadAllLoadedBanks();
+
             if (activeScene != "Transition")
             {
-                if (!Launcher.HarmonyPatched)
+                if (!HarmonyPatched)
                 {
                     //Plugin.DoHarmonyPatch();
 
-                    if (Launcher.FGCHarmonyPatched)
+                    if (FGCHarmonyPatched)
                     {
-                        Launcher.FGCHarmony.UnpatchSelf();
-                        Launcher.FGCHarmonyPatched = false;
+                        FGCHarmony.UnpatchSelf();
+                        FGCHarmonyPatched = false;
                     }
                 }
 
@@ -145,25 +147,17 @@ namespace FGTools.States
                 if (FGTServiceManager.GetService<RoundLoaderService>() != null && !FGTServiceManager.GetService<RoundLoaderService>().UsingAdditiveLoad)
                 {
                     if (SpeedrunMode.Value)
-                    {
-                        //if (activeScene != "Fallguy_Victory_Scene")
-                        //    ServiceManagerFGT.GetService<SpeedrunService>().ResetStats();
                         FGTServiceManager.GetService<SpeedrunService>().SpeedrunState = RunState.Inactive;
-                    }
+
                     try { AudioMixing.Instance.ResetAllSnapshotParams(); } catch { }
+
                     StateManager.FGCurrentState = PlayerState.Despawned;
-                    StateManager.FGTCurrentState = FGTStateManager.ToolsState.SceneLoaded;
+                    StateManager.FGTCurrentState = ToolsState.SceneLoaded;
 
                     if (CGM != null && CGM._musicInstance != null)
-                        FMODTool.EndFmod(CGM._musicInstance._eventInstance, FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+                        FMODTool.EndFmod(CGM._musicInstance._eventInstance, STOP_MODE.ALLOWFADEOUT);
 
                     FGTServiceManager.GetService<StatisticsService>().ResetTimer();
-                }
-                else
-                {
-                    GameObject lights = GameObject.Find("----------------LIGHTS");
-                    lights?.SetActive(false);
-                    StateManager.RoundLoadingAllowed = false;
                 }
 
                 if (activeScene == "MainMenu")
@@ -175,23 +169,25 @@ namespace FGTools.States
                 if (activeScene != "MainMenu" && !activeScene.StartsWith("FallGuy_Fraggle"))
                 {
                     if (GravZoneEffect.Value)
+                    {
                         foreach (COMMON_GravityModifierVolume gravZone in Resources.FindObjectsOfTypeAll<COMMON_GravityModifierVolume>())
                             gravZone._playAudio = true;
+                    }
                 }
 
                 if (activeScene.StartsWith("FallGuy_Fraggle"))
                 {
                     if (!LocalServerService.IsServerInOperation) return; 
 
-                    if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative && !StateManager.IsFGC)
+                    if (StateManager.FGTCurrentState != ToolsState.InCreative && !StateManager.IsFGC)
                     {
                         FGTLog(LogLevel.Info, GetType(), "Loading into FGC");
-                        StateManager.HandleFGTState(FGTStateManager.ToolsState.InCreative);
+                        StateManager.HandleFGTState(ToolsState.InCreative);
                     }
-                    else if (StateManager.IsFGC && StateManager.FGTCurrentState != FGTStateManager.ToolsState.GPFGCLoading)
+                    else if (StateManager.IsFGC && StateManager.FGTCurrentState != ToolsState.GPFGCLoading)
                     {
                         FGTLog(LogLevel.Info, GetType(), "FGC Gameplay loading");
-                        StateManager.HandleFGTState(FGTStateManager.ToolsState.GPFGCLoading);
+                        StateManager.HandleFGTState(ToolsState.GPFGCLoading);
                     }
                 }
             }

@@ -116,133 +116,133 @@ namespace FGTools.Services
 
         public void Load()
         {
-            if (!Loaded)
-            {
-                FGTLog(LogLevel.Info, base.GetType(), "Load");
-                var favIds = new HashSet<string>();
-                try
-                {
-                    try
-                    {
-                        if (!File.Exists(Launcher.CustomFavList))
-                        {
-                            var stats = JsonSerializer.Serialize(FavList);
-                            File.WriteAllText(Launcher.CustomFavList, stats);
-                        }
-                        else
-                            FavList = JsonSerializer.Deserialize<HashSet<string>>(File.ReadAllText(Launcher.CustomFavList));
-                    }
-                    catch
-                    {
-                        ResetFavList();
-                    }
-
-                    if (FavList == null)
-                        ResetFavList();
-
-                    var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
-
-                    //colors
-                    UserColors = cos.ColourSchemes;
-
-                    foreach (var res in PushCosmList<ColourOption, ColourSchemeDto>(UserColors, def => def.CMSData, itemDto => ItemDtoToColourSchemeDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllColors.Add(res);
-
-                    //patterns
-                    UserPatterns = cos.Patterns;
-
-                    foreach (var res in PushCosmList<SkinPatternOption, PatternDto>(UserPatterns, def => def.CMSData, itemDto => ItemDtoToPatternDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllPatterns.Add(res);
-
-                    //faces
-                    UserFaceplates = cos.Faceplates;
-
-                    foreach (var res in PushCosmList<FaceplateOption, FaceplateDto>(UserFaceplates, def => def.CMSData, itemDto => ItemDtoToFaceplateDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllFaceplates.Add(res);
-
-                    //uppers
-                    UserUppers = cos.UpperCostumePieces;
-
-                    foreach (var res in PushCosmList<CostumeOption, UpperCostumePieceDto>(UserUppers, def => def.CMSData, itemDto => ItemDtoToCostumeUpperDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllUppers.Add(res);
-
-                    //lowers
-                    UserLowers = cos.LowerCostumePieces;
-
-                    foreach (var res in PushCosmList<CostumeOption, LowerCostumePieceDto>(UserLowers, def => def.CMSData, itemDto => ItemDtoToCostumeLowerDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllLowers.Add(res);
-
-
-                    //nameplates
-                    UserNameplates = cos.Nameplates;
-
-                    foreach (var res in PushCosmList<NameplateOption, NameplateDto>(UserNameplates, def => def.CMSData, itemDto => ItemDtoToNameplateDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllNameplates.Add(res);
-
-                    //emotes
-                    UserEmotes = cos.Emotes;
-
-                    foreach (var res in PushCosmList<EmotesOption, EmoteDto>(UserEmotes, def => def.CMSData, itemDto => ItemDtoToEmoteDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllEmotes.Add(res);
-
-              
-                    //victory poses
-                    UserPunchlines = cos.Punchlines;
-
-                    foreach (var res in PushCosmList<VictoryOption, PunchlineDto>(UserPunchlines, def => def.CMSData, itemDto => ItemDtoToVictoryDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
-                        AllPunchlines.Add(res);
-
-                    //nicknames
-                    UserNicknames = cos.Nicknames;
-
-                    BuildCosmList<NicknameDto, NicknamesSO, Nickname>(UserNicknames, AllNicknames, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault(), so => 
-                    {
-                        var list = new List<Nickname>();
-                        foreach (var pair in so.Nicknames)
-                            list.Add(pair.Value);
-                        return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToNicknameDto(itemDto), favIds, FavList);
-
-                    //emoticons
-                    UserEmoticons = cos.Emoticons;
-
-                    BuildCosmList<EmoticonDto, CosmeticsEmoticonsSO, CustomiserEmoticons>(UserEmoticons, AllEmoticons, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsEmoticonsSO>().FirstOrDefault(), so =>
-                    {
-                        var list = new List<CustomiserEmoticons>();
-                        foreach (var pair in so.Emoticons)
-                            list.Add(pair.Value);
-                        return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToEmoticonDto(itemDto), favIds, FavList);
-
-                    //phrases
-                    UserPhrases = cos.Phrases;
-
-                    BuildCosmList<PhraseDto, CosmeticsPhrasesSO, CustomiserPhrases>(UserPhrases, AllPhrases, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsPhrasesSO>().FirstOrDefault(), so =>
-                    {
-                        var list = new List<CustomiserPhrases>();
-                        foreach (var pair in so.Phrases)
-                            list.Add(pair.Value);
-                        return list;
-                    }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToPhraseDto(itemDto), favIds, FavList);
-
-                    EndLoad();
-
-                    SearchLoaded = true;
-                    SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
-
-                    Loaded = true;
-                    if (AllCosmetics.Value)
-                        GrantAllCosmetics();
-                    else
-                        RemoveAllCosmetics();
-                }
-                catch (Exception e) { FGTLog(LogLevel.Error, GetType(), e); };
-            }
-            else
+            if (Loaded)
             {
                 FGTLog(LogLevel.Info, base.GetType(), "Already loaded, finishing.");
                 EndLoad();
+                return;
             }
+
+            FGTLog(LogLevel.Info, base.GetType(), "Load");
+            var favIds = new HashSet<string>();
+
+            try
+            {
+                try
+                {
+                    if (!File.Exists(Launcher.CustomFavList))
+                    {
+                        var stats = JsonSerializer.Serialize(FavList);
+                        File.WriteAllText(Launcher.CustomFavList, stats);
+                    }
+                    else
+                        FavList = JsonSerializer.Deserialize<HashSet<string>>(File.ReadAllText(Launcher.CustomFavList));
+                }
+                catch
+                {
+                    ResetFavList();
+                }
+
+                if (FavList == null)
+                    ResetFavList();
+
+                var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
+                //colors
+                UserColors = cos.ColourSchemes;
+
+                foreach (var res in PushCosmList<ColourOption, ColourSchemeDto>(UserColors, def => def.CMSData, itemDto => ItemDtoToColourSchemeDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllColors.Add(res);
+
+                //patterns
+                UserPatterns = cos.Patterns;
+
+                foreach (var res in PushCosmList<SkinPatternOption, PatternDto>(UserPatterns, def => def.CMSData, itemDto => ItemDtoToPatternDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllPatterns.Add(res);
+
+                //faces
+                UserFaceplates = cos.Faceplates;
+
+                foreach (var res in PushCosmList<FaceplateOption, FaceplateDto>(UserFaceplates, def => def.CMSData, itemDto => ItemDtoToFaceplateDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllFaceplates.Add(res);
+
+                //uppers
+                UserUppers = cos.UpperCostumePieces;
+
+                foreach (var res in PushCosmList<CostumeOption, UpperCostumePieceDto>(UserUppers, def => def.CMSData, itemDto => ItemDtoToCostumeUpperDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllUppers.Add(res);
+
+                //lowers
+                UserLowers = cos.LowerCostumePieces;
+
+                foreach (var res in PushCosmList<CostumeOption, LowerCostumePieceDto>(UserLowers, def => def.CMSData, itemDto => ItemDtoToCostumeLowerDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllLowers.Add(res);
+
+
+                //nameplates
+                UserNameplates = cos.Nameplates;
+
+                foreach (var res in PushCosmList<NameplateOption, NameplateDto>(UserNameplates, def => def.CMSData, itemDto => ItemDtoToNameplateDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllNameplates.Add(res);
+
+                //emotes
+                UserEmotes = cos.Emotes;
+
+                foreach (var res in PushCosmList<EmotesOption, EmoteDto>(UserEmotes, def => def.CMSData, itemDto => ItemDtoToEmoteDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllEmotes.Add(res);
+
+
+                //victory poses
+                UserPunchlines = cos.Punchlines;
+
+                foreach (var res in PushCosmList<VictoryOption, PunchlineDto>(UserPunchlines, def => def.CMSData, itemDto => ItemDtoToVictoryDto(itemDto), dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                    AllPunchlines.Add(res);
+
+                //nicknames
+                UserNicknames = cos.Nicknames;
+
+                BuildCosmList<NicknameDto, NicknamesSO, Nickname>(UserNicknames, AllNicknames, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault(), so =>
+                {
+                    var list = new List<Nickname>();
+                    foreach (var pair in so.Nicknames)
+                        list.Add(pair.Value);
+                    return list;
+                }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToNicknameDto(itemDto), favIds, FavList);
+
+                //emoticons
+                UserEmoticons = cos.Emoticons;
+
+                BuildCosmList<EmoticonDto, CosmeticsEmoticonsSO, CustomiserEmoticons>(UserEmoticons, AllEmoticons, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsEmoticonsSO>().FirstOrDefault(), so =>
+                {
+                    var list = new List<CustomiserEmoticons>();
+                    foreach (var pair in so.Emoticons)
+                        list.Add(pair.Value);
+                    return list;
+                }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToEmoticonDto(itemDto), favIds, FavList);
+
+                //phrases
+                UserPhrases = cos.Phrases;
+
+                BuildCosmList<PhraseDto, CosmeticsPhrasesSO, CustomiserPhrases>(UserPhrases, AllPhrases, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsPhrasesSO>().FirstOrDefault(), so =>
+                {
+                    var list = new List<CustomiserPhrases>();
+                    foreach (var pair in so.Phrases)
+                        list.Add(pair.Value);
+                    return list;
+                }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToPhraseDto(itemDto), favIds, FavList);
+
+                EndLoad();
+
+                SearchLoaded = true;
+                SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
+
+                Loaded = true;
+                if (AllCosmetics.Value)
+                    GrantAllCosmetics();
+                else
+                    RemoveAllCosmetics();
+            }
+            catch (Exception e) { FGTLog(LogLevel.Error, GetType(), e); }
         }
 
         bool nav = true;

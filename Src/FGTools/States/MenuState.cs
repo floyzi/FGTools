@@ -221,18 +221,12 @@ namespace FGTools.States
 
             FinishLoginAct = new(() =>
             {
-                Action firstLaunch = () =>
+                static void firstLaunch()
                 {
-                    if (!StateManager.LoggedInBefore)
-                    {
-                        Launcher.UniverseUIBase ??= UniversalUI.RegisterUI(UniverseGUID, null);
-
-                        if (FGToolsUI.Instance == null)
-                            StateManager.InternalState.ToolsUI = new(Launcher.UniverseUIBase);
-                    }
 #if DEV
                     Broadcaster.Instance.Broadcast<GlobalDebug.DebugToggleFPSCounter>(new());
 #endif
+                    StateManager.CreateUIIfNeeded();
 
                     StateManager.InternalState.ToolsUI.ToggleUI(true);
                     Launcher.UniverseUIBase.SetOnTop();
@@ -242,7 +236,7 @@ namespace FGTools.States
                     FGTServiceManager.GetService<RoundLoaderService>().SetupCMSRoundList();
                     FGTServiceManager.GetService<StatisticsService>().ValidateStats(GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName);
                     FGTServiceManager.GetService<CosmeticsService>().Load();
-                };
+                }
 
                 StateManager.CanUseHotkeys = true;
                 StateManager.ExploreState = null;

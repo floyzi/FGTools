@@ -30,6 +30,7 @@ using System.Text.Json;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UniverseLib.UI;
 using wle::ScriptableObjects;
 using static FGClient.GlobalGameStateClient;
 using static FGClient.UI.UIModalMessage;
@@ -462,6 +463,17 @@ namespace FGTools.States.Logic
                     if (Launcher.HarmonyPatched)
                     { Launcher.GlobalHarmony.UnpatchSelf(); Launcher.HarmonyPatched = false; }
                     break;
+            }
+        }
+
+        internal void CreateUIIfNeeded()
+        {
+            if (!LoggedInBefore)
+            {
+                Launcher.UniverseUIBase ??= UniversalUI.RegisterUI(UniverseGUID, null);
+
+                if (FGToolsUI.Instance == null)
+                    InternalState.ToolsUI = new(Launcher.UniverseUIBase);
             }
         }
 
