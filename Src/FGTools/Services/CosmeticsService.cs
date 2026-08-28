@@ -102,6 +102,7 @@ namespace FGTools.Services
         GameObject _searchPrefab;
         bool Loaded;
         bool SearchLoaded;
+        string _recentQuery;
         public override void RegisterService()
         {
 
@@ -408,9 +409,17 @@ namespace FGTools.Services
         }
 
 
+        internal void ResumeSearch()
+        {
+            if (string.IsNullOrEmpty(_recentQuery)) return;
+            Search(_recentQuery, GetSection(), RequestType.Locker, Config.Config.AllCosmetics.Value);
+        }
+
         //i hate this actually
         public void Search(string req, string type, RequestType reqType, bool allCosmetics)
         {
+            _recentQuery = req;
+
             if (string.IsNullOrEmpty(req))
             {
                 if (AllCosmetics.Value)

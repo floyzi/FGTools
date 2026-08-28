@@ -46,8 +46,7 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
         static void MoveToPage(CustomiserMenuViewModel __instance, int pageIndex)
         {
-            if (pageIndex != 0)
-                FGTServiceManager.GetService<CosmeticsService>().SearchEnd(true);
+            if (pageIndex != 0) FGTServiceManager.GetService<CosmeticsService>().ResumeSearch();
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
