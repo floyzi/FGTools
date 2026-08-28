@@ -1,5 +1,6 @@
 ﻿using BepInEx.Logging;
 using Catapult.Modules.Items.Protocol.Dtos;
+using DG.Tweening;
 using Epic.OnlineServices;
 using Events;
 using FallGuys.Player.Protocol.Client.Cosmetics;
@@ -19,7 +20,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UniverseLib.UI;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
@@ -94,7 +97,7 @@ namespace FGTools.Services
 
         internal static HashSet<string> FavList { get; set; }
         internal SearchPanel SearchPanel;
-
+        GameObject _searchPrefab;
         bool Loaded;
         bool SearchLoaded;
         public override void RegisterService()
@@ -278,7 +281,77 @@ namespace FGTools.Services
             OutfitMenuViewModel.gameObject.SetActive(false);
             InterfaceMenuViewModel.gameObject.SetActive(false);
             TheatricsMenuViewModel.gameObject.SetActive(false);
+
+            MakeUI();
         }
+
+        void MakeUI()
+        {
+            if (_searchPrefab == null)
+            {
+                var inputField = Resources.FindObjectsOfTypeAll<UICustomTMP_InputField>().FirstOrDefault(x => x.transform.parent?.parent?.name == "CodeInputField");
+                _searchPrefab = GameObject.Instantiate(inputField.transform.parent.parent.gameObject);
+                var input = _searchPrefab.GetComponentInChildren<UICustomTMP_InputField>();
+                input.contentType = TMP_InputField.ContentType.Standard;
+                var placeholder = input.placeholder.GetComponent<TextMeshProUGUI>();
+                placeholder.color = new(1, 1, 1, 0.3f);
+                placeholder.text = LocalizedStr("inputfield_placeholder");
+                placeholder.fontStyle = FontStyles.Normal;
+                _searchPrefab.hideFlags = HideFlags.HideAndDontSave;
+                GameObject.DontDestroyOnLoad(_searchPrefab);
+            }
+
+            foreach (var screen in Screens)
+            {
+                var initTest = screen.Value.transform.GetChild(0).transform;
+                var searchBar = GameObject.Instantiate(_searchPrefab, initTest);
+
+                var rt = searchBar.gameObject.GetComponent<RectTransform>();
+                rt.anchorMax = new(0.4f, 1);
+                rt.anchorMin = new(0, 1);
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -30);
+
+                var input = searchBar.GetComponentInChildren<UICustomTMP_InputField>();
+                var tween = input.GetComponent<TweenOnTMP_InputField>();
+                tween.OnMouseHover = new Action<bool>((s) =>
+                {
+                    tween._toggleOn.localScale = Vector3.one;
+
+                    tween._inactiveToggleCanvasGroup.DOSafeFade(s ? 0 : 1, tween._alphaInTime);
+                    tween._activeToggleCanvasGroup.DOSafeFade(s ? 1 : 0, tween._alphaInTime);
+
+                    if (s)
+                    {
+                        AudioManager.PlayOneShot(tween._onSelectAudio);
+                        tween._toggleOn.DOPunchScale(tween._toSize, tween._bounceTime, tween._bounceNumber, tween._bouncePower);
+
+                        input.Select();
+                        input.ActivateInputField();
+                        input.caretWidth = 1;
+
+                        SearchStart();
+                    }
+                    else
+                    {
+                        input.DeactivateInputField();
+                        input.caretWidth = 0;
+
+                        SearchEnd(false);
+                    }
+                });
+
+                input.onEndEdit.AddListener(new Action<string>((s) =>
+                {
+                    SearchEnd(false);
+                }));
+
+                input.onSelect.AddListener(new Action<string>((s) =>
+                {
+                    SearchStart();
+                }));
+            }
+        }
+
         void OnGUI()
         {
             //if (FGTCurrentState == FGTState.Menu)
