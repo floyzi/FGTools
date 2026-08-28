@@ -234,7 +234,7 @@ namespace FGTools.Services
                 EndLoad();
 
                 SearchLoaded = true;
-                SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
+                //SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
 
                 Loaded = true;
                 if (AllCosmetics.Value)

@@ -362,9 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-Lib/FallGuys/*
-!Lib/FallGuys/README.md
-!Lib/FallGuys/usage.*
+Misc/Lib/FallGuys/*
+!Misc/Lib/FallGuys/README.md
+!Misc/Lib/FallGuys/usage.*
 Release/*dll
 Release/*pdb
 Release/Assets/Lib/*.dll
@@ -372,3 +372,8 @@ Release/Assets/Lib/*.pdb
 Release/Images/*
 !Release/Images/example.*
 [Oo]ld/
+[Ll]ibrary/
+[Tt]emp/
+[Uu]ser[Ss]ettings/
+[Aa]sset[Bb]undles/
+TextMesh Pro

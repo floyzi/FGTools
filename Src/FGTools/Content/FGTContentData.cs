@@ -6,6 +6,7 @@ using System.Text.Json;
 using FGTools.Content.Attributes;
 using FGTools.Content.ContentImpl;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using static FGTools.Internal.Extensions.FLZ_Extensions;
 
 namespace FGTools.Content
 {
@@ -31,7 +32,7 @@ namespace FGTools.Content
 
             _version = doc.RootElement.GetProperty("meta").GetProperty("content_version").GetString();
 
-            foreach (var field in this.GetType().GetFields())
+            foreach (var field in GetType().GetFields())
             {
                 var groupAttr = field.FieldType.GetCustomAttribute<FGTGroup>();
                 var type = field.FieldType;
@@ -108,8 +109,7 @@ namespace FGTools.Content
 
                             field.SetValue(this, dict);
                         }
-
-
+                        
                         if (genericDef == typeof(List<>))
                         {
                             var itemType = baseType.GetGenericArguments()[0];
@@ -162,7 +162,14 @@ namespace FGTools.Content
                             var fieldAttr = prop.GetCustomAttribute<FGTField>();
                             if (fieldAttr != null && groupJson.TryGetProperty(fieldAttr.JsonKey, out var fieldJson))
                             {
-                                prop.SetValue(typeInst, JsonSerializer.Deserialize(fieldJson.GetRawText(), prop.PropertyType));
+                                try
+                                {
+                                    prop.SetValue(typeInst, JsonSerializer.Deserialize(fieldJson.GetRawText(), prop.PropertyType));
+                                }
+                                catch (Exception ex)
+                                {
+                                    FGTLog(BepInEx.Logging.LogLevel.Error, GetType(), ex);
+                                }
                             }
                         }
                         field.SetValue(this, typeInst);
