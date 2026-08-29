@@ -101,7 +101,6 @@ namespace FGTools.Services
         internal static HashSet<string> FavList { get; set; }
         GameObject _searchPrefab;
         bool Loaded;
-        bool SearchLoaded;
         string _recentQuery;
         public override void RegisterService()
         {
@@ -207,7 +206,7 @@ namespace FGTools.Services
                 //nicknames
                 UserNicknames = cos.Nicknames;
 
-                BuildCosmList<NicknameDto, NicknamesSO, Nickname>(UserNicknames, AllNicknames, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault(), so =>
+                BuildCosmList(UserNicknames, AllNicknames, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault(), so =>
                 {
                     var list = new List<Nickname>();
                     foreach (var pair in so.Nicknames)
@@ -218,7 +217,7 @@ namespace FGTools.Services
                 //emoticons
                 UserEmoticons = cos.Emoticons;
 
-                BuildCosmList<EmoticonDto, CosmeticsEmoticonsSO, CustomiserEmoticons>(UserEmoticons, AllEmoticons, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsEmoticonsSO>().FirstOrDefault(), so =>
+                BuildCosmList(UserEmoticons, AllEmoticons, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsEmoticonsSO>().FirstOrDefault(), so =>
                 {
                     var list = new List<CustomiserEmoticons>();
                     foreach (var pair in so.Emoticons)
@@ -229,7 +228,7 @@ namespace FGTools.Services
                 //phrases
                 UserPhrases = cos.Phrases;
 
-                BuildCosmList<PhraseDto, CosmeticsPhrasesSO, CustomiserPhrases>(UserPhrases, AllPhrases, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsPhrasesSO>().FirstOrDefault(), so =>
+                BuildCosmList(UserPhrases, AllPhrases, dto => dto.Item, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val, () => Resources.FindObjectsOfTypeAll<CosmeticsPhrasesSO>().FirstOrDefault(), so =>
                 {
                     var list = new List<CustomiserPhrases>();
                     foreach (var pair in so.Phrases)
@@ -238,9 +237,6 @@ namespace FGTools.Services
                 }, obj => (CMSItemDefinition)(Il2CppSystem.Object)obj, itemDto => ItemDtoToPhraseDto(itemDto), favIds, FavList);
 
                 EndLoad();
-
-                SearchLoaded = true;
-                //SearchPanel = new SearchPanel(Launcher.UniverseUIBase);
 
                 Loaded = true;
 
@@ -505,7 +501,6 @@ namespace FGTools.Services
                         DoSearch<NameplateDto, NameplateOption>(term, reqType, allCosmetics, AllNameplates, UserNameplates, Resources.FindObjectsOfTypeAll<NameplateOption>(), dto => dto.Item, targ => targ, itemDto => ItemDtoToNameplateDto(itemDto), res => cos.Nameplates = res, ref finalRes, ref listedRes);
                         break;
                     case "nickname":
-                        //it's broken and im way too lazy to fix it rn
                         var nicknames = Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault().Nicknames.Values;
                         Il2CppSystem.Collections.Generic.List<NicknameDto> nickname_targetList = AllNicknames;
                         if (!allCosmetics)
@@ -577,7 +572,7 @@ namespace FGTools.Services
                             }
                         }
 
-                        foreach (EmoticonDto item in emoticons_targetList)
+                        foreach (var item in emoticons_targetList)
                         {
                             var a = item.Item.Id.Split('.')[1].ToLower();
                             if ((item.IsFavourite || FavList.Contains(item.Item.Id)) && foundIds.Contains(a))
@@ -587,7 +582,7 @@ namespace FGTools.Services
                             }
                         }
 
-                        foreach (CustomiserEmoticons nickname in emoticons)
+                        foreach (var nickname in emoticons)
                         {
                             if (foundIds.Contains(nickname.Id.ToLower()))
                             {
@@ -659,8 +654,7 @@ namespace FGTools.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                //SearchPanel.SetResult($"{LocalizedStr($"gui_cosmetics_search_err\n{ex}")}");
+                FGTLog(LogLevel.Error, GetType(), ex);
             }
 
         }
