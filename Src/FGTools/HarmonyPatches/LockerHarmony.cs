@@ -26,7 +26,6 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.DoExitSubMenu)), HarmonyPostfix]
         static void DoExitSubMenu(CustomiserScreenViewModel __instance, bool keepChanges)
         {
-            Debug.Log("ext");
             switch (__instance.CurrentScreen)
             {
                 case CustomiserScreens.Outfits:
@@ -43,10 +42,17 @@ namespace FGTools.HarmonyPatches
             File.WriteAllText(Launcher.CustomFavList, JsonSerializer.Serialize(CosmeticsService.FavList));
         }
 
-        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
-        static void MoveToPage(CustomiserMenuViewModel __instance, int pageIndex)
+        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPrefix]
+        static bool MoveToPagePref(CustomiserMenuViewModel __instance, int pageIndex)
         {
-            if (pageIndex != 0) FGTServiceManager.GetService<CosmeticsService>().ResumeSearch();
+            FGTServiceManager.GetService<CosmeticsService>().ResolveSections();
+            return true;
+        }
+
+        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
+        static void MoveToPagePost(CustomiserMenuViewModel __instance, int pageIndex)
+        {
+            FGTServiceManager.GetService<CosmeticsService>().ResumeSearch();
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]

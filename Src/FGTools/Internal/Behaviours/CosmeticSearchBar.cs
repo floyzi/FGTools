@@ -38,6 +38,7 @@ namespace FGTools.Internal.Behaviours
             //this works just fine so why even bother
             tween.OnMouseHover = new Action<bool>((s) =>
             {
+                tween._toggleOn.DOKill();
                 tween._toggleOn.localScale = Vector3.one;
 
                 tween._inactiveToggleCanvasGroup.DOSafeFade(s ? 0 : 1, tween._alphaInTime);
@@ -46,6 +47,7 @@ namespace FGTools.Internal.Behaviours
                 if (s)
                 {
                     AudioManager.PlayOneShot(tween._onSelectAudio);
+
                     tween._toggleOn.DOPunchScale(tween._toSize, tween._bounceTime, tween._bounceNumber, tween._bouncePower);
 
                     _inputField.Select();

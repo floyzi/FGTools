@@ -415,6 +415,44 @@ namespace FGTools.Services
             Search(_recentQuery, GetSection(), RequestType.Locker, Config.Config.AllCosmetics.Value);
         }
 
+        internal void ResolveSections()
+        {
+            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
+            if (cos.ColourSchemes == null || cos.ColourSchemes.Count == 0)
+                cos.ColourSchemes = AllCosmetics.Value ? AllColors : UserColors;
+
+            if (cos.Patterns == null || cos.Patterns.Count == 0)
+                cos.Patterns = AllCosmetics.Value ? AllPatterns : UserPatterns;
+
+            if (cos.Faceplates == null || cos.Faceplates.Count == 0)
+                cos.Faceplates = AllCosmetics.Value ? AllFaceplates : UserFaceplates;
+
+            if (cos.UpperCostumePieces == null || cos.UpperCostumePieces.Count == 0)
+                cos.UpperCostumePieces = AllCosmetics.Value ? AllUppers : UserUppers;
+
+            if (cos.LowerCostumePieces == null || cos.LowerCostumePieces.Count == 0)
+                cos.LowerCostumePieces = AllCosmetics.Value ? AllLowers : UserLowers;
+
+            if (cos.Emotes == null || cos.Emotes.Count == 0)
+                cos.Emotes = AllCosmetics.Value ? AllEmotes : UserEmotes;
+
+            if (cos.Punchlines == null || cos.Punchlines.Count == 0)
+                cos.Punchlines = AllCosmetics.Value ? AllPunchlines : UserPunchlines;
+
+            if (cos.Emoticons == null || cos.Emoticons.Count == 0)
+                cos.Emoticons = AllCosmetics.Value ? AllEmoticons : UserEmoticons;
+
+            if (cos.Phrases == null || cos.Phrases.Count == 0)
+                cos.Phrases = AllCosmetics.Value ? AllPhrases : UserPhrases;
+
+            if (cos.Nicknames == null || cos.Nicknames.Count == 0)
+                cos.Nicknames = AllCosmetics.Value ? AllNicknames : UserNicknames;
+
+            if (cos.Nameplates == null || cos.Nameplates.Count == 0)
+                cos.Nameplates = AllCosmetics.Value ? AllNameplates : UserNameplates;
+        }
+
         //i hate this actually
         public void Search(string req, string type, RequestType reqType, bool allCosmetics)
         {
@@ -468,9 +506,6 @@ namespace FGTools.Services
                         break;
                     case "nickname":
                         //it's broken and im way too lazy to fix it rn
-                        if (reqType != RequestType.List)
-                            break;
-
                         var nicknames = Resources.FindObjectsOfTypeAll<NicknamesSO>().FirstOrDefault().Nicknames.Values;
                         Il2CppSystem.Collections.Generic.List<NicknameDto> nickname_targetList = AllNicknames;
                         if (!allCosmetics)
@@ -645,6 +680,8 @@ namespace FGTools.Services
                 cos.Punchlines = AllPunchlines;
                 cos.Emoticons = AllEmoticons;
                 cos.Phrases = AllPhrases;
+                cos.Nicknames = AllNicknames;
+
                 Refresh();
             }
         }
@@ -664,6 +701,7 @@ namespace FGTools.Services
                 cos.Punchlines = UserPunchlines;
                 cos.Emoticons = UserEmoticons;
                 cos.Phrases = UserPhrases;
+                cos.Nicknames = UserNicknames;
 
                 Refresh();
             }
