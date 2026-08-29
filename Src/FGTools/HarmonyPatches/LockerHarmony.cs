@@ -60,7 +60,8 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserSectionBase<ColourOption, ColourSchemeDto>), nameof(CustomiserSectionBase<,>.UpdateItemInfo)), HarmonyPostfix]
         static void MoveToPagePost(CustomiserSectionBase<ColourOption, ColourSchemeDto> __instance, IItemDefinition item)
         {
-            __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
+            if (ShowItemIds.Value)
+                __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
