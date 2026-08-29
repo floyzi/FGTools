@@ -195,7 +195,7 @@ namespace FGTools.Config
             if (_cfgDescs.TryGetValue(key, out string value))
                 return value;
 
-            return $"Missing: {key}";
+            return $"MISSING: {key}";
         }
 
         public static void LoadCFG(ConfigFile bepCfg)

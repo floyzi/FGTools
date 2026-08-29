@@ -102,6 +102,8 @@ namespace FGTools.Services
         GameObject _searchPrefab;
         bool Loaded;
         string _recentQuery;
+        public static bool _searchActive = false;
+
         public override void RegisterService()
         {
 
@@ -247,9 +249,6 @@ namespace FGTools.Services
             }
             catch (Exception e) { FGTLog(LogLevel.Error, GetType(), e); }
         }
-
-        bool nav = true;
-        public static bool _searchActive = false;
 
         void EndLoad()
         {
@@ -662,6 +661,7 @@ namespace FGTools.Services
         public void GrantAllCosmetics()
         {
             var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
             if (cos != null && Loaded)
             {
                 cos.ColourSchemes = AllColors;
@@ -683,6 +683,7 @@ namespace FGTools.Services
         public void RemoveAllCosmetics()
         {
             var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
             if (cos != null && Loaded)
             {
                 cos.ColourSchemes = UserColors;

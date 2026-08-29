@@ -1,4 +1,5 @@
-﻿using FG.Common;
+﻿using FallGuys.Player.Protocol.Client.Cosmetics;
+using FG.Common;
 using FGClient;
 using FGClient.Customiser;
 using FGClient.UI;
@@ -53,6 +54,13 @@ namespace FGTools.HarmonyPatches
         static void MoveToPagePost(CustomiserMenuViewModel __instance, int pageIndex)
         {
             FGTServiceManager.GetService<CosmeticsService>().ResumeSearch();
+        }
+
+        //this affects all CustomiserSectionBase<,> implementations, not only colors section
+        [HarmonyPatch(typeof(CustomiserSectionBase<ColourOption, ColourSchemeDto>), nameof(CustomiserSectionBase<,>.UpdateItemInfo)), HarmonyPostfix]
+        static void MoveToPagePost(CustomiserSectionBase<ColourOption, ColourSchemeDto> __instance, IItemDefinition item)
+        {
+            __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
         }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
