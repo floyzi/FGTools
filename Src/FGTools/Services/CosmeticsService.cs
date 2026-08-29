@@ -249,20 +249,46 @@ namespace FGTools.Services
         void EndLoad()
         {
             ColorSect = Resources.FindObjectsOfTypeAll<CustomiserColourSection>().FirstOrDefault();
+            ColorSect.gameObject.AddComponent<CanvasGroup>();
+
             PatternsSect = Resources.FindObjectsOfTypeAll<CustomiserPatternsSection>().FirstOrDefault();
+            PatternsSect.gameObject.AddComponent<CanvasGroup>();
+
             FaceSect = Resources.FindObjectsOfTypeAll<CustomiserFaceplateSection>().FirstOrDefault();
+            FaceSect.gameObject.AddComponent<CanvasGroup>();
+
             UpperCostumeSect = Resources.FindObjectsOfTypeAll<CustomiserUpperCostumeSection>().FirstOrDefault();
+            UpperCostumeSect.gameObject.AddComponent<CanvasGroup>();
+
             LowerCostumeSect = Resources.FindObjectsOfTypeAll<CustomiserLowerCostumeSection>().FirstOrDefault();
+            LowerCostumeSect.gameObject.AddComponent<CanvasGroup>();
+
             NameplateSect = Resources.FindObjectsOfTypeAll<CustomiserNameplateSection>().FirstOrDefault();
+            NameplateSect.gameObject.AddComponent<CanvasGroup>();
+
             VictorySect = Resources.FindObjectsOfTypeAll<CustomiserVictorySection>().FirstOrDefault();
+            VictorySect.gameObject.AddComponent<CanvasGroup>();
+
             EmotesSect = Resources.FindObjectsOfTypeAll<CustomiserEmotesSection>().FirstOrDefault();
+            EmotesSect.gameObject.AddComponent<CanvasGroup>();
+
             NicknameSect = Resources.FindObjectsOfTypeAll<CustomiserNicknameSection>().FirstOrDefault();
+            NicknameSect.gameObject.AddComponent<CanvasGroup>();
+
             EmoticonsSect = Resources.FindObjectsOfTypeAll<CustomiserEmoticonsSection>().FirstOrDefault();
+            EmoticonsSect.gameObject.AddComponent<CanvasGroup>();
+
             PhrasesSect = Resources.FindObjectsOfTypeAll<CustomiserPhrasesSection>().FirstOrDefault();
+            PhrasesSect.gameObject.AddComponent<CanvasGroup>();
 
             OutfitMenuViewModel = Resources.FindObjectsOfTypeAll<OutfitMenuViewModel>().FirstOrDefault();
+            OutfitMenuViewModel.gameObject.AddComponent<CanvasGroup>();
+
             InterfaceMenuViewModel = Resources.FindObjectsOfTypeAll<InterfaceMenuViewModel>().FirstOrDefault();
+            InterfaceMenuViewModel.gameObject.AddComponent<CanvasGroup>();
+
             TheatricsMenuViewModel = Resources.FindObjectsOfTypeAll<TheatricsMenuViewModel>().FirstOrDefault();
+            TheatricsMenuViewModel.gameObject.AddComponent<CanvasGroup>();
 
             OutfitMenuFocusable = OutfitMenuViewModel.gameObject.GetComponent<OutfitMenuFocusableViewModel>();
             InterfaceMenuFocusable = InterfaceMenuViewModel.gameObject.GetComponent<InterfaceMenuFocusableViewModel>();
@@ -683,54 +709,63 @@ namespace FGTools.Services
             }
         }
 
+        static void ResolveSection<TItemDefinition, TItemDto>(CustomiserSectionBase<TItemDefinition, TItemDto> sect, bool valid)
+        {
+            var canvas = sect.gameObject.GetComponent<CanvasGroup>();
+
+            if (valid)
+            {
+                canvas.alpha = 1;
+                canvas.blocksRaycasts = true;
+                canvas.interactable = true;
+
+                sect.RefreshSectionData();
+                return;
+            }
+            else
+            {
+                canvas.alpha = 0;
+                canvas.blocksRaycasts = false;
+                canvas.interactable = false;
+            }
+        }
+
         public void Refresh()
         {
             var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
             var hasColors = cos.ColourSchemes.Count > 0;
-            ColorSect._gridOptionSelection._contentRect.gameObject.SetActive(hasColors);
-            if (hasColors) ColorSect.RefreshSectionData();
+            ResolveSection(ColorSect, hasColors);
 
             var hasPatterns = cos.Patterns.Count > 0;
-            PatternsSect._gridOptionSelection._contentRect.gameObject.SetActive(hasPatterns);
-            if (hasPatterns) PatternsSect.RefreshSectionData();
+            ResolveSection(PatternsSect, hasPatterns);
 
             var hasEmotes = cos.Emotes.Count > 0;
-            EmotesSect._gridOptionSelection._contentRect.gameObject.SetActive(hasEmotes);
-            if (hasEmotes) EmotesSect.RefreshSectionData();
+            ResolveSection(EmotesSect, hasEmotes);
 
             var hasFaceplates = cos.Faceplates.Count > 0;
-            FaceSect._gridOptionSelection._contentRect.gameObject.SetActive(hasFaceplates);
-            if (hasFaceplates) FaceSect.RefreshSectionData();
+            ResolveSection(FaceSect, hasFaceplates);
 
             var hasUppers = cos.UpperCostumePieces.Count > 0;
-            UpperCostumeSect._gridOptionSelection._contentRect.gameObject.SetActive(hasUppers);
-            if (hasUppers) UpperCostumeSect.RefreshSectionData();
+            ResolveSection(UpperCostumeSect, hasUppers);
 
             var hasLowers = cos.LowerCostumePieces.Count > 0;
-            LowerCostumeSect._gridOptionSelection._contentRect.gameObject.SetActive(hasLowers);
-            if (hasLowers) LowerCostumeSect.RefreshSectionData();
+            ResolveSection(LowerCostumeSect, hasLowers);
 
             var hasNameplates = cos.Nameplates.Count > 0;
-            NameplateSect._gridOptionSelection._contentRect.gameObject.SetActive(hasNameplates);
-            if (hasNameplates) NameplateSect.RefreshSectionData();
+            ResolveSection(NameplateSect, hasNameplates);
 
             var hasPunchlines = cos.Punchlines.Count > 0;
-            VictorySect._gridOptionSelection._contentRect.gameObject.SetActive(hasPunchlines);
-            if (hasPunchlines) VictorySect.RefreshSectionData();
+            ResolveSection(VictorySect, hasPunchlines);
 
             var hasNicknames = cos.Nicknames.Count > 0;
-            NicknameSect._gridOptionSelection._contentRect.gameObject.SetActive(hasNicknames);
-            if (hasNicknames) NicknameSect.RefreshSectionData();
+            ResolveSection(NicknameSect, hasNicknames);
 
             var hasEmoticons = cos.Emoticons.Count > 0;
-            EmoticonsSect._gridOptionSelection._contentRect.gameObject.SetActive(hasEmoticons);
-            if (hasEmoticons) EmoticonsSect.RefreshSectionData();
+            ResolveSection(EmoticonsSect, hasEmoticons);
 
             var hasPhrases = cos.Phrases.Count > 0;
-            PhrasesSect._gridOptionSelection._contentRect.gameObject.SetActive(hasPhrases);
-            if (hasPhrases) PhrasesSect.RefreshSectionData();
-
+            ResolveSection(PhrasesSect, hasPhrases);
         }
 
         static ItemDto CMSDefinitionToItemDto(CMSItemDefinition itemDefinition)
