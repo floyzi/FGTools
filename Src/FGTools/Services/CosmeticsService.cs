@@ -26,6 +26,7 @@ using System.Linq;
 using System.Text.Json;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
 using UniverseLib.UI;
 using static FG.Benchmarking.Boot;
@@ -99,9 +100,10 @@ namespace FGTools.Services
         GameObject _searchPrefab;
         bool Loaded;
         string _recentQuery;
-        public static bool _searchActive = false;
+        internal static bool _searchActive = false;
         internal string CurrentSection;
         internal string PreviousSection;
+        internal string InputString;
 
         public override void RegisterService()
         {
@@ -319,7 +321,7 @@ namespace FGTools.Services
                 input.contentType = TMP_InputField.ContentType.Standard;
                 var placeholder = input.placeholder.GetComponent<TextMeshProUGUI>();
                 placeholder.color = new(1, 1, 1, 0.3f);
-                placeholder.text = LocalizedStr("inputfield_placeholder");
+                placeholder.text = LocalizedStr("gui_cosmetics_search");
                 placeholder.fontStyle = FontStyles.Normal;
                 _searchPrefab.hideFlags = HideFlags.HideAndDontSave;
                 GameObject.DontDestroyOnLoad(_searchPrefab);
@@ -339,20 +341,29 @@ namespace FGTools.Services
             }
         }
 
-        void OnGUI()
+        internal string GetState()
         {
-            //if (FGTCurrentState == FGTState.Menu)
-            //{
-            //    if (IsSomeScreenActive())
-            //    {
-            //        GUI.Label(new Rect(15f, 80f, 240f, 20f), output);
-            //        searchTerm = GUI.TextField(new Rect(15f, 100f, 240f, 40f), searchTerm);
-            //        if (GUI.Button(new Rect(15f, 140f, 240f, 40f), "Search"))
-            //            Search(searchTerm, GetSection());
-            //        nav = GUI.Toggle(new Rect(15f, 80f, 240f, 20f), nav, "Disable navigation");
-            //    }
-            //}
+            var sect = GetSection();
+            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
+            return sect switch
+            {
+                "colour" => LocalizeState(cos.ColourSchemes.Count),
+                "pattern" => LocalizeState(cos.Patterns.Count),
+                "face" => LocalizeState(cos.Faceplates.Count),
+                "upper" => LocalizeState(cos.UpperCostumePieces.Count),
+                "lower" => LocalizeState(cos.LowerCostumePieces.Count),
+                "emotes" => LocalizeState(cos.Emotes.Count),
+                "victory" => LocalizeState(cos.Punchlines.Count),
+                "banner" => LocalizeState(cos.Nameplates.Count),
+                "nickname" => LocalizeState(cos.Nicknames.Count),
+                "emoticons" => LocalizeState(cos.Emoticons.Count),
+                "phrases" => LocalizeState(cos.Phrases.Count),
+                _ => "Unsupported!!1 " + sect,
+            };
         }
+
+        string LocalizeState(int count) => !string.IsNullOrEmpty(InputString) ? LocalizedStr("gui_cosmetics_found", [count]) : LocalizedStr("gui_cosmetics_total", [count]);
 
         public override void UpdateService()
         {
@@ -366,6 +377,7 @@ namespace FGTools.Services
         public void SearchStart()
         {
             _searchActive = true;
+
             foreach (var pair in Screens)
             {
                 if (pair.Value.gameObject.activeSelf)
@@ -418,14 +430,16 @@ namespace FGTools.Services
 
         public string GetSection()
         {
-            if (OutfitMenuViewModel.gameObject.activeSelf)
-                return OutfitMenuViewModel.CurrentSectionText;
-            else if (TheatricsMenuViewModel.gameObject.activeSelf)
-                return TheatricsMenuViewModel.CurrentSectionText;
-            else if (InterfaceMenuViewModel.gameObject.activeSelf)
-                return InterfaceMenuViewModel.CurrentSectionText;
+            string sect = "";
 
-            return "";
+            if (OutfitMenuViewModel != null && OutfitMenuViewModel.gameObject.activeSelf)
+                sect = OutfitMenuViewModel.CurrentSectionText;
+            else if (TheatricsMenuViewModel != null && TheatricsMenuViewModel.gameObject.activeSelf)
+                sect = TheatricsMenuViewModel.CurrentSectionText;
+            else if (InterfaceMenuViewModel != null && InterfaceMenuViewModel.gameObject.activeSelf)
+                sect = InterfaceMenuViewModel.CurrentSectionText;
+
+            return sect;
         }
 
 
@@ -627,10 +641,11 @@ namespace FGTools.Services
             }
         }
 
-        static void ResolveSection<TItemDefinition, TItemDto>(CustomiserSectionBase<TItemDefinition, TItemDto> sect, bool valid)
+        void ResolveSection<TItemDefinition, TItemDto>(CustomiserSectionBase<TItemDefinition, TItemDto> sect, bool valid)
         {
             var canvas = sect.gameObject.GetComponent<CanvasGroup>();
             sect._customiserMenu.transform.GetChild(2).gameObject.SetActive(valid);
+            sect._customiserMenu.CurrentSectionText = GetSection();
 
             if (valid)
             {

@@ -9,21 +9,20 @@ using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
 using HarmonyLib;
+using Mediatonic.Tools.MVVM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using static FGTools.Config.Config;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.HarmonyPatches
 {
-    public class LockerHarmony : FGTBase
+    internal class LockerHarmony : FGTBase
     {
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.DoExitSubMenu)), HarmonyPostfix]
         static void DoExitSubMenu(CustomiserScreenViewModel __instance, bool keepChanges)
@@ -66,16 +65,23 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserSectionBase<ColourOption, ColourSchemeDto>), nameof(CustomiserSectionBase<,>.UpdateItemInfo)), HarmonyPostfix]
         static void UpdateItemInfo(CustomiserSectionBase<ColourOption, ColourSchemeDto> __instance, IItemDefinition item)
         {
+            if (item == null) return;
+
             if (ShowItemIds.Value)
                 __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
         }
         
-        //[HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.CurrentSectionText), MethodType.Setter), HarmonyPrefix]
-        //static bool MoveToPagePost(CustomiserMenuViewModel __instance, ref string value)
-        //{
-        //    value = $"{CMSLoader.Instance._localisedStrings.GetString(value)}\n<size=50%>test</size>";
-        //    return true;
-        //}
+        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.CurrentSectionText), MethodType.Setter), HarmonyPostfix]
+        static void CurrentSectionText(CustomiserMenuViewModel __instance, ref string value)
+        {
+            ResolveSectionText(__instance);
+        }
+
+        [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.OnEnable)), HarmonyPostfix]
+        static void OnEnable(CustomiserMenuViewModel __instance)
+        {
+            ResolveSectionText(__instance);
+        }
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
         static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Il2CppSystem.Exception error, CustomisationSelections previousSelections, bool isEmotes)
@@ -99,6 +105,14 @@ namespace FGTools.HarmonyPatches
         {
             __instance.HideSpinner();
             return false;
+        }
+
+        static void ResolveSectionText(CustomiserMenuViewModel model)
+        {
+            var service = FGTServiceManager.GetService<CosmeticsService>();
+            var text = model.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault(x => x.name == "Submenu_Text");
+            if (text.TryGetComponent<TextBinding>(out var bind)) GameObject.Destroy(bind);
+            text.GetComponent<TextMeshProUGUI>().SetText($"{CMSLoader.Instance._localisedStrings.GetString(model.CurrentSectionText)}\n<size=50%>{service.GetState()}</size>");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DG.Tweening;
+using FGClient.Customiser;
 using FGTools.Services;
 using System;
 using System.Collections;
@@ -84,6 +85,7 @@ namespace FGTools.Internal.Behaviours
 
             _inputField.onValueChanged.AddListener(new Action<string>((s) => 
             {
+                _service.InputString = s;
                 if (_delay != null) CoroutineRunner.Instance.StopCoroutine(_delay);
                 _delay = CoroutineRunner.Instance.StartCoroutine(DelayedSearch(s).WrapToIl2Cpp());
             }));
@@ -126,6 +128,7 @@ namespace FGTools.Internal.Behaviours
         {
             _debugService.CanTriggerDebug = true;
             _inputField.text = "";
+            _service.InputString = "";
             _rectTransform.DOKill();
         }
     }
