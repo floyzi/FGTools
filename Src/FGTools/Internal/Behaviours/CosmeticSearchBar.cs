@@ -21,8 +21,11 @@ namespace FGTools.Internal.Behaviours
         DebugDisplayService _debugService;
         Vector2 _initPos;
         RectTransform _rectTransform;
+        CanvasGroup _group;
         void Awake()
         {
+            _group = gameObject.AddComponent<CanvasGroup>();
+
             _rectTransform = GetComponent<RectTransform>();
             _initPos = _rectTransform.anchoredPosition;
 
@@ -34,7 +37,7 @@ namespace FGTools.Internal.Behaviours
 
             Reset();
 
-            //too lazy to figure out why it does not work properly natively (
+            //too lazy to figure out why it does not work properly native way
             //this works just fine so why even bother
             tween.OnMouseHover = new Action<bool>((s) =>
             {
@@ -101,6 +104,20 @@ namespace FGTools.Internal.Behaviours
         void OnEnable()
         {
             Reset();
+
+            if (!Config.Config.ShowSearchInLocker.Value)
+            {
+                _group.interactable = false;
+                _group.alpha = 0f;
+                _group.blocksRaycasts = false;
+            }
+            else
+            {
+                _group.interactable = true;
+                _group.alpha = 1f;
+                _group.blocksRaycasts = true;
+            }
+
             _rectTransform.anchoredPosition = _initPos + Vector2.up * 80f;
             _rectTransform.DOAnchorPos(new(_rectTransform.anchoredPosition.x, _initPos.y), 0.2f);
         }
