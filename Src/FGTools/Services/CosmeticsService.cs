@@ -903,10 +903,15 @@ namespace FGTools.Services
                 var item = getItm(res) as ItemDefinitionSO;
                 var potentialCostume = item as CostumeOption;
 
-                var good = !string.IsNullOrEmpty(term) && item.DisplayName != null && (item.DisplayName.ToUpper().Contains(term) || item.ItemId.ToUpper().Contains(term)) && ids.Contains(item._itemId.ToLower());
+                var good =
+                    !string.IsNullOrEmpty(term) &&
+                    item.DisplayName != null && 
+                    (item.DisplayName.Contains(term, Il2CppSystem.StringComparison.CurrentCultureIgnoreCase) || 
+                    (AllowSearchById.Value && item.ItemId.Contains(term, Il2CppSystem.StringComparison.CurrentCultureIgnoreCase))) && 
+                    ids.Contains(item._itemId.ToLower());
 
-                if (!good)
-                    continue;
+
+                if (!good) continue;
 
                 if (potentialCostume == null)
                 {
