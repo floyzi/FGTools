@@ -1,5 +1,6 @@
 ﻿using FallGuys.Player.Protocol.Client.Cosmetics;
 using FG.Common;
+using FG.Common.CMS;
 using FGClient;
 using FGClient.Customiser;
 using FGClient.UI;
@@ -63,6 +64,13 @@ namespace FGTools.HarmonyPatches
             if (ShowItemIds.Value)
                 __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
         }
+
+        //[HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.CurrentSectionText), MethodType.Setter), HarmonyPrefix]
+        //static bool MoveToPagePost(CustomiserMenuViewModel __instance, ref string value)
+        //{
+        //    value = $"{CMSLoader.Instance._localisedStrings.GetString(value)}\n<size=50%>test</size>";
+        //    return true;
+        //}
 
         [HarmonyPatch(typeof(CustomiserScreenViewModel), nameof(CustomiserScreenViewModel.HandleConfigureRequestFailed)), HarmonyPrefix]
         static bool HandleConfigureRequestFailed(CustomiserScreenViewModel __instance, Il2CppSystem.Exception error, CustomisationSelections previousSelections, bool isEmotes)
