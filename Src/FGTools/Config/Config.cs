@@ -34,6 +34,7 @@ namespace FGTools.Config
         const string SPSect = "SPEEDRUNNING";
         const string PWSect = "POWERUP SETTINGS";
         const string FGCSect = "FG CREATIVE";
+        const string LockerSect = "LOCKER";
 
         public enum Watermark
         {
@@ -187,6 +188,11 @@ namespace FGTools.Config
         //SOURCES
         public static ConfigEntry<MirrorType> ContentMirror { get; set; }
         public static ConfigEntry<string> ContentSourceOverride { get; set; }
+
+        //LOCKER
+        public static ConfigEntry<bool> ShowSearchInLocker { get; set; }
+        public static ConfigEntry<bool> AllowSearchById { get; set; }
+        public static ConfigEntry<bool> ShowItemIds { get; set; }
 
         static Dictionary<string, string> _cfgDescs = [];
 
@@ -426,8 +432,14 @@ namespace FGTools.Config
             #endregion
 
             #region MIRRORS
-            ContentMirror = ConfigFile.Bind(FGCSect, "Download Source", MirrorType.Auto, GetDesc("download_mirror"));
-            ContentSourceOverride = ConfigFile.Bind(FGCSect, "Download Source Override", string.Empty, GetDesc("download_mirror_override"));
+            ContentMirror = ConfigFile.Bind(OptionsSect, "Download Source", MirrorType.Auto, GetDesc("download_mirror"));
+            ContentSourceOverride = ConfigFile.Bind(OptionsSect, "Download Source Override", string.Empty, GetDesc("download_mirror_override"));
+            #endregion
+
+            #region LOCKER
+            ShowSearchInLocker = ConfigFile.Bind(LockerSect, "Show Search Bar", true, GetDesc("locker_search_bar"));
+            AllowSearchById = ConfigFile.Bind(LockerSect, "Allow Search Via ID", true, GetDesc("locker_id_search"));
+            ShowItemIds = ConfigFile.Bind(LockerSect, "Show Item IDs", true, GetDesc("locker_item_ids"));
             #endregion
         }
 

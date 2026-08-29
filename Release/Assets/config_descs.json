@@ -53,5 +53,8 @@
     "download_mirror": "Source that will be used to fetch FGTools content, highly recommended to keep it on \"Auto\", some sources may have older content version",
     "download_mirror_override": "Custom source that will be used for content fetcheing, when set \"Download Source\" setting will be ignored, keep it blank unless you know what you're doing",
     "speedrun_background_timer": "If enabled, speedrun timer will be paused when app is not in focus",
-    "fast_load": "If enabled rounds loaded via round loader will automatically skip intro and countdown"
+    "fast_load": "If enabled rounds loaded via round loader will automatically skip intro and countdown",
+    "locker_search_bar": "If enabled a search bar will be shown in locker",
+    "locker_id_search": "If enabled searching will also cover item IDs",
+    "locker_item_ids": "If enabled an item ID will be shown below it's name in locker"
 }
