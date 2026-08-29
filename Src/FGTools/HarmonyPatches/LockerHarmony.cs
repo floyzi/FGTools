@@ -47,24 +47,29 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPrefix]
         static bool MoveToPagePref(CustomiserMenuViewModel __instance, int pageIndex)
         {
-            FGTServiceManager.GetService<CosmeticsService>().ResolveSections();
+            var service = FGTServiceManager.GetService<CosmeticsService>();
+            service.PreviousSection = __instance.CurrentSectionText;
+            service.ResolveSections();
             return true;
         }
 
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
         static void MoveToPagePost(CustomiserMenuViewModel __instance, int pageIndex)
         {
-            FGTServiceManager.GetService<CosmeticsService>().ResumeSearch();
+            var service = FGTServiceManager.GetService<CosmeticsService>();
+            service.CurrentSection = __instance.CurrentSectionText;
+            if (service.CurrentSection == service.PreviousSection) return;
+            service.ResumeSearch();
         }
 
         //this affects all CustomiserSectionBase<,> implementations, not only colors section
         [HarmonyPatch(typeof(CustomiserSectionBase<ColourOption, ColourSchemeDto>), nameof(CustomiserSectionBase<,>.UpdateItemInfo)), HarmonyPostfix]
-        static void MoveToPagePost(CustomiserSectionBase<ColourOption, ColourSchemeDto> __instance, IItemDefinition item)
+        static void UpdateItemInfo(CustomiserSectionBase<ColourOption, ColourSchemeDto> __instance, IItemDefinition item)
         {
             if (ShowItemIds.Value)
                 __instance._customiserMenu.SelectedText = $"{item.DisplayName}\n<size=50%>{item.ItemId}</size>";
         }
-
+        
         //[HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.CurrentSectionText), MethodType.Setter), HarmonyPrefix]
         //static bool MoveToPagePost(CustomiserMenuViewModel __instance, ref string value)
         //{
