@@ -241,6 +241,8 @@ namespace FGTools.Services
 
         public void UpdateTimer(bool debug)
         {
+            if (_currentRun == null) return;
+
             if (SpeedrunState == RunState.Running && !_restartButton.gameObject.activeSelf)
                 _restartButton.gameObject.SetActive(true);
 
@@ -250,9 +252,9 @@ namespace FGTools.Services
                 _currentRun.RunningTime += Time.deltaTime;
 
             if (SpeedrunState != RunState.Respawned)
-                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(_currentRun.RunningTime, true)}"); } catch { }
+                try { _lapTimeText.GetComponent<TextMeshProUGUI>()?.SetText($"{ReturnTimeAsString(_currentRun.RunningTime, true)}"); } catch { }
             else
-                try { _lapTimeText.GetComponent<TextMeshProUGUI>().SetText($"{ReturnTimeAsString(0, true)}"); } catch { }
+                try { _lapTimeText.GetComponent<TextMeshProUGUI>()?.SetText($"{ReturnTimeAsString(0, true)}"); } catch { }
 
         }
 

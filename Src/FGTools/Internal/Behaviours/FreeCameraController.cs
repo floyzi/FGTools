@@ -149,7 +149,7 @@ namespace FGTools.Internal.Behaviours
                 enterFreeCam = false;
                 if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
                 {
-                    UIM.SwitchToState(InGameUiManager.InGameState.Playing);
+                    CGM._inGameUiManager.SwitchToState(InGameUiManager.InGameState.Playing);
                     RewiredManager.Instance.EnableMap(0, 0);
                     FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(true);
                 }
@@ -181,7 +181,7 @@ namespace FGTools.Internal.Behaviours
             CAM?.transform.position = lastCamPos;
             if (StateManager.FGTCurrentState != FGTStateManager.ToolsState.InCreative)
             {
-                UIM.SwitchToState(InGameUiManager.InGameState.Banners);
+                CGM._inGameUiManager.SwitchToState(InGameUiManager.InGameState.Banners);
                 RewiredManager.Instance.DisableMap(0, 0);
                 FGTServiceManager.Instance.GetService<SpeedrunService>().TriggerTimer(false);
             }

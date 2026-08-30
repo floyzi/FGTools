@@ -52,9 +52,6 @@ namespace FGTools.States.Logic
         internal FGTState PreviousState;
         internal UltimatePartyState ExploreState;
         internal ShowState ShowState;
-        internal static PlayerTeamManager PTM => CGM._playerTeamManager;
-        internal static InGameUiManager UIM => CGM._inGameUiManager;
-        internal StateGameLoading GameLoading;
 
         internal Round CurrentRound;
         internal Round PreviousRound;

@@ -202,7 +202,7 @@ namespace FGTools.Services
                 }
             }
 
-            GUI.Label(new Rect(Screen.width - _width + 10, 5, _width, Screen.height - 5f), $"{ReturnDebugInfo()}", debugStyle);
+            GUI.Label(new Rect(Screen.width - _width + 10, 5, _width, Screen.height - 5f), $"<size=10>{ReturnDebugInfo()}</size>", debugStyle);
             GUI.Label(new Rect(Screen.width - _width + 10, Screen.height - 65, _width, 45), bottomLine);
 
             float buttonWidth = (_width - 30f) / 2;
