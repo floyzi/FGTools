@@ -5,6 +5,7 @@ using BepInEx.Unity.IL2CPP.Utils.Collections;
 using FG.Common;
 using FGTools.LocalServer;
 using FGTools.Services;
+using FGTools.States;
 using FGTools.States.Logic;
 using Levels.Progression;
 using System;
@@ -15,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
+using static PlatformQuickPlay;
 
 namespace FGTools.Internal.Behaviours.ServerSide
 {
@@ -94,8 +96,23 @@ namespace FGTools.Internal.Behaviours.ServerSide
 
         internal static RespawnLocation GetRespawnLocation()
         {
-            var pos = CGM.GameRules.PickRespawnPosition(0, 0, -1, -1, false);
-            return new(pos.transform.position, pos.transform.rotation);
+            Vector3 pos;
+            Quaternion rot;
+
+            if (Config.Config.RespawnAtCheckpoint.Value)
+            {
+                var point = FGTStateManager.StateManager.GetState<GameplayState>().Spawnpoint;
+                pos = point.transform.position;
+                rot = point.transform.rotation;
+            }
+            else
+            {
+                var point = CGM.GameRules.PickRespawnPosition(0, 0, -1, -1, false);
+                pos = point.transform.position;
+                rot = point.transform.rotation;
+            }
+
+            return new(pos, rot);
         }
 
         void OnDestroy()
