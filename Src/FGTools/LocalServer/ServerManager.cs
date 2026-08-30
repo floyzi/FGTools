@@ -175,7 +175,7 @@ namespace FGTools.LocalServer
             var movableObjects = Resources.FindObjectsOfTypeAll<wle.LevelEditorMovableObject>().Select(obj => obj.gameObject);
             possibleTargets = [.. netObjects, .. movableObjects];
 
-            foreach (GameObject obj in possibleTargets)
+            foreach (var obj in possibleTargets)
             {
                 if (obj.GetComponent<OfflineGrabTargetID>() == null)
                 {
@@ -189,6 +189,17 @@ namespace FGTools.LocalServer
             var ppm = Resources.FindObjectsOfTypeAll<PixelPerfectManager>().FirstOrDefault();
             ppm?.Init();
             ppm?.BeginGame();
+
+            //slop
+            foreach (var movable in Resources.FindObjectsOfTypeAll<COMMON_MovingPlatform>())
+            {
+                if (movable.GetComponent<OfflineGrabTargetID>() == null)
+                {
+                    var targ = movable.gameObject.AddComponent<OfflineGrabTargetID>();
+                    targ._hashID = (uint)Random.Range(10000, 99999);
+                    targ.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+                }
+            }
 
             ScoreZoneManager.NumPlayers = FGTServiceManager.GetService<RoundOptionsService>().GetPlayers();
             foreach (var zone in Resources.FindObjectsOfTypeAll<ScoreZoneManager>())
