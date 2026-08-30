@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using UnityEngine;
+using static FG.Benchmarking.ClientRoundFlow.RoundLoading;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.UI.ReadyPopups;
 using KeyCode = UnityEngine.KeyCode;
@@ -97,6 +98,7 @@ namespace FGTools.Config
         public static ConfigEntry<bool> AllowRPC { get; set; }
         public static ConfigEntry<string> InGameTheme { get; set; }
         public static ConfigEntry<bool> AutoSetPreset { get; set; }
+        public static ConfigEntry<bool> ChangeLoadingScreen { get; set; }
         #endregion
 
         #region HOTKEYS BINDINGS
@@ -216,29 +218,16 @@ namespace FGTools.Config
             LangFileName.SettingChanged += (sender, args) => {
                 //ConfigAction(true);
             };
+
             UseBackupLocale = ConfigFile.Bind(OptionsSect, "Use Backup Localization", false, "Useful for people who translating FGTools to other languages. If enabled localization from server will be bypassed.");
-            //offlineMode = cfg.Bind(optionsSect, "Offline Mode", false, GetDesc("loader01"));
-            //offlineMode.SettingChanged += (sender, args) => {
-            //    if (StateManager.FGTCurrentState == FGTStateEnum.BeforeMenu)
-            //        ConfigAction();
-            //    else
-            //        ConfigAction(true);
-            //};
-            //offlineUsername = cfg.Bind(optionsSect, "Offline Name", "DEFAULT", GetDesc("loader02"));
+
             AllowRPC = ConfigFile.Bind(OptionsSect, "Discord RPC", true, GetDesc("allow_rpc"));
-            AllowRPC.SettingChanged += (sender, args) => {
-                //if (rpcState == FGTRpcState.Disabled)
-                //    rpcState = FGTRpcState.Unknown;
-                //if (AllowRPC.Value)
-                //   ServiceManagerFGT.GetService<DiscordRPCService>().HandleRPCState(FGTRpcState.MenuLoading);
-                //else if (_Discord != null)
-                //{
-                //    _Discord.Dispose();
-                //    _Discord = null;
-                //}
-            };
+
             InGameTheme = ConfigFile.Bind(OptionsSect, "Theme", "DEFAULT", GetDesc("menu_theme"));
+
             AutoSetPreset = ConfigFile.Bind(OptionsSect, "Auto Set Preset", true, GetDesc("auto_preset"));
+
+            ChangeLoadingScreen = ConfigFile.Bind(OptionsSect, "Change Loading Screen", true, GetDesc("fgt_loading_screen"));
             #endregion
 
             LocalizationService.SelectedLocalizeFolder ??= Path.Combine(Launcher.LocalizationDir + LangFileName.Value + "\\");

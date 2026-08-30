@@ -36,7 +36,7 @@
     "speedrun_insta_start": "If enabled, new attempt will instantly start even if you didn't start moving",
     "speedrun_checkpoint_res": "If enabled, you will respawn at checkpoint position instead of spawn position",
     "unknown_2": "If enabled, rounds checkpoints won't affect you",
-    "selected_powerup": "Exploding Rhino power up doesn't work!!",
+    "selected_powerup": "What powerup will you have when using round loader",
     "powerup_ui": "If enabled, Power Up inventory will be visible",
     "inf_powerup": "If enabled, you will have infinite uses of Power Up",
     "powerup_length": "The duration of Power Up",
@@ -56,5 +56,6 @@
     "fast_load": "If enabled rounds loaded via round loader will automatically skip intro and countdown",
     "locker_search_bar": "If enabled a search bar will be shown in locker",
     "locker_id_search": "If enabled searching will also cover item IDs",
-    "locker_item_ids": "If enabled an item ID will be shown below it's name in locker"
+    "locker_item_ids": "If enabled an item ID will be shown below it's name in locker",
+    "fgt_loading_screen": "If enabled Fall Guys loading screens will be replaced with FGTools one"
 }

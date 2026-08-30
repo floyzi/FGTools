@@ -81,6 +81,8 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(LoadingScreenViewModel), nameof(LoadingScreenViewModel.Update)), HarmonyPostfix]
         static void UpdateDisplay(LoadingScreenViewModel __instance)
         {
+            if (!Config.Config.ChangeLoadingScreen.Value) return;
+
             if (File.Exists(Launcher.LoadingScreen) && __instance._loadingScreenImage.sprite.name != Path.GetFileNameWithoutExtension(Launcher.LoadingScreen))
                 __instance._loadingScreenImage.sprite = GetSpriteFromFile(Launcher.LoadingScreen, 1920, 1080);
 
