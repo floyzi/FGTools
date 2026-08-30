@@ -7,14 +7,16 @@
 		<Version>1.5.0-pre5</Version>
 		<AssemblyVersion>1.4.99.4</AssemblyVersion>
 		<FileVersion>1.4.99.4</FileVersion>
+		<Authors>Floyzi</Authors>
+		<PackageProjectUrl>https://github.com/floyzi/FGTools</PackageProjectUrl>
+		<RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+		<Company>Obed Guys Corp.</Company>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>latest</LangVersion>
 		<RestoreAdditionalProjectSources>
 			https://api.nuget.org/v3/index.json; https://nuget.bepinex.dev/v3/index.json; https://nuget.samboy.dev/v3/index.json
 		</RestoreAdditionalProjectSources>
 		<RootNamespace>FGTools</RootNamespace>
-		<Authors>Floyzi</Authors>
-		<PackageProjectUrl>https://github.com/floyzi/FGTools</PackageProjectUrl>
 		<Configurations>DEV;ClosedBeta;PROD</Configurations>
 		<Optimize>True</Optimize>
 	</PropertyGroup>

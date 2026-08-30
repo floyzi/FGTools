@@ -5,8 +5,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<OutputPath>..\..\Output</OutputPath>
+	<OutputPath>..\..\Release</OutputPath>
 	<Description>Crash handler for FGTools</Description>
+	<Authors>Floyzi</Authors>
+	<Company>Obed Guys Corp.</Company>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 </PropertyGroup>
