@@ -367,8 +367,12 @@ Misc/Lib/FallGuys/*
 !Misc/Lib/FallGuys/usage.*
 Release/*dll
 Release/*pdb
+Release/*exe
+Release/*json
 Release/Assets/Lib/*.dll
 Release/Assets/Lib/*.pdb
+Release/Assets/Lib/*.exe
+Release/Assets/Lib/*.json
 Release/Images/*
 !Release/Images/example.*
 [Oo]ld/

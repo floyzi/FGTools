@@ -45,13 +45,13 @@
 		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Midi.dll" />
 		<NAudioCore Include="$(LibsDir)NAudio\NAudio.Wasapi.dll" />
 		<NAudioCore Include="$(LibsDir)NAudio\NAudio.WinMM.dll" />
-
 		<DiscordSDK Include="$(LibsDir)discord_game_sdk.dll" />
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ReleaseDir)" />
 		<Copy SourceFiles="$(OutputPath)$(AssemblyName).pdb" DestinationFolder="$(ReleaseDir)" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+		<Copy SourceFiles="$(OutputPath)$(AssemblyName).deps.json" DestinationFolder="$(ReleaseDir)" Condition="Exists('$(OutputPath)$(AssemblyName).deps.json')" />
 		<Copy SourceFiles="$(OutputPath)discord_api.dll" DestinationFolder="$(OutLibsDir)" />
 		<Copy SourceFiles="$(OutputPath)discord_api.pdb" DestinationFolder="$(OutLibsDir)" Condition="Exists('$(OutputPath)discord_api.pdb')" />
 		<Copy SourceFiles="@(NAudioCore)" DestinationFolder="$(OutLibsDir)" SkipUnchangedFiles="true" />
