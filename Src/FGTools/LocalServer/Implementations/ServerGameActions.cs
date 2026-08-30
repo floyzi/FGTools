@@ -64,6 +64,8 @@ namespace FGTools.LocalServer.Implementations
             var playerData = ServerManager.CGM.GetPlayerData(playerNetObject.NetID);
             var actualFinal = ServerManager.CGM._round.GameRules.IsFinalRound && isNotInSpeedrun;
 
+            Console.WriteLine($"{isNotInSpeedrun} - {actualFinal}");
+
             if (playerData.completedLevel)
             {
                 FLZ_Extensions.FGTLog(LogLevel.Info, "MarkPlayerAsSuccessful", $"Player already qualified.");
@@ -85,15 +87,16 @@ namespace FGTools.LocalServer.Implementations
                 extraDisplayInfo = default
             });
 
-            if (isNotInSpeedrun)
-                ServerManager.CGM._qualifiedPlayerCount++;
-
+            ServerManager.CGM._qualifiedPlayerCount++;
             ServerManager.CGM._clientPlayerManager.GetClientPlayerDataForNetId(playerNetObject.NetID).completedLevel = true;
 
             var roundEndCondition = ServerManager.CGM.QualifiedPlayerCount >= ServerManager.CGM.RequiredQualifiedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded;
-            
+            Console.WriteLine($"{roundEndCondition}");
+
             if (roundEndCondition && actualFinal)
+            {
                 LocalServerService.ServerManager.EndRound(true);
+            }
             else if (!actualFinal)
             {
                 LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerPlayerProgress()
@@ -111,14 +114,12 @@ namespace FGTools.LocalServer.Implementations
                 NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
             });
 
-            if (isNotInSpeedrun)
-            {
-                if (roundEndCondition)
-                    LocalServerService.ServerManager.EndRound(true);
+            if (roundEndCondition)
+                LocalServerService.ServerManager.EndRound(true);
 
-                if (shouldDespawn)
-                    RequestDestroy(playerNetObject);
-            }
+            if (shouldDespawn)
+                RequestDestroy(playerNetObject);
+
         }
 
         void MarkTeamAsSuccessful(int teamId, bool shouldDespawn)

@@ -84,7 +84,6 @@ namespace FGTools.Services
         SpeedrunSaveJson _latestSave;
         Speedrun _currentRun;
         readonly List<Speedrun> _runsHistory = [];
-        int _amountOfSpawns = 0;
 
         public override void RegisterService()
         {
@@ -243,7 +242,7 @@ namespace FGTools.Services
         {
             if (_currentRun == null) return;
 
-            if (SpeedrunState == RunState.Running && !_restartButton.gameObject.activeSelf)
+            if (SpeedrunState == RunState.Running && _restartButton != null && !_restartButton.gameObject.activeSelf)
                 _restartButton.gameObject.SetActive(true);
 
             if (!debug)
@@ -365,7 +364,6 @@ namespace FGTools.Services
                 case RunState.Respawned:
                     if (prevState == RunState.Running)
                         EndCurrentRun();
-                    _amountOfSpawns++;
                     TriggerTimer(true);
                     if (FMODTool.TryGetEventInstance(SNAPSHOT_KEY, out var evt))
                         evt.start();

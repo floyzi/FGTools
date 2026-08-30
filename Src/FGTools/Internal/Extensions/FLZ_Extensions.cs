@@ -136,7 +136,7 @@ namespace FGTools.Internal.Extensions
         internal static void DoModal(FLZ_ModalData data)
         {
             if (PopupManager.Instance.HasActivePopup)
-                PopupManager.Instance.ClearActivePopup();
+                PopupManager.Instance.HideActivePopup();
 
             if (data.HideGUIType > 0)
             {

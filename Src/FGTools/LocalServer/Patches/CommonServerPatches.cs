@@ -166,7 +166,6 @@ namespace FGTools.LocalServer.Patches
         [HarmonyPatch(typeof(BannersDefault), nameof(BannersDefault.CreateMessageComplete)), HarmonyPrefix]
         static bool CreateMessageComplete(BannersDefault __instance)
         {
-            Console.WriteLine(3434);
             AudioManager.PlayGameplayEndAudio(true);
             __instance.State = BannersDefault.BannerActive.Complete;
             var speedrun = Config.Config.SpeedrunMode.Value && !FGTServiceManager.GetService<SpeedrunService>().IsSepeedrunsDisabled;
@@ -320,7 +319,7 @@ namespace FGTools.LocalServer.Patches
                 if (StateManager.ShowState == null)
                 {
                     if (speedrun)
-                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunRestart();
+                        FGTServiceManager.GetService<SpeedrunService>().TriggerSpeedrunContinueModal();
                     else
                     {
                         if (StateManager.ExploreState == null)

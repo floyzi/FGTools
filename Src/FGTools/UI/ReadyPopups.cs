@@ -4,6 +4,7 @@ using FG.Common;
 using FG.Common.Audio;
 using FGClient;
 using FGClient.UI;
+using FGTools.LocalServer;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.States.Logic;
@@ -12,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static FGTools.Config.Config;
@@ -155,7 +157,29 @@ namespace FGTools.UI
             {
                 if (wasok)
                 {
+                    var servUpdateMngr = Resources.FindObjectsOfTypeAll<ServerPlayerUpdateManager>().FirstOrDefault();
+                    servUpdateMngr.RegisterPlayer(FGBehaviour.FGCC, true);
+
+                    CGM.SetClockPaused(false);
+                    CGM.SetPhysicsPaused(false);
+                    CGM._roundResults.Clear();
+
+                    foreach (var crown in Resources.FindObjectsOfTypeAll<COMMON_GrabToQualify>())
+                    {
+                        crown._charactersAchievingObjective.Clear();
+                        crown.GetComponent<Animation>()?.enabled = true;
+                    }
+
+                    LocalServerService.ServerManager.HandleServerState(ServerManager.ServerState.GameInProgress); 
+
+                    LocalServerService.ServerManager.BroadcastMessage(new GameMessageServerQualificationProgressUpdated()
+                    {
+                        NumQualifiedPlayers = 0,
+                        NumEliminatedPlayers = 0,
+                    });
+
                     FGTServiceManager.GetService<SpeedrunService>().EndCurrentRun();
+
                     if (SceneManager.GetActiveScene().name == CGM._round.GetSceneName() && !OldSPContinue.Value)
                         FGBehaviour.ReturnToStart();
                     else

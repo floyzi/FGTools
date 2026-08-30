@@ -473,7 +473,7 @@ namespace FGTools.LocalServer
             ServerManager.AddComponent<ServerBehaviour>();
         }
 
-        void HandleServerState(ServerState state)
+        internal void HandleServerState(ServerState state)
         {
             ServerLog("HandleServerState", $"Server state change: {State} --> {state}");
             State = state;
@@ -520,7 +520,7 @@ namespace FGTools.LocalServer
 
                 var ogt = gtq.gameObject.AddComponent<OfflineGrabTargetID>();
                 ogt._hashID = (uint)Random.Range(10000, 99999);
-                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab;
             }
         }
 
@@ -1388,7 +1388,7 @@ namespace FGTools.LocalServer
 
                 var ogt = gtq.gameObject.AddComponent<OfflineGrabTargetID>();
                 ogt._hashID = (uint)Random.Range(10000, 99999);
-                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab | OfflineGrabTargetID.OfflineGrabTargetIDType.Mantle;
+                ogt.Type = OfflineGrabTargetID.OfflineGrabTargetIDType.Grab;
                 gtq.enabled = true;
             }
         }
