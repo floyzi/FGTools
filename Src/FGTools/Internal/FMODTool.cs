@@ -36,6 +36,7 @@ namespace FGTools.Internal
         internal static void UnloadBank(string bankName)
         {
             var existing = FGTStateManager.Instance.gameObject.GetComponent<SoundBankLoader>();
+
             if (existing != null)
             {
                 GameObject.DestroyImmediate(existing?._soundbanksToLoad);
@@ -46,6 +47,7 @@ namespace FGTools.Internal
             l._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
             l._soundbanksToLoad.SoundBanksToLoad = new([bankName]);
             l.UnloadBanks();
+
             GameObject.DestroyImmediate(l._soundbanksToLoad);
             GameObject.DestroyImmediate(l);
         }
@@ -53,6 +55,7 @@ namespace FGTools.Internal
         internal static void LoadBank(string bankName) 
         {
             var existing = FGTStateManager.Instance.gameObject.GetComponent<SoundBankLoader>();
+
             if (existing != null)
             {
                 GameObject.DestroyImmediate(existing?._soundbanksToLoad);
@@ -63,6 +66,7 @@ namespace FGTools.Internal
             l._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
             l._soundbanksToLoad.SoundBanksToLoad = new([bankName]);
             l.LoadBanks();
+
             GameObject.DestroyImmediate(l._soundbanksToLoad);
             GameObject.DestroyImmediate(l);
         }
@@ -72,7 +76,6 @@ namespace FGTools.Internal
             foreach (var evt in ValidEvents)
             {
                 evt.Value.Event.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-              
             }
          
             ValidEvents.Clear();

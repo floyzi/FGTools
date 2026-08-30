@@ -36,7 +36,7 @@
     "speedrun_insta_start": "If enabled, new attempt will instantly start even if you didn't start moving",
     "speedrun_checkpoint_res": "If enabled, you will respawn at checkpoint position instead of spawn position",
     "unknown_2": "If enabled, rounds checkpoints won't affect you",
-    "selected_powerup": "What powerup will you have when using round loader",
+    "selected_powerup": "What powerup will you have when using round loader (exploding rhino temporary disabled)",
     "powerup_ui": "If enabled, Power Up inventory will be visible",
     "inf_powerup": "If enabled, you will have infinite uses of Power Up",
     "powerup_length": "The duration of Power Up",

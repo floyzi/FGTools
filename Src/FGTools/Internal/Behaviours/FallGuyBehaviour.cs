@@ -41,7 +41,6 @@ namespace FGTools.Internal.Behaviours
         internal GameplayState CurrentGPState => StateManager.GetState<GameplayState>();
         internal int PlayerTeamId = -1;
         internal bool IsInPseudoZone = false;
-        internal static int Rand = -1;
 
         float _nextRespawn;
         float _timeLeft = FGTServiceManager.Instance.GetService<RoundOptionsService>().ReturnLatestOptions().TimeLimitLength;
@@ -58,9 +57,6 @@ namespace FGTools.Internal.Behaviours
 
         void PreInit()
         {
-            if (Rand != -1)
-                Rand = -1;
-
             FGCC = gameObject.GetComponent<FallGuysCharacterController>();
             FreeCamera = gameObject.AddComponent<FreeCameraController>();
             _gamemode = CGM._round.Archetype.Id.Split('_')[1];
@@ -74,12 +70,8 @@ namespace FGTools.Internal.Behaviours
             FGTLog(LogLevel.Info, GetType(), $"Successful pre-init | Gamemode = {_gamemode}");
         }
 
-        void PreloadPowAudio(SelectedPowerup power)
+        static void PreloadPowAudio(SelectedPowerup power)
         {
-            var ldr = gameObject.AddComponent<SoundBankLoader>();
-            ldr._soundbanksToLoad = ScriptableObject.CreateInstance<SceneSoundBanksSO>();
-            ldr._soundbanksToLoad.SoundBanksToLoad = new(["BNK_SFX_PowerUp_RollingBall"]);
-
             switch (power)
             {
                 case SelectedPowerup.RollingBall:
@@ -101,12 +93,12 @@ namespace FGTools.Internal.Behaviours
         {
             var motorAgent = GetComponent<MotorAgent>();
 
-            if (power == SelectedPowerup.None)
+            if (power == SelectedPowerup.None || power == SelectedPowerup.ExplodingRhino) //todo: rhino crashes the game whed used, needs fix!1
                 return;
 
             var powerupFunc = motorAgent.GetMotorFunction<MotorFunctionPowerup>();
             var targetPowerup = "PowerupSO Rolling Ball";
-            var GPIV = Resources.FindObjectsOfTypeAll<GameplayPowerupInventoryViewModel>().FirstOrDefault();
+            var inventory = Resources.FindObjectsOfTypeAll<GameplayPowerupInventoryViewModel>().FirstOrDefault();
 
             if (powerupFunc == null)
             {
@@ -139,12 +131,14 @@ namespace FGTools.Internal.Behaviours
 
             powerupFunc.EquippedPowerupData.Init(pow, PowerupAmount.Value, PowerupLength.Value, InfPowerups.Value);
 
-            if (PowerupInventory.Value && GPIV != null && GPIV._character == null)
+            if (PowerupInventory.Value && inventory != null && inventory._character == null)
             {
-                GPIV.ResetInventory();
-                GPIV._character = FGCC;
-                GPIV.OnCharacterControllerInitialized();
-                GPIV.gameObject.SetActive(true);
+                inventory.ResetInventory();
+                inventory._character = FGCC;
+                inventory.OnCharacterControllerInitialized();
+                inventory.gameObject.SetActive(true);
+                inventory.UpdateUI(powerupFunc.EquippedPowerupData, pow);
+                PreloadPowAudio(Powerup.Value);
             }
         }
 

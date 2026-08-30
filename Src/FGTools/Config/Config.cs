@@ -149,10 +149,8 @@ namespace FGTools.Config
         public static ConfigEntry<bool> GravZoneEffect { get; set; }
         public static ConfigEntry<bool> InvisibleCheckpoint { get; set; }
         public static ConfigEntry<bool> RealHardMode { get; set; }
-        public static ConfigEntry<float> RCDelay { get; set; }
         public static ConfigEntry<float> SkipIntroTime { get; set; }
         public static ConfigEntry<bool> ColliderView { get; set; }
-        public static ConfigEntry<bool> RandomizeRings { get; set; }
         public static ConfigEntry<float> CameraDistance { get; set; }
         public static ConfigEntry<bool> RandomMusic { get; set; }
         public static ConfigEntry<bool> FastLoad { get; set; }
@@ -310,8 +308,6 @@ namespace FGTools.Config
             };
             RealHardMode = ConfigFile.Bind(GPSect, "Hard Mode", false, GetDesc("hard_mode"));
 
-            RCDelay = ConfigFile.Bind(GPSect, "Delay", 0.5f, GetDesc("cr_delay"));
-
             SkipIntroTime = ConfigFile.Bind(GPSect, "Skip Intro Time", 0.5f, GetDesc("skip_intro_time"));
 
             RoundsFilter = ConfigFile.Bind(GPSect, "Random Rounds Filter", RandomRoundsFilter.All, GetDesc("round_filter"));
@@ -319,11 +315,6 @@ namespace FGTools.Config
             ColliderView = ConfigFile.Bind(GPSect, "Collider View", false, GetDesc("collider_view"));
             ColliderView.SettingChanged += (sender, args) => {
                 UpdateColliderView();
-            };
-
-            RandomizeRings = ConfigFile.Bind(GPSect, "Random Roll Levels Rings", false, GetDesc("random_rings"));
-            RandomizeRings.SettingChanged += (sender, args) => {
-                ConfigAction();
             };
 
             CameraDistance = ConfigFile.Bind(GPSect, "Camera Distance", 0f, GetDesc("custom_camera_distance"));
