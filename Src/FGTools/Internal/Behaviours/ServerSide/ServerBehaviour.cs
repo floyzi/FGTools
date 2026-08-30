@@ -1,22 +1,11 @@
 ﻿extern alias wle;
-
-using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
 using FG.Common;
-using FGTools.LocalServer;
 using FGTools.Services;
 using FGTools.States;
 using FGTools.States.Logic;
 using Levels.Progression;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static PlatformQuickPlay;
 
 namespace FGTools.Internal.Behaviours.ServerSide
 {

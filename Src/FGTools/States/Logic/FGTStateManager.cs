@@ -1,5 +1,6 @@
 ﻿extern alias wle;
 
+using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using Events;
@@ -169,7 +170,7 @@ namespace FGTools.States.Logic
             else
             {
                 InGameTheme.Value = LocalizedStr("gui_default");
-                FGTLog(LogLevel.Warning, base.GetType(), "Theme files are missing or not set yet, fallback to default.");
+                FGTLog(LogLevel.Info, base.GetType(), "Theme files are missing or not set yet, fallback to default.");
             }
 
             if (File.Exists(Launcher.BundlePath))
@@ -218,6 +219,20 @@ namespace FGTools.States.Logic
                 IsBackground = true
             };
             _memoryThread.Start();
+
+            if (File.Exists(Launcher.Crashpad))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = Launcher.Crashpad,
+                    Arguments = $"\"{Environment.ProcessId.ToString()}\" \"{Paths.BepInExRootPath}\"",
+                    WorkingDirectory = Paths.GameRootPath,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+            }
+            else
+                FGTLog(LogLevel.Warning, GetType(), "Couldn't locate crashpad!");
 
             ForceSetState(new MenuState());
         }

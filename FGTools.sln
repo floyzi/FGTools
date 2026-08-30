@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.9.34607.119
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12120.281 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FGTools", "Src\FGTools\FGTools.csproj", "{3B9D9D58-A59B-421F-8BC6-FB5E184C4AAF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "discord_api", "Src\discord_api\discord_api.csproj", "{AABA2CCF-8806-46CC-A8CB-083236BD5FA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FGToolsCrashpad", "Src\FGToolsCrashpad\FGToolsCrashpad.csproj", "{BA78BCD2-6A78-CD6E-B754-105104A80C53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +28,12 @@ Global
 		{AABA2CCF-8806-46CC-A8CB-083236BD5FA1}.Dev|Any CPU.Build.0 = Debug|Any CPU
 		{AABA2CCF-8806-46CC-A8CB-083236BD5FA1}.Prod|Any CPU.ActiveCfg = Release|Any CPU
 		{AABA2CCF-8806-46CC-A8CB-083236BD5FA1}.Prod|Any CPU.Build.0 = Release|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.ClosedBeta|Any CPU.ActiveCfg = Release|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.ClosedBeta|Any CPU.Build.0 = Release|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.Dev|Any CPU.ActiveCfg = Release|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.Dev|Any CPU.Build.0 = Release|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.Prod|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA78BCD2-6A78-CD6E-B754-105104A80C53}.Prod|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

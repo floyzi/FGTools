@@ -155,6 +155,7 @@ namespace FGTools
         public static string ExploreBackupV2 => Path.Combine(AssetsDir, "explore-codes_V2.json");
         public static string Splash => Path.Combine(AssetsDir, "splash.png");
         public static string LibDir => Path.Combine(AssetsDir, "Lib");
+        public static string Crashpad => Path.Combine(CommonDir, "FGToolsCrashpad.exe");
         #endregion
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
