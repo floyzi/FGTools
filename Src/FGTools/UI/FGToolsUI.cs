@@ -356,7 +356,7 @@ namespace FGTools.UI
         void UpdateTitle(string title)
         {
             if (!string.IsNullOrEmpty(title))
-                TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} > {title}";
+                TitleBar.transform.GetChild(0).GetComponent<Text>().text = $"{Launcher.DisplayName} V{FGToolsBuildDetails.Version} > {title}";
         }
 
         internal void GoToTab(Tab selectedTab, SubLevel tabLevel, bool shouldChangeTitle = true, bool silent = false)

@@ -593,8 +593,8 @@ namespace FGTools.LocalServer
 
             FGTLog(LogLevel.Info, GetType(), $"Processing connect request from {msg.NetworkID}");
 
-            var servVer = new System.Version(Launcher.BuildInfo.Version);
-            var clientVer = new System.Version(msg.Version);
+            var servVer = new System.Version(FGToolsBuildDetails.AssemblyVersion);
+            var clientVer = new System.Version(msg.AssemblyVersion);
             var conn = NetworkManager.GetConnectionForNetworkID(msg.NetworkID);
 
             if (conn == null)
@@ -639,7 +639,7 @@ namespace FGTools.LocalServer
                 return;
             }
 
-            if (clientVer == servVer && msg.ID != Launcher.BuildInfo.GUID)
+            if (clientVer == servVer && msg.ID != FGToolsBuildDetails.BuildId)
             {
                 FGTLog(LogLevel.Warning, GetType(), $"Server and client running on a different version (build ID doesn't match), disconnecting...");
 

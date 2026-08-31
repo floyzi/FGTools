@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
-		<title>FGTools</title>
-		<AssemblyName>FGTools</AssemblyName>
+		<ProductName>FGTools</ProductName>
+		<AssemblyName>$(ProductName)</AssemblyName>
 		<Description>Fall Guys level loader by @floyzi102 on Twitter</Description>
+		<BepInExId>flz.fgt</BepInExId>
 		<Version>1.5.0-pre5</Version>
 		<AssemblyVersion>1.4.99.4</AssemblyVersion>
-		<FileVersion>1.4.99.4</FileVersion>
+		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Authors>Floyzi</Authors>
 		<PackageProjectUrl>https://github.com/floyzi/FGTools</PackageProjectUrl>
 		<RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
@@ -621,6 +622,11 @@
 		  <HintPath>..\..\Misc\Lib\FallGuys\Wushu.LevelEditor.Runtime.dll</HintPath>
 		  <Aliases>wle</Aliases>
 		</Reference>
+	</ItemGroup>
+
+	<Import Project="FLZ_BuildTargets.targets" />
+	<ItemGroup>
+		<None Update="FLZ_BuildTargets.targets" Visible="false" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -22,61 +22,10 @@ using static FGTools.Config.Config;
 
 namespace FGTools
 {
-    [BepInPlugin(GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin(FGToolsBuildDetails.BepInExID, FGToolsBuildDetails.Name, FGToolsBuildDetails.Version)]
     [BepInIncompatibility("flz.fg.desktop.cheats")]
     public class Launcher : BasePlugin
     {
-        public readonly struct BuildDetails
-        {
-            public readonly string UI_Version;
-            public readonly string Config;
-            public readonly string Commit;
-            public readonly Guid GUID;
-            public readonly DateTime BuildDate;
-            public readonly string[] Defines;
-            public readonly string Version;
-
-            public BuildDetails(string config, string ui_version, string file_version, string commit, string date, string guid, string defines)
-            {
-                Config = config;
-                Commit = commit;
-                UI_Version = ui_version;
-                Version = file_version;
-
-                if (long.TryParse(date, out long unixTimestamp))
-                    BuildDate = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).UtcDateTime;
-
-                GUID = Guid.Parse(guid);
-
-#if DEV
-                var except = new HashSet<string>() { "TRACE", "NET", "NET6_0", "NETCOREAPP", "DEV" };
-                Defines = [.. defines.Split(';', StringSplitOptions.RemoveEmptyEntries).Where(d => !except.Contains(d))];
-#endif
-            }
-
-            public override string ToString()
-            {
-                return $"Env: {Config} Commit: #{GetCommit()} Build Date: {BuildDate}";
-            }
-
-            internal string GetCommit()
-            {
-                return Commit.Length > 12 ? Commit[..12] : Commit;
-            }
-
-            internal string GetDefines()
-            {
-#if DEV
-                if (Defines == null)
-                    return "?";
-
-                return string.Join(", ", Defines);
-#else
-                return "?";
-#endif
-            }
-        }
-
         internal readonly static Harmony GlobalHarmony = new(HarmonyGUID);
         internal readonly static Harmony OfflineHarmony = new(OfflineHarmonyGUID);
         internal readonly static Harmony FGCHarmony = new(FraggleHarmonyGUID);
@@ -84,8 +33,8 @@ namespace FGTools
         internal readonly static Harmony ThemesHarmony = new(ThemesHarmonyGUID);
         internal readonly static Harmony ServerHarmony = new(ServerHarmonyGUID);
 
-        internal static BuildDetails BuildInfo;
         internal static DateTime StartupTime = DateTime.UtcNow;
+        internal static DateTime BuildDate;
 
         internal static UIBase UniverseUIBase;
         internal static AssetBundle FGToolsBundle;
@@ -104,10 +53,17 @@ namespace FGTools
                 {
                     [5, 27] => BirthdayName,
                     [4, 1] => FoolsName,
-                    _ => DefaultName,
+#if !DEV
+                    _ => FGToolsBuildDetails.Name,
+#else
+                    _ => "SlopTools"
+#endif
                 };
             } 
         }
+#if DEV
+        internal static HashSet<string> IgnoreDefines = ["TRACE", "NET", "NET6_0", "NETCOREAPP", FGToolsBuildDetails.Config.ToUpper()];
+#endif
 
         #region PATHS
         public static string CommonDir => Path.Combine(Paths.PluginPath, "FGTools\\");
@@ -161,29 +117,16 @@ namespace FGTools
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         internal static extern int MessageBox(IntPtr ptr, string msg, string title, uint type);
 
+        readonly List<string> _missingData = [];
+
         public override void Load()
         {
             try
             {
-                var assembly = Assembly.GetExecutingAssembly();
-
-                var version = FileVersionInfo.GetVersionInfo(assembly.Location);
-                var commit = version.ProductVersion.Split('+');
-                var metadata = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToList();
-                var cfg = assembly.GetCustomAttributes<AssemblyConfigurationAttribute>().ToList()[0].Configuration;
-
-                var buildDate = metadata.FirstOrDefault(x => x.Key == "BuildDate")?.Value;
-                var buildGuid = metadata.FirstOrDefault(x => x.Key == "BuildGuid")?.Value;
-                string defines = null;
-#if DEV
-                defines = metadata.FirstOrDefault(x => x.Key == "DefineConstants")?.Value;
-#endif
-                BuildInfo = new BuildDetails(cfg, MyPluginInfo.PLUGIN_VERSION, version.FileVersion, commit.Length > 1 ? commit[1] : "LOCAL BUILD", buildDate, buildGuid, defines);
-
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<FGTBehaviour>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<ToolsBehaviour>();
 
-                var monoMain = new GameObject() { name = DefaultName };
+                var monoMain = new GameObject(FGToolsBuildDetails.Name);
                 monoMain.AddComponent<FGTBehaviour>();
                 monoMain.hideFlags = HideFlags.HideAndDontSave;
 
@@ -199,10 +142,12 @@ namespace FGTools
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<PrefabSpawnerController>();
                 FLZ_Extensions.TryRegisterTypeInIl2cpp<CosmeticSearchBar>();
 
+                BuildDate = DateTimeOffset.FromUnixTimeSeconds(FGToolsBuildDetails.BuildTimestamp).UtcDateTime;
+
                 Log.LogMessage($" --- ");
-                Log.LogMessage($"{DisplayName} V{BuildInfo.UI_Version}");
-                Log.LogMessage($"{Description}");
-                Log.LogMessage($"{BuildInfo.ToString()}");
+                Log.LogMessage($"{DisplayName} V{FGToolsBuildDetails.Version}");
+                Log.LogMessage($"{FGToolsBuildDetails.Description}");
+                Log.LogMessage($"Env: {FGToolsBuildDetails.Config} Commit: #{FGToolsBuildDetails.CommitHashShort} Build Date: {BuildDate}");
                 Log.LogMessage($" --- ");
 
                 PermanentHarmony.PatchAll(typeof(ServerCorePatches));
@@ -239,8 +184,8 @@ namespace FGTools
             Log.LogFatal("[Launcher] Startup failed. Certain files or folders missing!");
 
             FLZ_Extensions.QuitWithMessage(
-                $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
-                $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", MissingData)}");
+                $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort})",
+                $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", _missingData)}");
         }
 
         void OnCrash(Exception e)
@@ -248,11 +193,10 @@ namespace FGTools
             Log.LogFatal($"[Launcher] Startup failed. Exception! {e}");
 
             FLZ_Extensions.QuitWithMessage(
-                $"FATAL ERROR - {DisplayName} V{BuildInfo.UI_Version} (#{BuildInfo.GetCommit()})",
+                $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort})",
                 $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed");
         }
 
-        readonly List<string> MissingData = [];
         bool Valid()
         {
             Log.LogInfo("[Launcher] Validating...");
@@ -263,16 +207,16 @@ namespace FGTools
             foreach (var folder in dirs)
             {
                 if (!Directory.Exists(folder))
-                    MissingData.Add(folder);
+                    _missingData.Add(folder);
             }
 
             foreach (var file in files)
             {
                 if (!File.Exists(file))
-                    MissingData.Add(file);
+                    _missingData.Add(file);
             }
 
-            return MissingData.Count == 0;
+            return _missingData.Count == 0;
         }
 
         void StartUp()

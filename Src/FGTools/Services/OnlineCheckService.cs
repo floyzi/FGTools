@@ -45,7 +45,7 @@ namespace FGTools.Services
         }
 
         public static string Error = "";
-        public static string LastVer = Launcher.BuildInfo.UI_Version;
+        public static string LastVer = FGToolsBuildDetails.Version;
         public Dictionary<string, string> ExploreCodes = [];
 
         LoadingScreenManager LoadingManager;
@@ -145,7 +145,7 @@ namespace FGTools.Services
             LoadingManager.HideScreen(new(true));
             LoadingManager.ShowScreen(new(true));
             ProgressBar = LoadingManager._loadingScreen.gameObject.GetComponentInChildren<UnityEngine.UI.Slider>();
-            DownloadCoroutine = CoroutineRunner.Instance.StartCoroutine(StartDownloading(DownloadSource, Launcher.BuildInfo.Config.ToLower() != "prod").WrapToIl2Cpp());
+            DownloadCoroutine = CoroutineRunner.Instance.StartCoroutine(StartDownloading(DownloadSource, FGToolsBuildDetails.Config.ToLower() != "prod").WrapToIl2Cpp());
         }
 
         public void DownloadNewLang(string newLang, Action after)
@@ -241,13 +241,13 @@ namespace FGTools.Services
             if (!FGTTargetSettings.FGTNewsfeed)
                 return;
 
-            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyDev && Launcher.BuildInfo.Config != "DEV")
+            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyDev && FGToolsBuildDetails.Config != "DEV")
                 return;
 
-            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyClosedBetaTesters && Launcher.BuildInfo.Config != "ClosedBeta")
+            if (newsfeed.VisibilityType == NewsfeedVisibleType.OnlyClosedBetaTesters && FGToolsBuildDetails.Config != "ClosedBeta")
                 return;
 
-            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(Launcher.BuildInfo.UI_Version))
+            if (newsfeed.TargetFGTVersions != null && !newsfeed.TargetFGTVersions.Contains(FGToolsBuildDetails.Version))
                 return;
 
             Il2CppReferenceArray<DescriptionParameter> EndsAtDescription = new(1);

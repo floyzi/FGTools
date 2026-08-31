@@ -251,7 +251,7 @@ namespace FGTools.States
                 FinishLoginAct = null;
             });
 
-            var targetVer = Launcher.BuildInfo.UI_Version;
+            var targetVer = FGToolsBuildDetails.Version;
             var evtVer = FGTServiceManager.GetService<EventService>().ReturnStringEventValue("MenuEntranceVersion");
 
             if (evtVer != null && targetVer != evtVer)
@@ -264,23 +264,23 @@ namespace FGTools.States
         {
             var evtS = FGTServiceManager.GetService<EventService>();
 
-            var targetVer = Launcher.BuildInfo.UI_Version;
+            var targetVer = FGToolsBuildDetails.Version;
             var eventVer = evtS.ReturnStringEventValue("MenuEntranceVersion");
 
             if (string.IsNullOrEmpty(eventVer) || targetVer != eventVer)
             {
                 DoModal(new(LocalizedStr("menuenter_title"), $"{LocalizedStr("menuenter_desc")}\n\n{LocalizedStr("gui_hotkeys", [ToggleCusorHotkey.Value, ToggleUIHotkey.Value, DebugUIHotkey.Value, EnterFFM.Value, RespawnHotkey.Value, CheckpointHotkey.Value, ToggleFreeCamHotkey.Value, ResetCheckpointHotkey.Value])}", UIModalMessage.ModalType.MT_OK, UIModalMessage.OKButtonType.Positive, onClosed: new Action<bool>((wasOk) =>
                 {
-                    if (OnlineCheck.TryBuildChangelog(Launcher.BuildInfo.UI_Version, out var log))
+                    if (OnlineCheck.TryBuildChangelog(FGToolsBuildDetails.Version, out var log))
                     {
-                        CreateEULAModal(string.Format($"V{Launcher.BuildInfo.UI_Version} - {LocalizedStr("changelog_title")}"), log, new Action<bool>(wasok =>
+                        CreateEULAModal(string.Format($"V{FGToolsBuildDetails.Version} - {LocalizedStr("changelog_title")}"), log, new Action<bool>(wasok =>
                         {
                             onOver();
                         }), true);
                     }
                     else
                     {
-                        FGTLog(LogLevel.Warning, GetType(), $"No changelog were found for version {Launcher.BuildInfo.UI_Version}");
+                        FGTLog(LogLevel.Warning, GetType(), $"No changelog were found for version {FGToolsBuildDetails.Version}");
                         onOver();
                     }
                 }), hideLvl: ModalHideGUIType.KeepHidden, priority: 1000));

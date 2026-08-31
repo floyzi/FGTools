@@ -128,7 +128,7 @@ namespace FGTools.States
                 })));
             }
 
-            string currVer = Launcher.BuildInfo.UI_Version;
+            string currVer = FGToolsBuildDetails.Version;
 
             var oS = FGTServiceManager.GetService<OnlineCheckService>();
 

@@ -95,9 +95,9 @@ namespace FGTools.Services
             {
                 var b1 = new StringBuilder();
 
-                b1.AppendLine($"Build: {Launcher.BuildInfo.BuildDate}");
-                b1.AppendLine($"Ver: {Launcher.BuildInfo.UI_Version} | BuildEnv: {Launcher.BuildInfo.Config} | Commit: #{Launcher.BuildInfo.GetCommit()}");
-                b1.AppendLine($"Build ID: {Launcher.BuildInfo.GUID}");
+                b1.AppendLine($"Build: {Launcher.BuildDate}");
+                b1.AppendLine($"Ver: {FGToolsBuildDetails.Version} | BuildEnv: {FGToolsBuildDetails.Config} | Commit: #{FGToolsBuildDetails.CommitHash}");
+                b1.AppendLine($"Build ID: {FGToolsBuildDetails.BuildId}");
                 b1.AppendLine($"Session Length: {DateTime.UtcNow.Subtract(Launcher.StartupTime):hh\\:mm\\:ss}");
                 b1.AppendLine($"Locale: {Config.Config.LangFileName.Value}");
                 b1.AppendLine($"CanUseHotkeys: {StateManager.CanUseHotkeys}");

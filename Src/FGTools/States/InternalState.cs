@@ -246,10 +246,9 @@ namespace FGTools.States
         }
 
 #if !PROD
-        const string WatermarkPlaceholder = "{0} {1} - V{2}\n\nBuild Date: {3}\nBuild ID: {4}\nBuild Commit: #{5}\nChecks State: {6} {7}\nContent Version: {8}\n{9}\nUTC: {10}";
+        const string WatermarkPlaceholder = "{0} {1} - V{2} (#{11})\n\nBuild Date: {3}\nBuild ID: {4}\nBuild Commit: #{5}\nChecks State: {6} {7}\nContent Version: {8}\n{9}\nUTC: {10}";
         void BETA_WatermarkGUI()
         {
-
             if (TargetTime >= RefreshTime.Seconds)
             {
                 NewBetaWaterRect.x = Random.Range(0, Screen.width - NewBetaWaterRect.width);
@@ -269,7 +268,7 @@ namespace FGTools.States
                
             };
 
-            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Launcher.DisplayName, Launcher.BuildInfo.Config, Launcher.BuildInfo.UI_Version, Launcher.BuildInfo.BuildDate, Launcher.BuildInfo.GUID, Launcher.BuildInfo.GetCommit(), OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, Launcher.BuildInfo.GetDefines(), DateTime.UtcNow]), def);
+            GUI.Label(NewBetaWaterRect, string.Format(WatermarkPlaceholder, [Launcher.DisplayName, FGToolsBuildDetails.Config, FGToolsBuildDetails.Version, BuildDate, FGToolsBuildDetails.BuildId, FGToolsBuildDetails.CommitHash, OnlineCheck.ChecksDisplay, OnlineCheck.ReturnChecksGoal(), OnlineCheck.FGTContent?.ContentVersion, string.Join(", ", FGToolsBuildDetails.Defines.Where(x => !IgnoreDefines.Any(y => x.StartsWith(y, StringComparison.Ordinal)))), DateTime.UtcNow, FGToolsBuildDetails.BuildNumber]), def);
         }
 #endif
 
@@ -277,9 +276,9 @@ namespace FGTools.States
         {
             var watermark = Config.Config.WatermarkLevel.Value switch
             {
-                Watermark.OnlyVersion => $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version}",
+                Watermark.OnlyVersion => $"{Launcher.DisplayName} V{FGToolsBuildDetails.Version}",
                 Watermark.None => string.Empty,
-                Watermark.VersionAndCredits => $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}",
+                Watermark.VersionAndCredits => $"{Launcher.DisplayName} V{FGToolsBuildDetails.Version} {FGToolsBuildDetails.Description[FGToolsBuildDetails.Description.IndexOf("by")..]}",
                 _ => throw new NotImplementedException(),
             };
 

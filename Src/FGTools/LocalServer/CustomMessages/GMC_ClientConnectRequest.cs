@@ -18,7 +18,7 @@ namespace FGTools.LocalServer.CustomMessages
         {
         }
 
-        public string Version { get; set; }
+        public string AssemblyVersion { get; set; }
         public Guid ID { get; set; }
         public string Commit { get; set; }
         public DateTime Date { get; set; }
@@ -26,7 +26,7 @@ namespace FGTools.LocalServer.CustomMessages
 
         internal override void Deserealize(NetworkReader netReader)
         {
-            Version = netReader.ReadString();
+            AssemblyVersion = netReader.ReadString();
             ID = Guid.Parse(netReader.ReadString());
             Commit = netReader.ReadString();
             Date = DateTime.Parse(netReader.ReadString());
@@ -38,10 +38,10 @@ namespace FGTools.LocalServer.CustomMessages
             netWriter ??= new();
 
             netWriter.Write((byte)lvl);
-            netWriter.Write(Launcher.BuildInfo.Version);
-            netWriter.Write(Launcher.BuildInfo.GUID.ToString());
-            netWriter.Write(Launcher.BuildInfo.GetCommit());
-            netWriter.Write(Launcher.BuildInfo.BuildDate.ToString());
+            netWriter.Write(FGToolsBuildDetails.AssemblyVersion);
+            netWriter.Write(FGToolsBuildDetails.BuildId.ToString());
+            netWriter.Write(FGToolsBuildDetails.CommitHash);
+            netWriter.Write(Launcher.BuildDate.ToString());
             netWriter.Write(GlobalGameStateClient.Instance.GetLocalClientNetworkID().NetworkID);
 
             var segment = netWriter.AsArraySegment();

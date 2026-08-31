@@ -1,4 +1,5 @@
 ﻿global using static Constants;
+using FGTools;
 using UnityEngine;
 static class Constants
 {
@@ -9,14 +10,8 @@ static class Constants
     #endregion
 
     #region META
-#if DEV
-    internal const string DefaultName = "SlopTools";
-#else
-    internal const string DefaultName = "FGTools";
-#endif
     internal const string BirthdayName = "It's My Birthday Tools";
     internal const string FoolsName = "FGStool";
-    internal const string Description = "Fall Guys level loader by @floyzi102 on Twitter";
 #if PROD
     internal const string DownloadSource = "production";
 #else
@@ -36,14 +31,13 @@ static class Constants
     #endregion
 
     #region GUIDS
-    internal const string GUID = "flz.fgt";
-    internal const string UniverseGUID = $"{GUID}.universe.ui";
-    internal const string HarmonyGUID = $"{GUID}.harmony";
-    internal const string OfflineHarmonyGUID = $"{GUID}.harmony.offline";
-    internal const string FraggleHarmonyGUID = $"{GUID}.harmony.fraggle";
-    internal const string ThemesHarmonyGUID = $"{GUID}.harmony.themes";
-    internal const string ServerHarmonyGUID = $"{GUID}.harmony.server";
-    internal const string PermanentHarmonyGUID = $"{GUID}.harmony.permanent";
+    internal const string UniverseGUID = $"{FGToolsBuildDetails.BepInExID}.universe.ui";
+    internal const string HarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony";
+    internal const string OfflineHarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony.offline";
+    internal const string FraggleHarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony.fraggle";
+    internal const string ThemesHarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony.themes";
+    internal const string ServerHarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony.server";
+    internal const string PermanentHarmonyGUID = $"{FGToolsBuildDetails.BepInExID}.harmony.permanent";
     #endregion
 
     #region ASSEMBLIES

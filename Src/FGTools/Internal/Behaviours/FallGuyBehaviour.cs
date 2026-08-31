@@ -93,7 +93,7 @@ namespace FGTools.Internal.Behaviours
         {
             var motorAgent = GetComponent<MotorAgent>();
 
-            if (power == SelectedPowerup.None /*|| power == SelectedPowerup.ExplodingRhino*/) //todo: rhino crashes the game whed used, needs fix!1
+            if (power == SelectedPowerup.None || power == SelectedPowerup.ExplodingRhino) //todo: rhino crashes the game whed used, needs fix!1
                 return;
 
             var powerupFunc = motorAgent.GetMotorFunction<MotorFunctionPowerup>();

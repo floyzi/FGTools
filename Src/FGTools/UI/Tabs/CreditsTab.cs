@@ -55,7 +55,7 @@ namespace FGTools.UI.Tabs
 
             Text credits = UIFactory.CreateLabel(ControlledObject, "creditsInfo", $"{sb.ToString().Trim()}", TextAnchor.LowerCenter, default, true, 14);
             credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
-            Text bottomLine = UIFactory.CreateLabel(ControlledObject, "creditsInfo_2", $"{Launcher.DisplayName} V{Launcher.BuildInfo.UI_Version} {Description[Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
+            Text bottomLine = UIFactory.CreateLabel(ControlledObject, "creditsInfo_2", $"{Launcher.DisplayName} V{FGToolsBuildDetails.Version} {FGToolsBuildDetails.Description[FGToolsBuildDetails.Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
             UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
         }
 

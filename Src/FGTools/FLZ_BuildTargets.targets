@@ -1,0 +1,47 @@
+<Project>
+  <PropertyGroup>
+    <BuildNumber>12</BuildNumber>
+  </PropertyGroup>
+  <Target Name="SetBuildNum" BeforeTargets="GenerateBuildDetails" Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <NewBuildNumber>$([MSBuild]::Add($(BuildNumber), 1))</NewBuildNumber>
+    </PropertyGroup>
+    <XmlPoke XmlInputPath="$(MSBuildThisFileFullPath)" Query="Project/PropertyGroup/BuildNumber" Value="$(NewBuildNumber)" />
+    <PropertyGroup>
+      <BuildNumber>$(NewBuildNumber)</BuildNumber>
+    </PropertyGroup>
+  </Target>
+  <Target Name="GenerateBuildDetails" BeforeTargets="BeforeCompile" DependsOnTargets="GenerateAssemblyInfo">
+    <PropertyGroup>
+      <ConstantsArray Condition="'$(Configuration)' == 'Dev'">$([System.String]::Copy('$(DefineConstants)').Replace(';', '","'))</ConstantsArray>
+      <ShortCommit>$([System.String]::Copy('$(SourceRevisionId)').Substring(0, $([System.Math]::Min(8, $(SourceRevisionId.Length)))))</ShortCommit>
+      <BuildId>$([System.Guid]::NewGuid())</BuildId>
+      <GeneratedText><![CDATA[
+using System%3B
+namespace $(RootNamespace)
+{
+    public static class $([System.String]::Copy('$(AssemblyName)').Replace('.', ''))BuildDetails
+    {
+        public const int BuildNumber = $(BuildNumber)%3B
+        public const string Version = "$(Version)"%3B
+        public const string AssemblyVersion = "$(AssemblyVersion)"%3B
+        public const string Config = "$(Configuration)"%3B
+        public const string CommitHash = "$(SourceRevisionId)"%3B
+        public const string CommitHashShort = "$(ShortCommit)"%3B
+        public static readonly long BuildTimestamp = $([System.DateTimeOffset]::UtcNow.ToUnixTimeSeconds())%3B
+        public const string Name = "$(ProductName)"%3B
+        public const string Description = "$(Description)"%3B
+        public const string Authors = "$(Authors)"%3B
+        public const string BepInExID = "$(BepInExId)"%3B
+        public static readonly string[] Defines = ["$(ConstantsArray)"]%3B
+        public static readonly Guid BuildId = new("$(BuildId)")%3B
+    }
+}
+				]]></GeneratedText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)GeneratedBuildDetails.cs" Lines="$(GeneratedText)" Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)GeneratedBuildDetails.cs" />
+    </ItemGroup>
+  </Target>
+</Project>
