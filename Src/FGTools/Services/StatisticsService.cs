@@ -126,7 +126,7 @@ namespace FGTools.Services
             }
             else
             {
-                HistoryActions.gameObject.SetActive(false);
+                HistoryActions?.gameObject?.SetActive(false);
                 _currPage = 0;
             }
 
@@ -241,7 +241,7 @@ namespace FGTools.Services
         public override void UpdateService()
         {
             if (CurrentStats.RoundHistory == null || CurrentStats.RoundHistory.Count == 0)
-                RoundHistoryTXT.text = LocalizedStr("gui_nothing2see");
+                RoundHistoryTXT?.text = LocalizedStr("gui_nothing2see");
 
             if (CurrentStats != null)
             {
@@ -253,11 +253,11 @@ namespace FGTools.Services
                 if (SceneManager.GetActiveScene().name == "MainMenu")
                     CurrentStats.TimeInMenu += Time.unscaledDeltaTime;
 
-
                 if (StateManager.FGTCurrentState == ToolsState.GameActive)
                     _roundLength += Time.unscaledDeltaTime;
 
                 TimeElapsed += Time.unscaledDeltaTime;
+
                 if (TimeElapsed >= SaveTime)
                 {
                     TimeElapsed = 0;

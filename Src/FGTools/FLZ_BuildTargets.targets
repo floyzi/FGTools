@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <BuildNumber>24</BuildNumber>
+    <BuildNumber>36</BuildNumber>
   </PropertyGroup>
   <Target Name="SetBuildNum" BeforeTargets="GenerateBuildDetails" Condition="'$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>

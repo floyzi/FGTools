@@ -27,6 +27,12 @@ namespace FGTools.Services
     //at least it works
     internal class CosmeticsService : FGTService
     {
+        internal class ItemCollection<TDto> where TDto : Il2CppSystem.Object
+        {
+            internal Il2CppSystem.Collections.Generic.List<ColourSchemeDto> UserItems = new();
+            internal readonly Il2CppSystem.Collections.Generic.List<ColourSchemeDto> AllItems = new();
+        }
+
         Il2CppSystem.Collections.Generic.List<ColourSchemeDto> UserColors = new();
         readonly Il2CppSystem.Collections.Generic.List<ColourSchemeDto> AllColors = new();
 

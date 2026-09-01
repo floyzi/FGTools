@@ -105,7 +105,7 @@ namespace FGTools.UI.Tabs
                 catalogueHelp.GameObject.SetActive(false);
 
                 Il2CppSystem.Collections.Generic.List<string> webThemes = new();
-                List<string> WebThemeIds = new();
+                List<string> WebThemeIds = [];
                 webThemes.Add(LocalizedStr("dropdown_placeholder"));
 
                 if (FGTTargetSettings.ThemeBrowserOnline)
@@ -140,7 +140,7 @@ namespace FGTools.UI.Tabs
                 rt.offsetMin = Vector2.zero;
                 rt.offsetMax = Vector2.zero;
 
-                var le = upperGradient.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+                var le = upperGradient.gameObject.AddComponent<LayoutElement>();
                 le.ignoreLayout = true;
 
                 var circles = UIFactory.CreateUIObject("Circles", previewTheme).AddComponent<Image>();

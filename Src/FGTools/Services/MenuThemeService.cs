@@ -317,6 +317,8 @@ namespace FGTools.Services
 
         static void SetDefaultBackground()
         {
+            if (BackgroudMaterial != null) return;
+
             DefaultTheme ??= SaveDefaultTheme();
 
             var currentBG = GameObject.Find(CurrentFGBackground);
@@ -406,7 +408,7 @@ namespace FGTools.Services
                 if (CurrentTheme != null)
                     delThemeDirBtn.Component.interactable = ThemeOnPreview.DisplayName != CurrentTheme.DisplayName;
 
-                SelectButton.Component.interactable = CurrentTheme == null ? true : ThemeOnPreview.DisplayName != CurrentTheme.DisplayName;
+                SelectButton.Component.interactable = CurrentTheme == null || ThemeOnPreview.DisplayName != CurrentTheme.DisplayName;
                 SetThemeForPreview(ThemeOnPreview);
             }
             else
@@ -439,11 +441,9 @@ namespace FGTools.Services
                 patCol = new(theme.CirclesRGBA[0], theme.CirclesRGBA[1], theme.CirclesRGBA[2], theme.CirclesRGBA[3]);
             }
 
-            if (UpperGradient != null)
-                UpperGradient.color = upper;
+            UpperGradient?.color = upper;
 
-            if (gradient != null)
-                gradient.color = lower;
+            gradient?.color = lower;
 
             if (pattern == null)
                 return;
@@ -630,6 +630,7 @@ namespace FGTools.Services
             themesDirs.Clear();
             themes.Add(LocalizedStr("gui_default"));
             string[] dirs = Directory.GetDirectories($"{Launcher.ThemesDir}");
+
             foreach (string dir in dirs)
             {
                 foreach (string file in Directory.GetFiles(dir))
@@ -643,6 +644,7 @@ namespace FGTools.Services
                     }
                 }
             }
+
             themesDropdown.AddOptions(themes);
 
             if (CurrentTheme != null)
@@ -742,6 +744,7 @@ namespace FGTools.Services
             pattern = (Image)data[11];
             SelectButton = (ButtonRef)data[12];
 
+            SetDefaultBackground();
             RefreshThemesDropdown();
         }
 
