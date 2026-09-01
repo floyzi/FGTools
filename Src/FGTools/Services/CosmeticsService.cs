@@ -13,12 +13,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
+using static FGTools.Services.CosmeticsService;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.Services
@@ -27,56 +29,193 @@ namespace FGTools.Services
     //at least it works
     internal class CosmeticsService : FGTService
     {
-        internal class ItemCollection<TDto> where TDto : Il2CppSystem.Object
+        internal interface IItemCollection
         {
-            internal Il2CppSystem.Collections.Generic.List<ColourSchemeDto> UserItems = new();
-            internal readonly Il2CppSystem.Collections.Generic.List<ColourSchemeDto> AllItems = new();
+            internal void GrantAll();
+            internal void GrantUser();
+            internal void Search(string req);
+            internal void ResolveSection();
+            internal void RefreshSection();
+        }
+        internal class ItemCollection<TCollection, TDefinition, TDto> : IItemCollection where TDto : Il2CppSystem.Object where TCollection : CustomiserSectionBase<TDefinition, TDto>
+        {
+            internal static HashSet<string> FavIds = [];
+            readonly string _group;
+            internal Il2CppSystem.Collections.Generic.List<IItemDefinition> Items;
+            internal ItemCollection(string group)
+            {
+                _group = group;
+                Items = CommonConfig.GetAssetsWithGroup(group);
+                UserItems = GetList();
+                SetAll();
+            }
+
+            TCollection _collection;
+            internal TCollection Collection 
+            { 
+                get 
+                {
+                    if (_collection == null)
+                    {
+                        _collection = Resources.FindObjectsOfTypeAll<TCollection>().FirstOrDefault();
+                        _collection.gameObject.AddComponent<CanvasGroup>();
+                    }
+
+                    return _collection; 
+                } 
+            }
+            internal Il2CppSystem.Collections.Generic.List<TDto> UserItems;
+            internal Il2CppSystem.Collections.Generic.List<TDto> AllItems;
+
+            static void AssignList(Il2CppSystem.Collections.Generic.List<TDto> items)
+            {
+                var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
+                var props = cos.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var prop = props.FirstOrDefault(x => x.PropertyType == typeof(Il2CppSystem.Collections.Generic.List<TDto>));
+                prop.SetValue(cos, items);
+            }
+
+            static Il2CppSystem.Collections.Generic.List<TDto> GetList()
+            {
+                var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+
+                var props = cos.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var prop = props.FirstOrDefault(x => x.PropertyType == typeof(Il2CppSystem.Collections.Generic.List<TDto>));
+                return prop.GetValue(cos) as Il2CppSystem.Collections.Generic.List<TDto>;
+            }
+
+            void SetAll()
+            {
+                var blank = CommonConfig.GetAssetsWithGroup(_group).ToArray().Select(x => x.CMSData).Where(cms => cms != null).Select(cms => ItemDtoTo<TDto>(CMSDefinitionToItemDto(cms))).Distinct().ToList();
+
+                foreach (var item in UserItems)
+                {
+                    var actualItem = item.Cast<IOwnedCosmeticDto>();
+                    if (actualItem.IsFavourite)
+                        FavIds.Add(actualItem.Item.Id);
+                }
+
+
+                var owned = blank.Select(x => (Dto: x, Owned: x.Cast<IOwnedCosmeticDto>())).ToList();
+                var res = new Il2CppSystem.Collections.Generic.List<TDto>();
+
+                foreach (var (dto, item) in owned)
+                {
+                    var id = item.Item.Id;
+
+                    if (FavList.Contains(id) || FavIds.Contains(id))
+                    {
+                        item.IsFavourite = true;
+
+                        if (!FavIds.Contains(id))
+                            FavIds.Add(id);
+
+                        res.Add(dto);
+                    }
+                }
+
+                foreach (var (dto, item) in owned)
+                {
+                    if (!FavIds.Contains(item.Item.Id))
+                        res.Add(item.Cast<TDto>());
+                }
+
+                AllItems = res;
+            }
+
+            void IItemCollection.Search(string req)
+            {
+                HashSet<string> ids = [];
+                HashSet<string> fav_ids = [];
+                HashSet<string> foundIds = [];
+
+                var r = new Il2CppSystem.Collections.Generic.List<TDto>();
+
+                var lookupList = AllCosmetics.Value ? AllItems : UserItems;
+
+                foreach (var targ in lookupList)
+                    ids.Add(targ.Cast<IOwnedCosmeticDto>().Item.ContentId);
+
+                foreach (var res in Items)
+                {
+                    var good = IsValidTerm(req, res.DisplayName, res.ItemId, ids);
+
+                    if (!good) continue;
+
+                    foundIds.Add(res.ItemId);
+                }
+
+                foreach (var item in lookupList)
+                {
+                    var actualItem = item.Cast<IOwnedCosmeticDto>();
+                    var a = actualItem.Item.Id.Split('.')[1].ToLower();
+                    if ((actualItem.IsFavourite || FavList.Contains(actualItem.Item.Id)) && foundIds.Contains(a))
+                    {
+                        r.Add(item);
+                        fav_ids.Add(a);
+                    }
+                }
+
+                foreach (var res in Items)
+                {
+                    if (res.CMSData != null && foundIds.Contains(res.ItemId.ToLower()))
+                    {
+                        var newdto = ItemDtoTo<TDto>(CMSDefinitionToItemDto(res.CMSData));
+                        var dtoItem = newdto.Cast<IOwnedCosmeticDto>();
+
+                        if (!fav_ids.Contains(dtoItem.Item.Id.Split('.')[1].ToLower()))
+                            r.Add(newdto);
+                    }
+                }
+
+                AssignList(r);
+            }
+
+            void IItemCollection.GrantAll()
+            {
+                AssignList(AllItems);
+            }
+
+            void IItemCollection.GrantUser()
+            {
+                AssignList(UserItems);
+            }
+
+            void IItemCollection.ResolveSection()
+            {
+                var list = GetList();
+                if (list == null || list.Count == 0)
+                    AssignList(AllCosmetics.Value ? AllItems : UserItems);
+            }
+
+            void IItemCollection.RefreshSection()
+            {
+                var items = GetList();
+                var valid = items != null && items.Count > 0;
+                var canvas = Collection.gameObject.GetComponent<CanvasGroup>();
+                Collection._customiserMenu.transform.GetChild(2).gameObject.SetActive(valid);
+                Collection._customiserMenu.CurrentSectionText = FGTServiceManager.Instance.GetService<CosmeticsService>().GetSection();
+
+                if (valid)
+                {
+                    canvas.alpha = 1;
+                    canvas.blocksRaycasts = true;
+                    canvas.interactable = true;
+
+                    Collection.RefreshSectionData();
+                    return;
+                }
+                else
+                {
+                    canvas.alpha = 0;
+                    canvas.blocksRaycasts = false;
+                    canvas.interactable = false;
+                }
+            }
         }
 
-        Il2CppSystem.Collections.Generic.List<ColourSchemeDto> UserColors = new();
-        readonly Il2CppSystem.Collections.Generic.List<ColourSchemeDto> AllColors = new();
-
-        Il2CppSystem.Collections.Generic.List<FaceplateDto> UserFaceplates = new();
-        readonly Il2CppSystem.Collections.Generic.List<FaceplateDto> AllFaceplates = new();
-
-        Il2CppSystem.Collections.Generic.List<PatternDto> UserPatterns = new();
-        readonly Il2CppSystem.Collections.Generic.List<PatternDto> AllPatterns = new();
-
-        Il2CppSystem.Collections.Generic.List<UpperCostumePieceDto> UserUppers = new();
-        readonly Il2CppSystem.Collections.Generic.List<UpperCostumePieceDto> AllUppers = new();
-
-        Il2CppSystem.Collections.Generic.List<LowerCostumePieceDto> UserLowers = new();
-        readonly Il2CppSystem.Collections.Generic.List<LowerCostumePieceDto> AllLowers = new();
-
-        Il2CppSystem.Collections.Generic.List<EmoteDto> UserEmotes = new();
-        readonly Il2CppSystem.Collections.Generic.List<EmoteDto> AllEmotes = new();
-
-        Il2CppSystem.Collections.Generic.List<NameplateDto> UserNameplates = new();
-        readonly Il2CppSystem.Collections.Generic.List<NameplateDto> AllNameplates = new();
-
-        Il2CppSystem.Collections.Generic.List<PunchlineDto> UserPunchlines = new();
-        readonly Il2CppSystem.Collections.Generic.List<PunchlineDto> AllPunchlines = new();
-
-        Il2CppSystem.Collections.Generic.List<NicknameDto> UserNicknames = new();
-        readonly Il2CppSystem.Collections.Generic.List<NicknameDto> AllNicknames = new();
-
-        Il2CppSystem.Collections.Generic.List<EmoticonDto> UserEmoticons = new();
-        readonly Il2CppSystem.Collections.Generic.List<EmoticonDto> AllEmoticons = new();
-
-        Il2CppSystem.Collections.Generic.List<PhraseDto> UserPhrases = new();
-        readonly Il2CppSystem.Collections.Generic.List<PhraseDto> AllPhrases = new();
-
-        CustomiserColourSection ColorSect;
-        CustomiserFaceplateSection FaceSect;
-        CustomiserPatternsSection PatternsSect;
-        CustomiserUpperCostumeSection UpperCostumeSect;
-        CustomiserLowerCostumeSection LowerCostumeSect;
-        CustomiserEmotesSection EmotesSect;
-        CustomiserNameplateSection NameplateSect;
-        CustomiserNicknameSection NicknameSect;
-        CustomiserVictorySection VictorySect;
-        CustomiserEmoticonsSection EmoticonsSect;
-        CustomiserPhrasesSection PhrasesSect;
+        Dictionary<string, IItemCollection> _itemCollections;
 
         internal Dictionary<CustomiserMenuViewModel, CustomiserSubScreenViewModel> Screens = [];
 
@@ -124,8 +263,7 @@ namespace FGTools.Services
             }
 
             FGTLog(LogLevel.Info, base.GetType(), "Load");
-            var favIds = new HashSet<string>();
-
+        
             try
             {
                 try
@@ -143,54 +281,20 @@ namespace FGTools.Services
                     ResetFavList();
                 }
 
-                if (FavList == null)
-                    ResetFavList();
+                if (FavList == null) ResetFavList();
 
-                var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
-
-                UserColors = cos.ColourSchemes;
-                foreach (var res in PushCosmList("costumes_colour_schemes", UserColors, favIds))
-                    AllColors.Add(res);
-
-                UserPatterns = cos.Patterns;
-                foreach (var res in PushCosmList("costumes_patterns", UserPatterns, favIds))
-                    AllPatterns.Add(res);
-
-                UserFaceplates = cos.Faceplates;
-                foreach (var res in PushCosmList("costumes_faceplates", UserFaceplates, favIds))
-                    AllFaceplates.Add(res);
-
-                UserUppers = cos.UpperCostumePieces;
-                foreach (var res in PushCosmList("costumes_upper", UserUppers, favIds))
-                    AllUppers.Add(res);
-
-                UserLowers = cos.LowerCostumePieces;
-                foreach (var res in PushCosmList("costumes_lower", UserLowers, favIds))
-                    AllLowers.Add(res);
-
-                UserNameplates = cos.Nameplates;
-                foreach (var res in PushCosmList("cosmetics_nameplates", UserNameplates, favIds))
-                    AllNameplates.Add(res);
-
-                UserEmotes = cos.Emotes;
-                foreach (var res in PushCosmList("cosmetics_emotes", UserEmotes, favIds))
-                    AllEmotes.Add(res);
-
-                UserPunchlines = cos.Punchlines;
-                foreach (var res in PushCosmList("cosmetics_punchlines", UserPunchlines, favIds))
-                    AllPunchlines.Add(res);
-
-                UserNicknames = cos.Nicknames;
-                foreach (var res in PushCosmList("cosmetics_nicknames", UserNicknames, favIds))
-                    AllNicknames.Add(res);
-
-                UserEmoticons = cos.Emoticons;
-                foreach (var res in PushCosmList("cosmetics_emoticons", UserEmoticons, favIds))
-                    AllEmoticons.Add(res);
-
-                UserPhrases = cos.Phrases;
-                foreach (var res in PushCosmList("cosmetics_phrases", UserPhrases, favIds))
-                    AllPhrases.Add(res);
+                _itemCollections = [];
+                _itemCollections.Add("colour", new ItemCollection<CustomiserColourSection, ColourOption, ColourSchemeDto>("costumes_colour_schemes"));
+                _itemCollections.Add("pattern", new ItemCollection<CustomiserPatternsSection, SkinPatternOption, PatternDto>("costumes_patterns"));
+                _itemCollections.Add("face", new ItemCollection<CustomiserFaceplateSection, FaceplateOption, FaceplateDto>("costumes_faceplates"));
+                _itemCollections.Add("upper", new ItemCollection<CustomiserUpperCostumeSection, CostumeOption, UpperCostumePieceDto>("costumes_upper"));
+                _itemCollections.Add("lower", new ItemCollection<CustomiserLowerCostumeSection, CostumeOption, LowerCostumePieceDto>("costumes_lower"));
+                _itemCollections.Add("banner", new ItemCollection<CustomiserNameplateSection, NameplateOption, NameplateDto>("cosmetics_nameplates"));
+                _itemCollections.Add("emotes", new ItemCollection<CustomiserEmotesSection, ItemDefinitionSO, EmoteDto>("cosmetics_emotes"));
+                _itemCollections.Add("victory", new ItemCollection<CustomiserVictorySection, VictoryOption, PunchlineDto>("cosmetics_punchlines"));
+                _itemCollections.Add("nickname", new ItemCollection<CustomiserNicknameSection, NicknameOption, NicknameDto>("cosmetics_nicknames"));
+                _itemCollections.Add("emoticons", new ItemCollection<CustomiserEmoticonsSection, ItemDefinitionSO, EmoticonDto>("cosmetics_emoticons"));
+                _itemCollections.Add("phrases", new ItemCollection<CustomiserPhrasesSection, SocialOption, PhraseDto>("cosmetics_phrases"));
 
                 EndLoad();
 
@@ -206,39 +310,6 @@ namespace FGTools.Services
 
         void EndLoad()
         {
-            ColorSect = Resources.FindObjectsOfTypeAll<CustomiserColourSection>().FirstOrDefault();
-            ColorSect.gameObject.AddComponent<CanvasGroup>();
-
-            PatternsSect = Resources.FindObjectsOfTypeAll<CustomiserPatternsSection>().FirstOrDefault();
-            PatternsSect.gameObject.AddComponent<CanvasGroup>();
-
-            FaceSect = Resources.FindObjectsOfTypeAll<CustomiserFaceplateSection>().FirstOrDefault();
-            FaceSect.gameObject.AddComponent<CanvasGroup>();
-
-            UpperCostumeSect = Resources.FindObjectsOfTypeAll<CustomiserUpperCostumeSection>().FirstOrDefault();
-            UpperCostumeSect.gameObject.AddComponent<CanvasGroup>();
-
-            LowerCostumeSect = Resources.FindObjectsOfTypeAll<CustomiserLowerCostumeSection>().FirstOrDefault();
-            LowerCostumeSect.gameObject.AddComponent<CanvasGroup>();
-
-            NameplateSect = Resources.FindObjectsOfTypeAll<CustomiserNameplateSection>().FirstOrDefault();
-            NameplateSect.gameObject.AddComponent<CanvasGroup>();
-
-            VictorySect = Resources.FindObjectsOfTypeAll<CustomiserVictorySection>().FirstOrDefault();
-            VictorySect.gameObject.AddComponent<CanvasGroup>();
-
-            EmotesSect = Resources.FindObjectsOfTypeAll<CustomiserEmotesSection>().FirstOrDefault();
-            EmotesSect.gameObject.AddComponent<CanvasGroup>();
-
-            NicknameSect = Resources.FindObjectsOfTypeAll<CustomiserNicknameSection>().FirstOrDefault();
-            NicknameSect.gameObject.AddComponent<CanvasGroup>();
-
-            EmoticonsSect = Resources.FindObjectsOfTypeAll<CustomiserEmoticonsSection>().FirstOrDefault();
-            EmoticonsSect.gameObject.AddComponent<CanvasGroup>();
-
-            PhrasesSect = Resources.FindObjectsOfTypeAll<CustomiserPhrasesSection>().FirstOrDefault();
-            PhrasesSect.gameObject.AddComponent<CanvasGroup>();
-
             OutfitMenuViewModel = Resources.FindObjectsOfTypeAll<OutfitMenuViewModel>().FirstOrDefault();
             OutfitMenuViewModel.gameObject.AddComponent<CanvasGroup>();
 
@@ -405,43 +476,10 @@ namespace FGTools.Services
 
         internal void ResolveSections()
         {
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
-
-            if (cos.ColourSchemes == null || cos.ColourSchemes.Count == 0)
-                cos.ColourSchemes = AllCosmetics.Value ? AllColors : UserColors;
-
-            if (cos.Patterns == null || cos.Patterns.Count == 0)
-                cos.Patterns = AllCosmetics.Value ? AllPatterns : UserPatterns;
-
-            if (cos.Faceplates == null || cos.Faceplates.Count == 0)
-                cos.Faceplates = AllCosmetics.Value ? AllFaceplates : UserFaceplates;
-
-            if (cos.UpperCostumePieces == null || cos.UpperCostumePieces.Count == 0)
-                cos.UpperCostumePieces = AllCosmetics.Value ? AllUppers : UserUppers;
-
-            if (cos.LowerCostumePieces == null || cos.LowerCostumePieces.Count == 0)
-                cos.LowerCostumePieces = AllCosmetics.Value ? AllLowers : UserLowers;
-
-            if (cos.Emotes == null || cos.Emotes.Count == 0)
-                cos.Emotes = AllCosmetics.Value ? AllEmotes : UserEmotes;
-
-            if (cos.Punchlines == null || cos.Punchlines.Count == 0)
-                cos.Punchlines = AllCosmetics.Value ? AllPunchlines : UserPunchlines;
-
-            if (cos.Emoticons == null || cos.Emoticons.Count == 0)
-                cos.Emoticons = AllCosmetics.Value ? AllEmoticons : UserEmoticons;
-
-            if (cos.Phrases == null || cos.Phrases.Count == 0)
-                cos.Phrases = AllCosmetics.Value ? AllPhrases : UserPhrases;
-
-            if (cos.Nicknames == null || cos.Nicknames.Count == 0)
-                cos.Nicknames = AllCosmetics.Value ? AllNicknames : UserNicknames;
-
-            if (cos.Nameplates == null || cos.Nameplates.Count == 0)
-                cos.Nameplates = AllCosmetics.Value ? AllNameplates : UserNameplates;
+            foreach (var collection in _itemCollections)
+                collection.Value.ResolveSection();
         }
 
-        //i hate this actually
         public void Search(string req, string type)
         {
             _recentQuery = req;
@@ -455,50 +493,10 @@ namespace FGTools.Services
                 return;
             }
 
-            HashSet<string> ids = [];
-            HashSet<string> fav_ids = [];
-            HashSet<string> foundIds = [];
-
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
- 
             try
             {
-                switch (type)
-                {
-                    case "colour":
-                        DoSearch<ColourSchemeDto>(req, AllCosmetics.Value ? AllColors : UserColors, CommonConfig.GetAssetsWithGroup("costumes_colour_schemes"), list => cos.ColourSchemes = list);
-                        break;
-                    case "pattern":
-                        DoSearch(req, AllCosmetics.Value ? AllPatterns : UserPatterns, CommonConfig.GetAssetsWithGroup("costumes_patterns"), list => cos.Patterns = list);
-                        break;
-                    case "face":
-                        DoSearch(req, AllCosmetics.Value ? AllFaceplates : UserFaceplates, CommonConfig.GetAssetsWithGroup("costumes_faceplates"), list => cos.Faceplates = list);
-                        break;
-                    case "upper":
-                        DoSearch(req, AllCosmetics.Value ? AllUppers : UserUppers, CommonConfig.GetAssetsWithGroup("costumes_upper"), list => cos.UpperCostumePieces = list);
-                        break;
-                    case "lower":
-                        DoSearch(req, AllCosmetics.Value ? AllLowers : UserLowers, CommonConfig.GetAssetsWithGroup("costumes_lower"), res => cos.LowerCostumePieces = res);
-                        break;
-                    case "emotes":
-                        DoSearch(req, AllCosmetics.Value ? AllEmotes : UserEmotes, CommonConfig.GetAssetsWithGroup("cosmetics_emotes"), res => cos.Emotes = res);
-                        break;
-                    case "victory":
-                        DoSearch(req, AllCosmetics.Value ? AllPunchlines : UserPunchlines, CommonConfig.GetAssetsWithGroup("cosmetics_punchlines"), res => cos.Punchlines = res);
-                        break;
-                    case "banner":
-                        DoSearch(req, AllCosmetics.Value ? AllNameplates : UserNameplates, CommonConfig.GetAssetsWithGroup("cosmetics_nameplates"), res => cos.Nameplates = res);
-                        break;
-                    case "nickname":
-                        DoSearch(req, AllCosmetics.Value ? AllNicknames : UserNicknames, CommonConfig.GetAssetsWithGroup("cosmetics_nicknames"), res => cos.Nicknames = res);
-                        break;
-                    case "emoticons":
-                        DoSearch(req, AllCosmetics.Value ? AllEmoticons : UserEmoticons, CommonConfig.GetAssetsWithGroup("cosmetics_emoticons"), res => cos.Emoticons = res);
-                        break;
-                    case "phrases":
-                        DoSearch(req, AllCosmetics.Value ? AllPhrases : UserPhrases, CommonConfig.GetAssetsWithGroup("cosmetics_phrases"), res => cos.Phrases = res);
-                        break;
-                }
+                if (_itemCollections.TryGetValue(type, out var itemCollection))
+                    itemCollection.Search(req);
 
                 Refresh();
             }
@@ -510,101 +508,33 @@ namespace FGTools.Services
 
         public void GrantAllCosmetics()
         {
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+            foreach (var collection in _itemCollections)
+                collection.Value.GrantAll();
 
-            if (cos != null && Loaded)
-            {
-                cos.ColourSchemes = AllColors;
-                cos.Patterns = AllPatterns;
-                cos.Faceplates = AllFaceplates;
-                cos.UpperCostumePieces = AllUppers;
-                cos.LowerCostumePieces = AllLowers;
-                cos.Nameplates = AllNameplates;
-                cos.Emotes = AllEmotes;
-                cos.Punchlines = AllPunchlines;
-                cos.Emoticons = AllEmoticons;
-                cos.Phrases = AllPhrases;
-                cos.Nicknames = AllNicknames;
-
-                Refresh();
-            }
+            Refresh();
         }
 
         public void RemoveAllCosmetics()
         {
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
+            foreach (var collection in _itemCollections)
+                collection.Value.GrantUser();
 
-            if (cos != null && Loaded)
-            {
-                cos.ColourSchemes = UserColors;
-                cos.Patterns = UserPatterns;
-                cos.Faceplates = UserFaceplates;
-                cos.UpperCostumePieces = UserUppers;
-                cos.LowerCostumePieces = UserLowers;
-                cos.Nameplates = UserNameplates;
-                cos.Emotes = UserEmotes;
-                cos.Punchlines = UserPunchlines;
-                cos.Emoticons = UserEmoticons;
-                cos.Phrases = UserPhrases;
-                cos.Nicknames = UserNicknames;
-
-                Refresh();
-            }
-        }
-
-        void ResolveSection<TItemDefinition, TItemDto>(CustomiserSectionBase<TItemDefinition, TItemDto> sect, bool valid)
-        {
-            var canvas = sect.gameObject.GetComponent<CanvasGroup>();
-            sect._customiserMenu.transform.GetChild(2).gameObject.SetActive(valid);
-            sect._customiserMenu.CurrentSectionText = GetSection();
-
-            if (valid)
-            {
-                canvas.alpha = 1;
-                canvas.blocksRaycasts = true;
-                canvas.interactable = true;
-
-                sect.RefreshSectionData();
-                return;
-            }
-            else
-            {
-                canvas.alpha = 0;
-                canvas.blocksRaycasts = false;
-                canvas.interactable = false;
-            }
+            Refresh();
         }
 
         public void Refresh()
         {
-            var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
             var sect = GetSection();
-
-            var sections = new Dictionary<string, Action>
-            {
-                ["colour"] = () => ResolveSection(ColorSect, cos.ColourSchemes.Count > 0),
-                ["pattern"] = () => ResolveSection(PatternsSect, cos.Patterns.Count > 0),
-                ["face"] = () => ResolveSection(FaceSect, cos.Faceplates.Count > 0),
-                ["upper"] = () => ResolveSection(UpperCostumeSect, cos.UpperCostumePieces.Count > 0),
-                ["lower"] = () => ResolveSection(LowerCostumeSect, cos.LowerCostumePieces.Count > 0),
-                ["emotes"] = () => ResolveSection(EmotesSect, cos.Emotes.Count > 0),
-                ["victory"] = () => ResolveSection(VictorySect, cos.Punchlines.Count > 0),
-                ["banner"] = () => ResolveSection(NameplateSect, cos.Nameplates.Count > 0),
-                ["nickname"] = () => ResolveSection(NicknameSect, cos.Nicknames.Count > 0),
-                ["emoticons"] = () => ResolveSection(EmoticonsSect, cos.Emoticons.Count > 0),
-                ["phrases"] = () => ResolveSection(PhrasesSect, cos.Phrases.Count > 0)
-            };
 
             if (string.IsNullOrEmpty(sect))
             {
-                foreach (var reslv1 in sections.Values)
-                    reslv1();
-
+                foreach (var section in _itemCollections)
+                    section.Value.RefreshSection();
                 return;
             }
-            
-            if (sections.TryGetValue(sect, out var reslv2))
-                reslv2();
+
+            if (_itemCollections.TryGetValue(sect, out var collection))
+                collection.RefreshSection();
         }
 
         static bool IsValidTerm(string term, string displayName, string itemId, HashSet<string> ids)
@@ -614,84 +544,6 @@ namespace FGTools.Services
                 (displayName.Contains(term, Il2CppSystem.StringComparison.CurrentCultureIgnoreCase) ||
                 (AllowSearchById.Value && itemId.Contains(term, Il2CppSystem.StringComparison.CurrentCultureIgnoreCase))) &&
                 ids.Contains(itemId.ToLower());
-        }
-
-        static void DoSearch<TDto>(string term, Il2CppSystem.Collections.Generic.List<TDto> lookupList, Il2CppSystem.Collections.Generic.List<IItemDefinition> resList, Action<Il2CppSystem.Collections.Generic.List<TDto>> setRes) where TDto : Il2CppSystem.Object
-        {
-            HashSet<string> ids = [];
-            HashSet<string> fav_ids = [];
-            HashSet<string> foundIds = [];
-
-            var r = new Il2CppSystem.Collections.Generic.List<TDto>();
-
-            foreach (var targ in lookupList)
-                ids.Add(targ.Cast<IOwnedCosmeticDto>().Item.ContentId);
-
-            foreach (var res in resList)
-            {
-                var good = IsValidTerm(term, res.DisplayName, res.ItemId, ids);
-
-                if (!good) continue;
-
-                foundIds.Add(res.ItemId);
-            }
-
-            foreach (var item in lookupList)
-            {
-                var actualItem = item.Cast<IOwnedCosmeticDto>();
-                var a = actualItem.Item.Id.Split('.')[1].ToLower();
-                if ((actualItem.IsFavourite || FavList.Contains(actualItem.Item.Id)) && foundIds.Contains(a))
-                {
-                    r.Add(item);
-                    fav_ids.Add(a);
-                }
-            }
-
-            foreach (var res in resList)
-            {
-                if (res.CMSData != null && foundIds.Contains(res.ItemId.ToLower()))
-                {
-                    var newdto = ItemDtoTo<TDto>(CMSDefinitionToItemDto(res.CMSData));
-                    var dtoItem = newdto.Cast<IOwnedCosmeticDto>();
-
-                    if (!fav_ids.Contains(dtoItem.Item.Id.Split('.')[1].ToLower()))
-                        r.Add(newdto);
-                }
-            }
-
-            setRes(r);
-        }
-
-        static List<TDto> PushCosmList<TDto>(string group, Il2CppSystem.Collections.Generic.List<TDto> uList, HashSet<string> favIds) where TDto : Il2CppSystem.Object
-        {
-            var blank = CommonConfig.GetAssetsWithGroup(group).ToArray()
-                .Select(x => x.CMSData)
-                .Where(cms => cms != null)
-                .Select(cms => ItemDtoTo<TDto>(CMSDefinitionToItemDto(cms)))
-                .Distinct()
-                .ToList();
-
-            foreach (var item in uList)
-            {
-                var actualItem = item.Cast<IOwnedCosmeticDto>();
-                if (actualItem.IsFavourite)
-                    favIds.Add(actualItem.Item.Id);
-            }
-
-
-            var owned = blank.Select(x => (Dto: x, Owned: x.Cast<IOwnedCosmeticDto>())).ToList();
-
-            return
-            [
-                .. owned.Where(x => FavList.Contains(x.Owned.Item.Id) || favIds.Contains(x.Owned.Item.Id))
-                .Select(x =>
-                {
-                    x.Owned.IsFavourite = true;
-                    favIds.Add(x.Owned.Item.Id);
-                    return x.Dto;
-                }),
-                .. owned.Where(x => !favIds.Contains(x.Owned.Item.Id)).Select(x => x.Dto)
-            ];
         }
 
         internal static void ResolveFavIds(CustomiserMenuViewModel screen)
