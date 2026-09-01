@@ -20,6 +20,7 @@ using UnityEngine.InputSystem.Utilities;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
+
 namespace FGTools.Services
 {
     //this whole class was terribly written, i'll rework this someday
@@ -142,47 +143,47 @@ namespace FGTools.Services
                 var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
                 UserColors = cos.ColourSchemes;
-                foreach (var res in PushCosmList("costumes_colour_schemes", UserColors, def => def.CMSData, ItemDtoToColourSchemeDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("costumes_colour_schemes", UserColors, favIds))
                     AllColors.Add(res);
 
                 UserPatterns = cos.Patterns;
-                foreach (var res in PushCosmList("costumes_patterns", UserPatterns, def => def.CMSData, ItemDtoToPatternDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("costumes_patterns", UserPatterns, favIds))
                     AllPatterns.Add(res);
 
                 UserFaceplates = cos.Faceplates;
-                foreach (var res in PushCosmList("costumes_faceplates", UserFaceplates, def => def.CMSData, ItemDtoToFaceplateDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("costumes_faceplates", UserFaceplates, favIds))
                     AllFaceplates.Add(res);
 
                 UserUppers = cos.UpperCostumePieces;
-                foreach (var res in PushCosmList("costumes_upper", UserUppers, def => def.CMSData, ItemDtoToCostumeUpperDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("costumes_upper", UserUppers, favIds))
                     AllUppers.Add(res);
 
                 UserLowers = cos.LowerCostumePieces;
-                foreach (var res in PushCosmList("costumes_lower", UserLowers, def => def.CMSData, ItemDtoToCostumeLowerDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("costumes_lower", UserLowers, favIds))
                     AllLowers.Add(res);
 
                 UserNameplates = cos.Nameplates;
-                foreach (var res in PushCosmList("cosmetics_nameplates", UserNameplates, def => def.CMSData, ItemDtoToNameplateDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_nameplates", UserNameplates, favIds))
                     AllNameplates.Add(res);
 
                 UserEmotes = cos.Emotes;
-                foreach (var res in PushCosmList("cosmetics_emotes", UserEmotes, def => def.CMSData, ItemDtoToEmoteDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_emotes", UserEmotes, favIds))
                     AllEmotes.Add(res);
 
                 UserPunchlines = cos.Punchlines;
-                foreach (var res in PushCosmList("cosmetics_punchlines", UserPunchlines, def => def.CMSData, ItemDtoToVictoryDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_punchlines", UserPunchlines, favIds))
                     AllPunchlines.Add(res);
 
                 UserNicknames = cos.Nicknames;
-                foreach (var res in PushCosmList("cosmetics_nicknames", UserNicknames, def => def.CMSData, ItemDtoToNicknameDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_nicknames", UserNicknames, favIds))
                     AllNicknames.Add(res);
 
                 UserEmoticons = cos.Emoticons;
-                foreach (var res in PushCosmList("cosmetics_emoticons", UserEmoticons, def => def.CMSData, ItemDtoToEmoticonDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_emoticons", UserEmoticons, favIds))
                     AllEmoticons.Add(res);
 
                 UserPhrases = cos.Phrases;
-                foreach (var res in PushCosmList("cosmetics_phrases", UserPhrases, def => def.CMSData, ItemDtoToPhraseDto, dto => dto.Item, favIds, dto => dto.IsFavourite, (dto, val) => dto.IsFavourite = val))
+                foreach (var res in PushCosmList("cosmetics_phrases", UserPhrases, favIds))
                     AllPhrases.Add(res);
 
                 EndLoad();
@@ -459,37 +460,37 @@ namespace FGTools.Services
                 switch (type)
                 {
                     case "colour":
-                        DoSearch(req, AllCosmetics.Value ? AllColors : UserColors, CommonConfig.GetAssetsWithGroup("costumes_colour_schemes"), dto => dto.Item, ItemDtoToColourSchemeDto, list => cos.ColourSchemes = list);
+                        DoSearch<ColourSchemeDto>(req, AllCosmetics.Value ? AllColors : UserColors, CommonConfig.GetAssetsWithGroup("costumes_colour_schemes"), list => cos.ColourSchemes = list);
                         break;
                     case "pattern":
-                        DoSearch(req, AllCosmetics.Value ? AllPatterns : UserPatterns, CommonConfig.GetAssetsWithGroup("costumes_patterns"), dto => dto.Item, ItemDtoToPatternDto, list => cos.Patterns = list);
+                        DoSearch(req, AllCosmetics.Value ? AllPatterns : UserPatterns, CommonConfig.GetAssetsWithGroup("costumes_patterns"), list => cos.Patterns = list);
                         break;
                     case "face":
-                        DoSearch(req, AllCosmetics.Value ? AllFaceplates : UserFaceplates, CommonConfig.GetAssetsWithGroup("costumes_faceplates"), dto => dto.Item, ItemDtoToFaceplateDto, list => cos.Faceplates = list);
+                        DoSearch(req, AllCosmetics.Value ? AllFaceplates : UserFaceplates, CommonConfig.GetAssetsWithGroup("costumes_faceplates"), list => cos.Faceplates = list);
                         break;
                     case "upper":
-                        DoSearch(req, AllCosmetics.Value ? AllUppers : UserUppers, CommonConfig.GetAssetsWithGroup("costumes_upper"), dto => dto.Item, ItemDtoToCostumeUpperDto, list => cos.UpperCostumePieces = list);
+                        DoSearch(req, AllCosmetics.Value ? AllUppers : UserUppers, CommonConfig.GetAssetsWithGroup("costumes_upper"), list => cos.UpperCostumePieces = list);
                         break;
                     case "lower":
-                        DoSearch(req, AllCosmetics.Value ? AllLowers : UserLowers, CommonConfig.GetAssetsWithGroup("costumes_lower"), dto => dto.Item, ItemDtoToCostumeLowerDto, res => cos.LowerCostumePieces = res);
+                        DoSearch(req, AllCosmetics.Value ? AllLowers : UserLowers, CommonConfig.GetAssetsWithGroup("costumes_lower"), res => cos.LowerCostumePieces = res);
                         break;
                     case "emotes":
-                        DoSearch(req, AllCosmetics.Value ? AllEmotes : UserEmotes, CommonConfig.GetAssetsWithGroup("cosmetics_emotes"), dto => dto.Item, ItemDtoToEmoteDto, res => cos.Emotes = res);
+                        DoSearch(req, AllCosmetics.Value ? AllEmotes : UserEmotes, CommonConfig.GetAssetsWithGroup("cosmetics_emotes"), res => cos.Emotes = res);
                         break;
                     case "victory":
-                        DoSearch(req, AllCosmetics.Value ? AllPunchlines : UserPunchlines, CommonConfig.GetAssetsWithGroup("cosmetics_punchlines"), dto => dto.Item, ItemDtoToVictoryDto, res => cos.Punchlines = res);
+                        DoSearch(req, AllCosmetics.Value ? AllPunchlines : UserPunchlines, CommonConfig.GetAssetsWithGroup("cosmetics_punchlines"), res => cos.Punchlines = res);
                         break;
                     case "banner":
-                        DoSearch(req, AllCosmetics.Value ? AllNameplates : UserNameplates, CommonConfig.GetAssetsWithGroup("cosmetics_nameplates"), dto => dto.Item, ItemDtoToNameplateDto, res => cos.Nameplates = res);
+                        DoSearch(req, AllCosmetics.Value ? AllNameplates : UserNameplates, CommonConfig.GetAssetsWithGroup("cosmetics_nameplates"), res => cos.Nameplates = res);
                         break;
                     case "nickname":
-                        DoSearch(req, AllCosmetics.Value ? AllNicknames : UserNicknames, CommonConfig.GetAssetsWithGroup("cosmetics_nicknames"), dto => dto.Item, ItemDtoToNicknameDto, res => cos.Nicknames = res);
+                        DoSearch(req, AllCosmetics.Value ? AllNicknames : UserNicknames, CommonConfig.GetAssetsWithGroup("cosmetics_nicknames"), res => cos.Nicknames = res);
                         break;
                     case "emoticons":
-                        DoSearch(req, AllCosmetics.Value ? AllEmoticons : UserEmoticons, CommonConfig.GetAssetsWithGroup("cosmetics_emoticons"), dto => dto.Item, ItemDtoToEmoticonDto, res => cos.Emoticons = res);
+                        DoSearch(req, AllCosmetics.Value ? AllEmoticons : UserEmoticons, CommonConfig.GetAssetsWithGroup("cosmetics_emoticons"), res => cos.Emoticons = res);
                         break;
                     case "phrases":
-                        DoSearch(req, AllCosmetics.Value ? AllPhrases : UserPhrases, CommonConfig.GetAssetsWithGroup("cosmetics_phrases"), dto => dto.Item, ItemDtoToPhraseDto, res => cos.Phrases = res);
+                        DoSearch(req, AllCosmetics.Value ? AllPhrases : UserPhrases, CommonConfig.GetAssetsWithGroup("cosmetics_phrases"), res => cos.Phrases = res);
                         break;
                 }
 
@@ -600,154 +601,6 @@ namespace FGTools.Services
                 reslv2();
         }
 
-        static ItemDto CMSDefinitionToItemDto(CMSItemDefinition itemDefinition)
-        {
-            ItemDto itemDto = new()
-            {
-                ContentId = itemDefinition.Id,
-                Id = itemDefinition.FullItemId,
-                ContentType = itemDefinition.GroupId,
-                Quantity = 1
-            };
-            return itemDto;
-        }
-
-        static ItemDto CMSDefinitionToItemDto(IItemDefinition itemDefinition)
-        {
-            ItemDto itemDto = new()
-            {
-                ContentId = itemDefinition.ItemId,
-                Id = itemDefinition.FullItemId,
-                ContentType = itemDefinition.CMSGroupID,
-                Quantity = 1
-            };
-            return itemDto;
-        }
-
-
-        static ColourSchemeDto ItemDtoToColourSchemeDto(ItemDto itemDto)
-        {
-            ColourSchemeDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static PatternDto ItemDtoToPatternDto(ItemDto itemDto)
-        {
-            PatternDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static FaceplateDto ItemDtoToFaceplateDto(ItemDto itemDto)
-        {
-            FaceplateDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static LowerCostumePieceDto ItemDtoToCostumeLowerDto(ItemDto itemDto)
-        {
-            LowerCostumePieceDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static UpperCostumePieceDto ItemDtoToCostumeUpperDto(ItemDto itemDto)
-        {
-            UpperCostumePieceDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static EmoteDto ItemDtoToEmoteDto(ItemDto itemDto)
-        {
-            EmoteDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static NameplateDto ItemDtoToNameplateDto(ItemDto itemDto)
-        {
-            NameplateDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static PunchlineDto ItemDtoToVictoryDto(ItemDto itemDto)
-        {
-            PunchlineDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static NicknameDto ItemDtoToNicknameDto(ItemDto itemDto)
-        {
-            NicknameDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-            return cosmeticDto;
-        }
-
-        static EmoticonDto ItemDtoToEmoticonDto(ItemDto itemDto)
-        {
-            EmoticonDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-
-            return cosmeticDto;
-        }
-
-        static PhraseDto ItemDtoToPhraseDto(ItemDto itemDto)
-        {
-            PhraseDto cosmeticDto = new()
-            {
-                EarnedAt = Il2CppSystem.DateTime.Now,
-                Item = itemDto,
-                IsFavourite = false
-            };
-
-            return cosmeticDto;
-        }
-
         static bool IsValidTerm(string term, string displayName, string itemId, HashSet<string> ids)
         {
             return !string.IsNullOrEmpty(term) &&
@@ -757,7 +610,7 @@ namespace FGTools.Services
                 ids.Contains(itemId.ToLower());
         }
 
-        static void DoSearch<TDto>(string term, Il2CppSystem.Collections.Generic.List<TDto> lookupList, Il2CppSystem.Collections.Generic.List<IItemDefinition> resList, Func<TDto, ItemDto> getItmDto, Func<ItemDto, TDto> pushDto, Action<Il2CppSystem.Collections.Generic.List<TDto>> setRes) where TDto : Il2CppSystem.Object
+        static void DoSearch<TDto>(string term, Il2CppSystem.Collections.Generic.List<TDto> lookupList, Il2CppSystem.Collections.Generic.List<IItemDefinition> resList, Action<Il2CppSystem.Collections.Generic.List<TDto>> setRes) where TDto : Il2CppSystem.Object
         {
             HashSet<string> ids = [];
             HashSet<string> fav_ids = [];
@@ -766,7 +619,7 @@ namespace FGTools.Services
             var r = new Il2CppSystem.Collections.Generic.List<TDto>();
 
             foreach (var targ in lookupList)
-                ids.Add(getItmDto(targ).ContentId);
+                ids.Add(targ.Cast<IOwnedCosmeticDto>().Item.ContentId);
 
             foreach (var res in resList)
             {
@@ -779,10 +632,9 @@ namespace FGTools.Services
 
             foreach (var item in lookupList)
             {
-                var a = getItmDto(item).Id.Split('.')[1].ToLower();
-                dynamic dItm = item;
-
-                if ((dItm.IsFavourite || FavList.Contains(getItmDto(item).Id)) && foundIds.Contains(a))
+                var actualItem = item.Cast<IOwnedCosmeticDto>();
+                var a = actualItem.Item.Id.Split('.')[1].ToLower();
+                if ((actualItem.IsFavourite || FavList.Contains(actualItem.Item.Id)) && foundIds.Contains(a))
                 {
                     r.Add(item);
                     fav_ids.Add(a);
@@ -793,8 +645,10 @@ namespace FGTools.Services
             {
                 if (res.CMSData != null && foundIds.Contains(res.ItemId.ToLower()))
                 {
-                    dynamic newdto = pushDto(CMSDefinitionToItemDto(res.CMSData));
-                    if (!fav_ids.Contains(newdto.Item.Id.Split('.')[1].ToLower()))
+                    var newdto = ItemDtoTo<TDto>(CMSDefinitionToItemDto(res.CMSData));
+                    var dtoItem = newdto.Cast<IOwnedCosmeticDto>();
+
+                    if (!fav_ids.Contains(dtoItem.Item.Id.Split('.')[1].ToLower()))
                         r.Add(newdto);
                 }
             }
@@ -802,30 +656,35 @@ namespace FGTools.Services
             setRes(r);
         }
 
-        static List<TDto> PushCosmList<TDto>(string group, Il2CppSystem.Collections.Generic.List<TDto> uList, Func<IItemDefinition, CMSItemDefinition> getCMSItm, Func<ItemDto, TDto> getItemDto, Func<TDto, ItemDto> getItem, HashSet<string> favIds, Func<TDto, bool> favGetter, Action<TDto, bool> favSetter) where TDto : Il2CppSystem.Object
+        static List<TDto> PushCosmList<TDto>(string group, Il2CppSystem.Collections.Generic.List<TDto> uList, HashSet<string> favIds) where TDto : Il2CppSystem.Object
         {
             var blank = CommonConfig.GetAssetsWithGroup(group).ToArray()
-                .Select(def => getCMSItm(def))
+                .Select(x => x.CMSData)
                 .Where(cms => cms != null)
-                .Select(cms => getItemDto(CMSDefinitionToItemDto(cms)))
+                .Select(cms => ItemDtoTo<TDto>(CMSDefinitionToItemDto(cms)))
                 .Distinct()
                 .ToList();
 
             foreach (var item in uList)
             {
-                if (favGetter(item))
-                    favIds.Add(getItem(item).Id);
+                var actualItem = item.Cast<IOwnedCosmeticDto>();
+                if (actualItem.IsFavourite)
+                    favIds.Add(actualItem.Item.Id);
             }
+
+
+            var owned = blank.Select(x => (Dto: x, Owned: x.Cast<IOwnedCosmeticDto>())).ToList();
 
             return
             [
-                .. blank.Where(item => favGetter(item) || FavList.Contains(getItem(item).Id) || favIds.Contains(getItem(item).Id))
-                .Select(item =>
+                .. owned.Where(x => FavList.Contains(x.Owned.Item.Id) || favIds.Contains(x.Owned.Item.Id))
+                .Select(x =>
                 {
-                    favSetter(item, true);
-                    favIds.Add(getItem(item).Id);
-                    return item;
-                }), .. blank.Where(item => !favIds.Contains(getItem(item).Id)),
+                    x.Owned.IsFavourite = true;
+                    favIds.Add(x.Owned.Item.Id);
+                    return x.Dto;
+                }),
+                .. owned.Where(x => !favIds.Contains(x.Owned.Item.Id)).Select(x => x.Dto)
             ];
         }
 
@@ -856,6 +715,29 @@ namespace FGTools.Services
         public override void OnAppQuit()
         {
 
+        }
+
+        static ItemDto CMSDefinitionToItemDto(CMSItemDefinition itemDefinition)
+        {
+            var itemDto = new ItemDto()
+            {
+                ContentId = itemDefinition.Id,
+                Id = itemDefinition.FullItemId,
+                ContentType = itemDefinition.GroupId,
+                Quantity = 1
+            };
+
+            return itemDto;
+        }
+
+        static T ItemDtoTo<T>(ItemDto itemDto) where T : Il2CppSystem.Object
+        {
+            var dto = (T)Activator.CreateInstance(typeof(T));
+            var owned = dto.TryCast<IOwnedCosmeticDto>();
+            owned.Item = itemDto;
+            owned.IsFavourite = false;
+            owned.EarnedAt = Il2CppSystem.DateTime.Now;
+            return dto;
         }
     }
 }

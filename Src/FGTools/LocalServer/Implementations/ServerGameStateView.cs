@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BepInEx.Logging;
-using FG.Common;
+﻿using FG.Common;
 using FGClient;
 using Il2CppInterop.Runtime.Attributes;
 using Il2CppInterop.Runtime.Injection;
 using UnityEngine;
-using static FGTools.Internal.Extensions.FLZ_Extensions;
 
 namespace FGTools.LocalServer.Implementations
 {
