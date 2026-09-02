@@ -46,10 +46,21 @@ namespace FGTools.HarmonyPatches
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPrefix]
         static bool MoveToPagePref(CustomiserMenuViewModel __instance, int pageIndex)
         {
+            if (!CosmeticsService.SearchActive) return true;
+
             var service = FGTServiceManager.GetService<CosmeticsService>();
             service.PreviousSection = __instance.CurrentSectionText;
             service.ResolveSections();
             return true;
+        }
+
+        [HarmonyPatch(typeof(CustomiserSubScreenViewModel), nameof(CustomiserSubScreenViewModel.UpdateNavPrompts))]
+        [HarmonyPatch(typeof(TheatricsMenuFocusableViewModel), nameof(TheatricsMenuFocusableViewModel.UpdateNavPrompts))]
+        [HarmonyPatch(typeof(InterfaceMenuFocusableViewModel), nameof(InterfaceMenuFocusableViewModel.UpdateNavPrompts))]
+        [HarmonyPrefix]
+        static bool UpdateNavPrompts(CustomiserMenuViewModel __instance, bool isFavourite, bool isNoneOption = false)
+        {
+            return !CosmeticsService.SearchActive;
         }
 
         [HarmonyPatch(typeof(CustomiserMenuViewModel), nameof(CustomiserMenuViewModel.MoveToPage)), HarmonyPostfix]
@@ -57,6 +68,7 @@ namespace FGTools.HarmonyPatches
         {
             var service = FGTServiceManager.GetService<CosmeticsService>();
             service.CurrentSection = __instance.CurrentSectionText;
+            service.UpdateSection();
             if (service.CurrentSection == service.PreviousSection) return;
             service.ResumeSearch();
         }

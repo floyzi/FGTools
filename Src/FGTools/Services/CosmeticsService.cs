@@ -20,13 +20,10 @@ using UnityEngine;
 using UnityEngine.InputSystem.Utilities;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static FGTools.Services.CosmeticsService;
 using static FGTools.Services.LocalizationService;
 
 namespace FGTools.Services
 {
-    //this whole class was terribly written, i'll rework this someday
-    //at least it works
     internal class CosmeticsService : FGTService
     {
         internal interface IItemCollection
@@ -36,21 +33,23 @@ namespace FGTools.Services
             internal void Search(string req);
             internal void ResolveSection();
             internal void RefreshSection();
+            internal void StartTyping();
+            internal void MakeUI();
+            internal void StopTyping();
         }
         internal class ItemCollection<TCollection, TDefinition, TDto> : IItemCollection where TDto : Il2CppSystem.Object where TCollection : CustomiserSectionBase<TDefinition, TDto>
         {
             internal static HashSet<string> FavIds = [];
-            readonly string _group;
             internal Il2CppSystem.Collections.Generic.List<IItemDefinition> Items;
             internal ItemCollection(string group)
             {
-                _group = group;
                 Items = CommonConfig.GetAssetsWithGroup(group);
                 UserItems = GetList();
                 SetAll();
             }
 
             TCollection _collection;
+            CustomiserSubScreenViewModel _focusable;
             internal TCollection Collection 
             { 
                 get 
@@ -59,6 +58,8 @@ namespace FGTools.Services
                     {
                         _collection = Resources.FindObjectsOfTypeAll<TCollection>().FirstOrDefault();
                         _collection.gameObject.AddComponent<CanvasGroup>();
+                        _collection._customiserMenu.gameObject.AddComponent<CanvasGroup>();
+                        _focusable = _collection._customiserMenu.GetComponent<CustomiserSubScreenViewModel>();
                     }
 
                     return _collection; 
@@ -87,7 +88,7 @@ namespace FGTools.Services
 
             void SetAll()
             {
-                var blank = CommonConfig.GetAssetsWithGroup(_group).ToArray().Select(x => x.CMSData).Where(cms => cms != null).Select(cms => ItemDtoTo<TDto>(CMSDefinitionToItemDto(cms))).Distinct().ToList();
+                var blank = Items.ToArray().Select(x => x.CMSData).Where(cms => cms != null).Select(cms => ItemDtoTo<TDto>(CMSDefinitionToItemDto(cms))).Distinct().ToList();
 
                 foreach (var item in UserItems)
                 {
@@ -195,7 +196,7 @@ namespace FGTools.Services
                 var valid = items != null && items.Count > 0;
                 var canvas = Collection.gameObject.GetComponent<CanvasGroup>();
                 Collection._customiserMenu.transform.GetChild(2).gameObject.SetActive(valid);
-                Collection._customiserMenu.CurrentSectionText = FGTServiceManager.Instance.GetService<CosmeticsService>().GetSection();
+                Collection._customiserMenu.CurrentSectionText = Collection._customiserMenu.CurrentSectionText;
 
                 if (valid)
                 {
@@ -204,6 +205,7 @@ namespace FGTools.Services
                     canvas.interactable = true;
 
                     Collection.RefreshSectionData();
+
                     return;
                 }
                 else
@@ -213,25 +215,44 @@ namespace FGTools.Services
                     canvas.interactable = false;
                 }
             }
+
+            void IItemCollection.StartTyping()
+            {
+                _focusable.enabled = false;
+                Broadcaster.Instance.RaiseEvent(new NavPromptChanged(new Il2CppSystem.Collections.Generic.Dictionary<NavPrompt, Il2CppSystem.Action>()));
+            }
+
+            void IItemCollection.StopTyping()
+            {
+                _focusable.enabled = true;
+                _focusable.OnGainFocus();
+            }
+
+            void IItemCollection.MakeUI()
+            {
+                if (Collection == null) return;
+
+                var initTest = _focusable.transform.GetChild(0).transform;
+                if (initTest.GetComponent<CosmeticSearchBar>() != null) return;
+
+                var searchBar = GameObject.Instantiate(FGTServiceManager.Instance.GetService<CosmeticsService>()._searchPrefab, initTest);
+
+                var rt = searchBar.gameObject.GetComponent<RectTransform>();
+                rt.anchorMax = new(0.4f, 1);
+                rt.anchorMin = new(0, 1);
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -30);
+
+                searchBar.AddComponent<CosmeticSearchBar>();
+            }
         }
 
         Dictionary<string, IItemCollection> _itemCollections;
-
-        internal Dictionary<CustomiserMenuViewModel, CustomiserSubScreenViewModel> Screens = [];
-
-        OutfitMenuViewModel OutfitMenuViewModel;
-        InterfaceMenuViewModel InterfaceMenuViewModel;
-        TheatricsMenuViewModel TheatricsMenuViewModel;
-
-        OutfitMenuFocusableViewModel OutfitMenuFocusable;
-        InterfaceMenuFocusableViewModel InterfaceMenuFocusable;
-        TheatricsMenuFocusableViewModel TheatricsMenuFocusable;
+        IItemCollection _currentColection;
 
         internal static HashSet<string> FavList { get; set; }
         GameObject _searchPrefab;
-        bool Loaded;
         string _recentQuery;
-        internal static bool _searchActive = false;
+        internal static bool SearchActive;
         internal string CurrentSection;
         internal string PreviousSection;
         internal string InputString;
@@ -243,7 +264,7 @@ namespace FGTools.Services
 
         void ResetFavList()
         {
-            FGTLog(LogLevel.Warning, base.GetType(), $"Failed to recover fav list.");
+            FGTLog(LogLevel.Warning, GetType(), $"Failed to recover fav list.");
 
             if (File.Exists(Launcher.CustomFavList))
                 File.Delete(Launcher.CustomFavList);
@@ -255,14 +276,14 @@ namespace FGTools.Services
 
         public void Load()
         {
-            if (Loaded)
+            if (_itemCollections != null && _itemCollections.Count > 0)
             {
-                FGTLog(LogLevel.Info, base.GetType(), "Already loaded, finishing.");
-                EndLoad();
+                FGTLog(LogLevel.Info, GetType(), "Already loaded, finishing.");
+                MakeUI();
                 return;
             }
 
-            FGTLog(LogLevel.Info, base.GetType(), "Load");
+            FGTLog(LogLevel.Info, GetType(), "Load");
         
             try
             {
@@ -296,9 +317,7 @@ namespace FGTools.Services
                 _itemCollections.Add("emoticons", new ItemCollection<CustomiserEmoticonsSection, ItemDefinitionSO, EmoticonDto>("cosmetics_emoticons"));
                 _itemCollections.Add("phrases", new ItemCollection<CustomiserPhrasesSection, SocialOption, PhraseDto>("cosmetics_phrases"));
 
-                EndLoad();
-
-                Loaded = true;
+                MakeUI();
 
                 if (AllCosmetics.Value)
                     GrantAllCosmetics();
@@ -306,33 +325,6 @@ namespace FGTools.Services
                     RemoveAllCosmetics();
             }
             catch (Exception e) { FGTLog(LogLevel.Error, GetType(), e); }
-        }
-
-        void EndLoad()
-        {
-            OutfitMenuViewModel = Resources.FindObjectsOfTypeAll<OutfitMenuViewModel>().FirstOrDefault();
-            OutfitMenuViewModel.gameObject.AddComponent<CanvasGroup>();
-
-            InterfaceMenuViewModel = Resources.FindObjectsOfTypeAll<InterfaceMenuViewModel>().FirstOrDefault();
-            InterfaceMenuViewModel.gameObject.AddComponent<CanvasGroup>();
-
-            TheatricsMenuViewModel = Resources.FindObjectsOfTypeAll<TheatricsMenuViewModel>().FirstOrDefault();
-            TheatricsMenuViewModel.gameObject.AddComponent<CanvasGroup>();
-
-            OutfitMenuFocusable = OutfitMenuViewModel.gameObject.GetComponent<OutfitMenuFocusableViewModel>();
-            InterfaceMenuFocusable = InterfaceMenuViewModel.gameObject.GetComponent<InterfaceMenuFocusableViewModel>();
-            TheatricsMenuFocusable = TheatricsMenuViewModel.gameObject.GetComponent<TheatricsMenuFocusableViewModel>();
-
-            Screens.Clear();
-            Screens.Add(OutfitMenuViewModel, OutfitMenuFocusable);
-            Screens.Add(InterfaceMenuViewModel, InterfaceMenuFocusable);
-            Screens.Add(TheatricsMenuViewModel, TheatricsMenuFocusable);
-
-            OutfitMenuViewModel.gameObject.SetActive(false);
-            InterfaceMenuViewModel.gameObject.SetActive(false);
-            TheatricsMenuViewModel.gameObject.SetActive(false);
-
-            MakeUI();
         }
 
         void MakeUI()
@@ -348,29 +340,19 @@ namespace FGTools.Services
                 placeholder.text = LocalizedStr("gui_cosmetics_search");
                 placeholder.fontStyle = FontStyles.Normal;
                 _searchPrefab.hideFlags = HideFlags.HideAndDontSave;
+                _searchPrefab.name = "CosmeticSearch";
                 GameObject.DontDestroyOnLoad(_searchPrefab);
             }
 
-            foreach (var screen in Screens)
-            {
-                var initTest = screen.Value.transform.GetChild(0).transform;
-                var searchBar = GameObject.Instantiate(_searchPrefab, initTest);
-
-                var rt = searchBar.gameObject.GetComponent<RectTransform>();
-                rt.anchorMax = new(0.4f, 1);
-                rt.anchorMin = new(0, 1);
-                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -30);
-
-                searchBar.AddComponent<CosmeticSearchBar>();
-            }
+            foreach (var collection in _itemCollections)
+                collection.Value.MakeUI();
         }
 
         internal string GetState()
         {
-            var sect = GetSection();
             var cos = CatapultServices.Instance.PlayerCosmeticsService.CosmeticsCollection;
 
-            return sect switch
+            return CurrentSection switch
             {
                 "colour" => LocalizeState(cos.ColourSchemes.Count),
                 "pattern" => LocalizeState(cos.Patterns.Count),
@@ -383,7 +365,7 @@ namespace FGTools.Services
                 "nickname" => LocalizeState(cos.Nicknames.Count),
                 "emoticons" => LocalizeState(cos.Emoticons.Count),
                 "phrases" => LocalizeState(cos.Phrases.Count),
-                _ => "Unsupported!!1 " + sect,
+                _ => "Unsupported!!1 " + CurrentSection,
             };
         }
 
@@ -393,85 +375,34 @@ namespace FGTools.Services
         {
             if (StateManager.FGTCurrentState == FGTStateManager.ToolsState.Menu)
             {
-                if (_searchActive)
-                    Broadcaster.Instance.RaiseEvent(new NavPromptChanged(new Il2CppSystem.Collections.Generic.Dictionary<NavPrompt, Il2CppSystem.Action>()));
+                //if (_searchActive)
+                //    Broadcaster.Instance.RaiseEvent(new NavPromptChanged(new Il2CppSystem.Collections.Generic.Dictionary<NavPrompt, Il2CppSystem.Action>()));
             }
         }
 
         public void SearchStart()
         {
-            _searchActive = true;
-
-            foreach (var pair in Screens)
-            {
-                if (pair.Value.gameObject.activeSelf)
-                {
-                    if (pair.Value is OutfitMenuFocusableViewModel outfitMenuFocusable)
-                        outfitMenuFocusable.enabled = false;
-                    else if (pair.Value is InterfaceMenuFocusableViewModel interfaceMenuFocusable)
-                        interfaceMenuFocusable.enabled = false;
-                    else if (pair.Value is TheatricsMenuFocusableViewModel theatricsMenuFocusable)
-                        theatricsMenuFocusable.enabled = false;
-                }
-            }
+            SearchActive = true;
+            _currentColection.StartTyping();
         }
 
-        public void SearchEnd(bool resetTerm)
+        public void SearchEnd()
         {
-            try
-            {
-                _searchActive = false;
-                var a = Resources.FindObjectsOfTypeAll<CustomiserScreenViewModel>().FirstOrDefault();
-                a?.OnGainFocus();
-                foreach (var pair in Screens)
-                {
-                    if (pair.Value.gameObject.activeSelf)
-                    {
-                        if (pair.Value is OutfitMenuFocusableViewModel outfitMenuFocusable)
-                            outfitMenuFocusable.enabled = true;
-                        else if (pair.Value is InterfaceMenuFocusableViewModel interfaceMenuFocusable)
-                            interfaceMenuFocusable.enabled = true;
-                        else if (pair.Value is TheatricsMenuFocusableViewModel theatricsMenuFocusable)
-                            theatricsMenuFocusable.enabled = true;
-                    }
-                }
-                if (resetTerm)
-                {
-                    if (AllCosmetics.Value)
-                        GrantAllCosmetics();
-                    else
-                        RemoveAllCosmetics();
-                }   
-            }
-            catch
-            {
-                if (AllCosmetics.Value)
-                    GrantAllCosmetics();
-                else
-                    RemoveAllCosmetics();
-            }
+            SearchActive = false;
+            _currentColection.StopTyping();
         }
 
-        public string GetSection()
+        internal void UpdateSection()
         {
-            string sect = "";
-
-            if (OutfitMenuViewModel != null && OutfitMenuViewModel.gameObject.activeSelf)
-                sect = OutfitMenuViewModel.CurrentSectionText;
-            else if (TheatricsMenuViewModel != null && TheatricsMenuViewModel.gameObject.activeSelf)
-                sect = TheatricsMenuViewModel.CurrentSectionText;
-            else if (InterfaceMenuViewModel != null && InterfaceMenuViewModel.gameObject.activeSelf)
-                sect = InterfaceMenuViewModel.CurrentSectionText;
-
-            return sect;
+            if (!_itemCollections.TryGetValue(CurrentSection, out _currentColection)) return;
+            _currentColection.RefreshSection();
         }
-
 
         internal void ResumeSearch()
         {
             Refresh();
             if (string.IsNullOrEmpty(_recentQuery)) return;
-            Search(_recentQuery, GetSection());
+            Search(_recentQuery, CurrentSection);
         }
 
         internal void ResolveSections()
@@ -524,16 +455,14 @@ namespace FGTools.Services
 
         public void Refresh()
         {
-            var sect = GetSection();
-
-            if (string.IsNullOrEmpty(sect))
+            if (string.IsNullOrEmpty(CurrentSection))
             {
                 foreach (var section in _itemCollections)
                     section.Value.RefreshSection();
                 return;
             }
 
-            if (_itemCollections.TryGetValue(sect, out var collection))
+            if (_itemCollections.TryGetValue(CurrentSection, out var collection))
                 collection.RefreshSection();
         }
 

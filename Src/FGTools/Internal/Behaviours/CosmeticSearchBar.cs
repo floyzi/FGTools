@@ -67,14 +67,14 @@ namespace FGTools.Internal.Behaviours
                     _inputField.caretWidth = 0;
                     _debugService.CanTriggerDebug = true;
 
-                    _service.SearchEnd(false);
+                    _service.SearchEnd();
                 }
             });
 
             _inputField.onEndEdit.AddListener(new Action<string>((s) =>
             {
                 _debugService.CanTriggerDebug = true;
-                _service.SearchEnd(false);
+                _service.SearchEnd();
             }));
 
             _inputField.onSelect.AddListener(new Action<string>((s) =>
@@ -94,7 +94,7 @@ namespace FGTools.Internal.Behaviours
         IEnumerator DelayedSearch(string s)
         {
             yield return new WaitForSeconds(0.35f);
-            _service.Search(s, _service.GetSection());
+            _service.Search(s, _service.CurrentSection);
             _delay = null;
         }
 
