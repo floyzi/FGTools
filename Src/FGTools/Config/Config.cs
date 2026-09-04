@@ -86,7 +86,6 @@ namespace FGTools.Config
         {
             Auto,
             GitHub,
-            Netlify,
             Vercel,
             Cloudflare,
             MyCDN,

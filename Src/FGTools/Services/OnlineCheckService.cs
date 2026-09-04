@@ -66,7 +66,6 @@ namespace FGTools.Services
         {
              { MirrorType.GitHub, "floyzi.github.io/FGTools/" },
              { MirrorType.Vercel, "floyzi-gitlab-io.vercel.app/FGTools/" },
-             { MirrorType.Netlify, "floyzi-page.netlify.app/public/FGTools/" },
              { MirrorType.Cloudflare, "page.floyzi.workers.dev/FGTools/" },
              { MirrorType.MyCDN, "cdn.floyzi.dev/content/FGTools/" }
         };

@@ -1,18 +1,10 @@
 ﻿extern alias wle;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using DG.Tweening;
 using Events;
 using FG.Common.CMS;
 using FGClient;
-using FGClient.CatapultServices;
 using FGClient.UI;
 using FGDebug;
 using FGTools.Content;
@@ -21,19 +13,21 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.States.Logic;
-using FGTools.UI;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using NAudio.Wave;
-using Rewired;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Video;
-using UniverseLib.UI;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
-using static FGTools.UI.ReadyPopups;
 
 namespace FGTools.States
 {
@@ -72,7 +66,6 @@ namespace FGTools.States
                         if (formats.ContainsKey(pair.Key))
                             actualVal = string.Format(actualVal, formats[pair.Key]);
 
-                      
                         return new ToolTip
                         {
                             _platform = ToolTip.TipPlatform.All,
