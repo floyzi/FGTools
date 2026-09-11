@@ -3,9 +3,11 @@
 using Catapult.Network.Connections.Config;
 using Catapult.Network.Gateway;
 using FG.Common;
+using FG.Common.CMS;
 using FGClient;
 using FGClient.CatapultServices;
 using FGClient.UI.Core;
+using FGTools.Config;
 using FGTools.Internal.Behaviours;
 using FGTools.Services;
 using FGTools.States.Logic;
@@ -87,6 +89,18 @@ namespace FGTools.HarmonyPatches
                 __instance._loadingScreenImage.sprite = GetSpriteFromFile(Launcher.LoadingScreen, 1920, 1080);
 
             __instance.ShowGameplayLoop = false;
+        }
+
+        [HarmonyPatch(typeof(ToolTipViewModel), nameof(ToolTipViewModel.TipText), MethodType.Setter), HarmonyPostfix]
+        static void UpdateDisplay(ToolTipViewModel __instance, string value)
+        {
+            if (LocalServerService.IsServerInOperation && Config.Config.ShowFGTTips.Value)
+            {
+                var tips = CMSLoader.Instance.CMSData.ToolTipsData["fgt"]._tips;
+                var tip = tips[UnityEngine.Random.RandomRange(0, tips.Count)];
+
+                value = __instance._activeControllerStringGlyph.ParseStringWithActiveController(tip._localisedStringtext.Text);
+            }
         }
 
         [HarmonyPatch(typeof(TitleScreenViewModel), nameof(TitleScreenViewModel.ExitTitleScreen)), HarmonyPrefix]

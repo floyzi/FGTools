@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
 using Cinemachine;
 using FG.Common;
 using FG.Common.Audio;
@@ -21,9 +17,15 @@ using FGTools.States.Logic;
 using FGTools.UI;
 using FMOD.Studio;
 using Il2CppInterop.Runtime.Attributes;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Dynamic.Utils;
 using Levels.Obstacles;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.SceneManagement;
 using UniverseLib.UI;
 using static FGTools.Config.Config;
@@ -300,6 +302,49 @@ namespace FGTools.States
             GUI.Label(new Rect((Screen.width - 500f) / 2f, Screen.height - 25f - 2f, 500, 25), $"<b>{watermark}</b>", upper);
         }
 
+        internal void ManageTooltips()
+        {
+            var tips = MakeTooltips();
+
+            if (CMSLoader.Instance.CMSData.ToolTipsData.ContainsKey("fgt"))
+                CMSLoader.Instance.CMSData.ToolTipsData["fgt"]._tips = tips;
+            else
+                CMSLoader.Instance.CMSData.ToolTipsData.Add("fgt", new ToolTips { _tips = tips });
+        }
+
+        Il2CppReferenceArray<ToolTip> MakeTooltips()
+        {
+            try
+            {
+                Dictionary<string, object> formats = new()
+                {
+                    { "fgt_tooltip_01", SkipIntroHotkey.Value },
+                    { "fgt_tooltip_03", ToggleUIHotkey.Value }
+                };
+
+                var tooltips = LocalizationService.LocalizedStrings.Where(pair => pair.Key.StartsWith("fgt_tooltip_")).Select(pair =>
+                {
+                    var actualVal = pair.Value;
+
+                    if (formats.ContainsKey(pair.Key))
+                        actualVal = string.Format(actualVal, formats[pair.Key]);
+
+                    return new ToolTip
+                    {
+                        _platform = ToolTip.TipPlatform.All,
+                        _localisedStringtext = new LocalisedString { Text = actualVal }
+                    };
+                }).ToArray();
+
+                FGTLog(LogLevel.Info, GetType(), $"Got {tooltips.Length} possible tooltips");
+
+                return new Il2CppReferenceArray<ToolTip>(tooltips);
+            }
+            catch
+            {
+                return null;
+            }
+        }
         public override void OnStateExit()
         {
 

@@ -98,6 +98,7 @@ namespace FGTools.Config
         public static ConfigEntry<string> InGameTheme { get; set; }
         public static ConfigEntry<bool> AutoSetPreset { get; set; }
         public static ConfigEntry<bool> ChangeLoadingScreen { get; set; }
+        public static ConfigEntry<bool> ShowFGTTips { get; set; }
         #endregion
 
         #region HOTKEYS BINDINGS
@@ -225,6 +226,8 @@ namespace FGTools.Config
             AutoSetPreset = ConfigFile.Bind(OptionsSect, "Auto Set Preset", true, GetDesc("auto_preset"));
 
             ChangeLoadingScreen = ConfigFile.Bind(OptionsSect, "Change Loading Screen", true, GetDesc("fgt_loading_screen"));
+
+            ShowFGTTips = ConfigFile.Bind(OptionsSect, "Show FGTools Tips", true, GetDesc("fgt_tips"));
             #endregion
 
             LocalizationService.SelectedLocalizeFolder ??= Path.Combine(Launcher.LocalizationDir + LangFileName.Value + "\\");

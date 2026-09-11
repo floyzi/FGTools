@@ -57,5 +57,6 @@
     "locker_search_bar": "If enabled a search bar will be shown in locker",
     "locker_id_search": "If enabled searching will also cover item IDs",
     "locker_item_ids": "If enabled an item ID will be shown below it's name in locker",
-    "fgt_loading_screen": "If enabled Fall Guys loading screens will be replaced with FGTools one"
+    "fgt_loading_screen": "If enabled Fall Guys loading screens will be replaced with FGTools one",
+    "fgt_tips": "If enabled a custom round loading screen tips will be shown instead of Fall Guys tips when you're using round loader"
 }

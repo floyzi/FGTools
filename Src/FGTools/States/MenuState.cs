@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Video;
@@ -43,47 +44,6 @@ namespace FGTools.States
         {
             GameActions.OnMenuEnter -= OnMenuEnter;
             Resources.FindObjectsOfTypeAll<MainMenuManager>().FirstOrDefault()?.StopMusic();
-        }
-
-        void MakeTooltips()
-        {
-            try
-            {
-                Dictionary<string, object> formats = new()
-                {
-                    { "fgt_tooltip_01", SkipIntroHotkey.Value },
-                    { "fgt_tooltip_03", ToggleUIHotkey.Value }
-                };
-
-                var currData = CMSLoader.Instance.CMSData.ToolTipsData["singleton"];
-
-                if (currData != null)
-                {
-                    var tooltips = LocalizedStrings.Where(pair => pair.Key.StartsWith("fgt_tooltip_")).Select(pair =>
-                    {
-                        var actualVal = pair.Value;
-
-                        if (formats.ContainsKey(pair.Key))
-                            actualVal = string.Format(actualVal, formats[pair.Key]);
-
-                        return new ToolTip
-                        {
-                            _platform = ToolTip.TipPlatform.All,
-                            _localisedStringtext = new LocalisedString { Text = actualVal }
-                        };
-                    }).ToArray();
-
-                    FGTLog(LogLevel.Info, base.GetType(), $"Got {tooltips.Length} possible tooltips");
-
-                    currData._tips = new Il2CppReferenceArray<ToolTip>(tooltips);
-                }
-                else
-                    FGTLog(LogLevel.Info, base.GetType(), "fuck.");
-            }
-            catch
-            {
-
-            }
         }
 
         IEnumerator PlayIntroAndContinue()
@@ -111,7 +71,7 @@ namespace FGTools.States
 
             IntroStopwatch.Start();
 
-            FGTLog(LogLevel.Info, base.GetType(), "Time for... GAMING INTRO");
+            FGTLog(LogLevel.Info, GetType(), "Time for... GAMING INTRO");
 
             var loopEvent = new WaveOutEvent();
             var outp = GameObject.Instantiate(TheIntro.asset);
@@ -152,7 +112,7 @@ namespace FGTools.States
 
             yield return new WaitForSeconds((float)intro.length);
 
-            FGTLog(LogLevel.Info, base.GetType(), $"Intro complete, took={IntroStopwatch.Elapsed.Seconds:F2}s");
+            FGTLog(LogLevel.Info, GetType(), $"Intro complete, took={IntroStopwatch.Elapsed.Seconds:F2}s");
 
             IntroStopwatch.Stop();
             filler.gameObject.SetActive(true);
@@ -214,7 +174,14 @@ namespace FGTools.States
 
             FinishLoginAct = new(() =>
             {
-                static void firstLaunch()
+                StateManager.CanUseHotkeys = true;
+                StateManager.ExploreState = null;
+                StateManager.ShowState = null;
+                StateManager.RoundLoadingAllowed = true;
+
+                StateManager.InternalState.ManageTooltips();
+
+                CheckFirstLaunchFlow(() =>
                 {
 #if DEV
                     Broadcaster.Instance.Broadcast<GlobalDebug.DebugToggleFPSCounter>(new());
@@ -229,16 +196,7 @@ namespace FGTools.States
                     FGTServiceManager.GetService<RoundLoaderService>().SetupCMSRoundList();
                     FGTServiceManager.GetService<StatisticsService>().ValidateStats(GlobalGameStateClient.Instance.PlayerProfile.PlatformAccountName);
                     FGTServiceManager.GetService<CosmeticsService>().Load();
-                }
-
-                StateManager.CanUseHotkeys = true;
-                StateManager.ExploreState = null;
-                StateManager.ShowState = null;
-                StateManager.RoundLoadingAllowed = true;
-
-                MakeTooltips();
-
-                CheckFirstLaunchFlow(firstLaunch);
+                });
                
                 StateManager.HandleFGTState(FGTStateManager.ToolsState.Menu);
                 FinishLoginAct = null;

@@ -396,8 +396,7 @@ namespace FGTools.Internal.Extensions
 
         public static void CreateEULAModal(string title, string content, Action<bool> onClick, bool oneBtn = false)
         {
-            if (UIManager.Instance.GetScreen<EULAPopupViewModel>(ScreenStackType.Popup) != null)
-                return;
+            if (UIManager.Instance.GetScreen<EULAPopupViewModel>(ScreenStackType.Popup) != null) return;
 
             var localisedBckp = new Il2CppSystem.Collections.Generic.Dictionary<string, string>();
 
