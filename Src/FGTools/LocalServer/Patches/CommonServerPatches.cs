@@ -183,7 +183,6 @@ namespace FGTools.LocalServer.Patches
 
                 if (StateManager.IsPlayingExplore)
                 {
-                    Console.WriteLine(434343);
                     StateManager.ExploreState.RequestNewRound();
                 }
                 else

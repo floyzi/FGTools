@@ -574,7 +574,7 @@ namespace FGTools.LocalServer
 
             var field = LocalServerService.GameMessageClientConnectClientType.GetFields().FirstOrDefault(x => x.FieldType == Il2CppType.Of<FG_NetworkID>());
             playerConn.RemoteNetworkID = field.GetValue(msg).Unbox<FG_NetworkID>();
-            Console.WriteLine(playerConn.RemoteNetworkID);
+
             PendingConnections.Add(playerConn.RemoteNetworkID, playerConn);
 
             LocalServerService.CustomMessageManager.SendMessageToClient(new GMC_ServerConnectionStatus()
