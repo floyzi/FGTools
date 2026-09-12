@@ -217,6 +217,12 @@ namespace FGTools.Services
 
         public void TriggerSpeedrunContinueModal(bool winScreen = false, VictoryScreenViewModel player = null)
         {
+            if (FGBehaviour.FGCC == null)
+            {
+                FLZ_Extensions.ForceExit();
+                return;
+            }
+
             if (StateManager.IsFGC)
                 SpeedrunContinePopup(GetRunTime(CGM._round.Id), winScreen, player);
             else
@@ -393,9 +399,12 @@ namespace FGTools.Services
                     CGM.SetClockPaused(true);
                     CGM._physicsSimulator.SetRunningPhysicsAutomatically(false);
                     XRayUtils.RemoveXRayControllerForCharacter(FGBehaviour.FGCC);
-                    FGBehaviour.FGCC.RigidBody.isKinematic = true;
-                    FGBehaviour.FGCC.CustomisationHandler.HandleCostumeVisibility(false);
-                    FGBehaviour.FGCC.CustomisationHandler.HandleFallGuyVisibility(false);
+                    if (FGBehaviour.FGCC != null)
+                    {
+                        FGBehaviour.FGCC.RigidBody.isKinematic = true;
+                        FGBehaviour.FGCC.CustomisationHandler?.HandleCostumeVisibility(false);
+                        FGBehaviour.FGCC.CustomisationHandler?.HandleFallGuyVisibility(false);
+                    }
                     break;
                 case RunState.Running:
                     _currentRun = new(_runsHistory.Count + 1);

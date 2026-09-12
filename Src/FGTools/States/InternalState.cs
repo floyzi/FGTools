@@ -46,7 +46,6 @@ namespace FGTools.States
 #endif
         public bool LoaderUIToggle = false;
         public Font TargetFont;
-        public CustomisationSelections LatestSelections;
         public bool OfflinePatches = false;
         public string LatestError;
         public bool ShouldSkipErrors;
@@ -56,73 +55,6 @@ namespace FGTools.States
         public override void OnStateSet()
         {
         
-        }
-
-        internal static void ResetRandomCosmetics()
-        {
-            if (StateManager.InternalState.LatestSelections != null)
-                GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections = StateManager.InternalState.LatestSelections;
-
-            if (FallGuyBehaviour.Instance != null)
-                CustomisationManager.Instance.ApplyCustomisationsToFallGuy(FallGuyBehaviour.Instance.gameObject, StateManager.InternalState.LatestSelections, FGBehaviour.PlayerTeamId);
-        }
-
-        internal static void HandleRandomCosmetics()
-        {
-            if (!StateManager.IsInGameplay)
-                return;
-
-            var manager = CustomisationManager.Instance;
-            if (manager == null)
-                return;
-
-            var cms = CMSLoader.Instance;
-            List<string> topIds = [.. cms._costumesUpperSO.CostumesTop.Keys];
-            List<string> bottomIds = [.. cms._costumesLowerSO.CostumesBottom.Keys];
-            List<string> patternIds = [.. cms._costumesPatternsSO.Patterns.Keys];
-            List<string> colorsIds = [.. cms._costumesColourSchemasSO.Colours.Keys];
-            List<string> facesIds = [.. cms._costumesFaceplatesSO.Faceplates.Keys];
-            List<string> emotesIds = [.. cms._cosmeticsEmoteSO.Emotes.Keys];
-
-            var handler = FGBehaviour.GetComponent<FallguyCustomisationHandler>();
-            if (handler == null)
-                return;
-
-            handler.UpdateCostumeOption(manager.GetUpperCostumeWithId(topIds[Random.RandomRange(0, topIds.Count)], true), false);
-            handler.UpdateCostumeOption(manager.GetLowerCostumeWithId(bottomIds[Random.RandomRange(0, bottomIds.Count)], true), false);
-            handler.UpdateColourOption(manager.GetColourOptionWithId(colorsIds[Random.RandomRange(0, colorsIds.Count)], true));
-            handler.UpdateFaceplateColours(manager.GetFaceplateOptionWithId(facesIds[Random.RandomRange(0, facesIds.Count)], true));
-            handler.UpdatePatternTexture(manager.GetSkinPatternOptionWithId(patternIds[Random.RandomRange(0, patternIds.Count)], true));
-
-            var eTop = manager.GetEmoteOptionWithId(emotesIds[Random.RandomRange(0, emotesIds.Count)], true);
-            var eRight = manager.GetEmoteOptionWithId(emotesIds[Random.RandomRange(0, emotesIds.Count)], true);
-            var eBottom = manager.GetEmoteOptionWithId(emotesIds[Random.RandomRange(0, emotesIds.Count)], true);
-            var eLeft = manager.GetEmoteOptionWithId(emotesIds[Random.RandomRange(0, emotesIds.Count)], true);
-          
-            List<EmotesOption> emotes = [eTop, eRight, eBottom, eLeft];
-
-            CustomisationSelections sect = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections;
-
-            int emoteIndex = 0;
-
-            for (int i = 0; i < sect.FirstWheelOptions.Count; i++)
-            {
-                if (sect.FirstWheelOptions[i].name.Contains("Emote") && emoteIndex < emotes.Count)
-                {
-                    sect.FirstWheelOptions[i] = emotes[emoteIndex++];
-                }
-            }
-
-            for (int i = 0; i < sect.SecondWheelOptions.Count; i++)
-            {
-                if (sect.SecondWheelOptions[i].name.Contains("Emote") && emoteIndex < emotes.Count)
-                {
-                    sect.SecondWheelOptions[i] = emotes[emoteIndex++];
-                }
-            }
-
-
-            XRayUtils.RemoveXRayControllerForCharacter(FGBehaviour.FGCC);
         }
 
         public override void OnSceneLoaded(Scene scene, LoadSceneMode mode)

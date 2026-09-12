@@ -1,56 +1,43 @@
 ﻿using BepInEx.Logging;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
-using Events;
 using FG.Common;
-using FG.Common.Character.MotorSystem;
+using FG.Common.Character;
 using FG.Common.CMS;
 using FGClient;
-using FGClient.FallFeed;
 using FGClient.Rendering.XRay;
 using FGClient.UI;
-using FGClient.UI.Core;
 using FGTools.Content;
 using FGTools.Internal;
 using FGTools.Internal.Behaviours;
 using FGTools.Services;
 using FGTools.States.Logic;
-using Levels.PixelPerfect;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Levels.Progression;
-using Levels.ScoreZone;
+using Spine;
 using SRF;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static FG.Common.GameStateMachine;
-using static FGClient.FallFeed.FallFeedManager;
 using static FGTools.Config.Config;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
-using static FGTools.Internal.FMODTool;
-using static FGTools.Launcher;
 using static FGTools.Services.LocalizationService;
-using static FGTools.Services.SpeedrunService;
 using static FGTools.States.Logic.FGTStateManager;
+using Random = UnityEngine.Random;
 
 namespace FGTools.States
 {
-    public class GameplayState : Logic.FGTState
+    public class GameplayState : FGTState
     {
         internal FGTController Controller;
-
-        public GameplayScoringViewModel[] scoringView;
-        public bool qualComplete;
-        public bool elimComplete;
-        public bool winComplete;
-        public bool winResultsPending;
-        public bool timeAttackWinResultsPending;
+        internal SocialPrimeHandler PrimeHandler;
         private float skipIntroHold;
         private bool holdingSkipIntro;
         public GameObject Spawnpoint;
 
         public override void OnStateSet()
         {
-            scoringView = Resources.FindObjectsOfTypeAll<GameplayScoringViewModel>();
+            PrimeHandler = Resources.FindObjectsOfTypeAll<SocialPrimeHandler>().FirstOrDefault();
 
             var controller = new GameObject($"{Launcher.DisplayName}_Controller");
             Controller = controller.AddComponent<FGTController>();
@@ -66,17 +53,6 @@ namespace FGTools.States
 
             zone.GetNextSpawnPositionAndRotation(out var pos, out var rot);
             Spawnpoint.transform.SetPositionAndRotation(pos, rot);
-        }
-
-        public void UpdateTeamsUI(int teamId, int score)
-        {
-            PlayerTeamManager.SetTeamScoreEvent evt = new()
-            {
-                teamId = teamId,
-                score = score
-            };
-            foreach (GameplayScoringViewModel scoreObj in scoringView)
-                try { scoreObj.HandleSetTeamScore(evt); } catch { }
         }
 
         void OnGameplayBegins()
@@ -207,6 +183,129 @@ namespace FGTools.States
         public override void DisplayGUI()
         {
             RoundIntroGUI();
+        }
+
+        internal void ResetRandomCosmetics()
+        {
+            var sect = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections;
+
+            FGBehaviour.FGCC.CustomisationHandler.UpdateCostumeOption(sect.CostumeTopOption, false);
+            FGBehaviour.FGCC.CustomisationHandler.UpdateCostumeOption(sect.CostumeBottomOption, false);
+            FGBehaviour.FGCC.CustomisationHandler.UpdateColourOption(sect.ColourOption);
+            FGBehaviour.FGCC.CustomisationHandler.UpdateFaceplateColours(sect.FaceplateOption);
+            FGBehaviour.FGCC.CustomisationHandler.UpdatePatternTexture(sect.PatternOption);
+
+            var emotes = new Il2CppReferenceArray<EmotesOption>(8);
+            var tempList1 = new Il2CppSystem.Collections.Generic.List<ItemDefinitionSO>(8);
+            var tempList2 = new Il2CppSystem.Collections.Generic.List<ItemDefinitionSO>(8);
+            int globalIndex = 0;
+
+            for (int i = 0; i < sect.FirstWheelOptions.Count; i++)
+            {
+                var itm = sect.FirstWheelOptions[i];
+                if (itm.CMSGroupID == "cosmetics_emotes")
+                    emotes[globalIndex] = itm.Cast<EmotesOption>();
+
+                tempList1.Add(itm);
+                globalIndex++;
+            }
+
+            for (int i = 0; i < sect.SecondWheelOptions.Count; i++)
+            {
+                var itm = sect.SecondWheelOptions[i];
+                if (itm.CMSGroupID == "cosmetics_emotes")
+                    emotes[globalIndex] = itm.Cast<EmotesOption>();
+
+                tempList2.Add(itm);
+                globalIndex++;
+            }
+
+            XRayUtils.RemoveXRayControllerForCharacter(FGBehaviour.FGCC);
+
+            FGBehaviour.FGCC.SetSocialOptions(sect.FirstWheelOptions, sect.SecondWheelOptions, emotes);
+
+            if (PrimeHandler != null)
+            {
+                PrimeHandler.HighlightedSocialWheel.SocialItemsDictionary[WheelType.Phrases] = tempList1;
+                PrimeHandler.HighlightedSocialWheel.SocialItemsDictionary[WheelType.EmotesAndEmoticons] = tempList2;
+            }
+        }
+
+        internal void HandleRandomCosmetics()
+        {
+            if (!StateManager.IsInGameplay)
+                return;
+
+            var cms = CMSLoader.Instance;
+            List<string> topIds = [.. cms._costumesUpperSO.CostumesTop.Keys];
+            List<string> bottomIds = [.. cms._costumesLowerSO.CostumesBottom.Keys];
+            List<string> patternIds = [.. cms._costumesPatternsSO.Patterns.Keys];
+            List<string> colorsIds = [.. cms._costumesColourSchemasSO.Colours.Keys];
+            List<string> facesIds = [.. cms._costumesFaceplatesSO.Faceplates.Keys];
+
+            FGBehaviour.FGCC.CustomisationHandler.UpdateCostumeOption(CustomisationManager.Instance.GetUpperCostumeWithId(topIds[Random.RandomRange(0, topIds.Count)], true), false);
+            FGBehaviour.FGCC.CustomisationHandler.UpdateCostumeOption(CustomisationManager.Instance.GetLowerCostumeWithId(bottomIds[Random.RandomRange(0, bottomIds.Count)], true), false);
+            FGBehaviour.FGCC.CustomisationHandler.UpdateColourOption(CustomisationManager.Instance.GetColourOptionWithId(colorsIds[Random.RandomRange(0, colorsIds.Count)], true));
+            FGBehaviour.FGCC.CustomisationHandler.UpdateFaceplateColours(CustomisationManager.Instance.GetFaceplateOptionWithId(facesIds[Random.RandomRange(0, facesIds.Count)], true));
+            FGBehaviour.FGCC.CustomisationHandler.UpdatePatternTexture(CustomisationManager.Instance.GetSkinPatternOptionWithId(patternIds[Random.RandomRange(0, patternIds.Count)], true));
+
+            var sect = GlobalGameStateClient.Instance.PlayerProfile.CustomisationSelections;
+
+            int globalIndex = 0;
+            var tempRes1 = new Il2CppReferenceArray<ItemDefinitionSO>(8);
+            var tempRes2 = new Il2CppReferenceArray<ItemDefinitionSO>(8);
+            var emoteOption = new Il2CppReferenceArray<EmotesOption>(8);
+
+            SetRandomWheel(sect.FirstWheelOptions, ref globalIndex, ref emoteOption, ref tempRes1, out var tempRes1List);
+            SetRandomWheel(sect.SecondWheelOptions, ref globalIndex, ref emoteOption, ref tempRes2, out var tempRes2List);
+
+            XRayUtils.RemoveXRayControllerForCharacter(FGBehaviour.FGCC);
+
+            FGBehaviour.FGCC.SetSocialOptions(tempRes1, tempRes2, emoteOption);
+
+            if (PrimeHandler != null)
+            {
+                PrimeHandler.HighlightedSocialWheel.SocialItemsDictionary[WheelType.Phrases] = tempRes1List;
+                PrimeHandler.HighlightedSocialWheel.SocialItemsDictionary[WheelType.EmotesAndEmoticons] = tempRes2List;
+            }
+        }
+
+        static void SetRandomWheel(Il2CppReferenceArray<ItemDefinitionSO> wheel, ref int globalIndex, ref Il2CppReferenceArray<EmotesOption> emotes, ref Il2CppReferenceArray<ItemDefinitionSO> array, out Il2CppSystem.Collections.Generic.List<ItemDefinitionSO> list)
+        {
+            list = new(8);
+
+            var cms = CMSLoader.Instance;
+            List<string> emotesIds = [.. cms._cosmeticsEmoteSO.Emotes.Keys];
+            List<string> emoticonIds = [.. cms._cosmeticsEmoticonsSO.Emoticons.Keys];
+            List<string> phraseIds = [.. cms._cosmeticsPhrasesSO.Phrases.Keys];
+
+            for (int i = 0; i < wheel.Count; i++)
+            {
+                var opt = wheel[i];
+
+                if (opt.CMSGroupID == "cosmetics_emotes")
+                {
+                    var emt = CustomisationManager.Instance.GetEmoteOptionWithId(emotesIds[Random.RandomRange(0, emotesIds.Count)], true);
+                    emotes[globalIndex] = emt;
+                    array[i] = emt;
+                }
+
+                if (opt.CMSGroupID == "cosmetics_phrases")
+                {
+                    var phrase = CustomisationManager.Instance.GetPhraseOptionWithId(phraseIds[Random.Range(0, phraseIds.Count)], true);
+                    array[i] = phrase;
+                }
+
+                if (opt.CMSGroupID == "cosmetics_emoticons")
+                {
+                    var emoticon = CustomisationManager.Instance.GetEmoticonOptionWithId(emoticonIds[Random.Range(0, emoticonIds.Count)], true);
+                    array[i] = emoticon;
+                }
+
+                list.Add(array[i]);
+
+                globalIndex++;
+            }
         }
     }
 }

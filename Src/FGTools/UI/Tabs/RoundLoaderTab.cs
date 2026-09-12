@@ -380,13 +380,18 @@ namespace FGTools.UI.Tabs
                 GameObject btnRow2 = UIFactory.CreateHorizontalGroup(gameplayGUI_Content, "ROW2", true, true, true, true, 5, new Vector4(2f, 2f, 2f, 2f), default, null);
                 UIFactory.SetLayoutElement(btnRow2, minHeight: 25, flexibleHeight: 0);
 
-                ButtonRef randCosmetics = UIFactory.CreateButton(btnRow2, "ramdCos", $"{LocalizedStr("gui_handle_random_cosmetics")}", null);
-                randCosmetics.OnClick += InternalState.HandleRandomCosmetics;
+                ButtonRef randCosmetics = UIFactory.CreateButton(btnRow2, "randCos", $"{LocalizedStr("gui_handle_random_cosmetics")}", null);
+                randCosmetics.OnClick += () =>
+                {
+                    var gps = StateManager.GetState<GameplayState>();
+                    gps?.HandleRandomCosmetics();
+                };
                 UIFactory.SetLayoutElement(randCosmetics.GameObject, 30, 20, null, 0, null, null, null);
                 ButtonRef defaultCos = UIFactory.CreateButton(btnRow2, "defaultCos", $"{LocalizedStr("gui_handle_default_cosmetics")}", null);
                 defaultCos.OnClick += () =>
                 {
-                    InternalState.ResetRandomCosmetics();
+                    var gps = StateManager.GetState<GameplayState>();
+                    gps?.ResetRandomCosmetics();
                 };
                 UIFactory.SetLayoutElement(defaultCos.GameObject, 30, 20, null, 0, null, null, null);
 

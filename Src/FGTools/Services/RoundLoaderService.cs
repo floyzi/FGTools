@@ -378,7 +378,9 @@ namespace FGTools.Services
                     return;
                 }
 
-                InternalState.ResetRandomCosmetics();
+                var gps = StateManager.GetState<GameplayState>();
+                gps?.ResetRandomCosmetics();
+
                 FGTLog(LogLevel.Message, base.GetType(), "[LOAD ACTION] Trying to load: " + StateManager.CurrentRound.Id);
                 FMODTool.UnloadAllLoadedBanks();
 

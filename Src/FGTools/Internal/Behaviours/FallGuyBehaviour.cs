@@ -299,11 +299,6 @@ namespace FGTools.Internal.Behaviours
 
         public void ReturnToStart()
         {
-            CurrentGPState.winComplete = false;
-            CurrentGPState.winResultsPending = false;
-            CurrentGPState.elimComplete = false;
-            CurrentGPState.qualComplete = false;
-
             if (!FGTServiceManager.Instance.GetService<EventService>().ReturnBoolEventValue("OldSp"))
             {
                 CreateNotification(LocalizedStr("msg_tip"), LocalizedStr("msg_old_spc_possible"), FGT_Info_Color);

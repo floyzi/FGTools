@@ -3,6 +3,7 @@
 using Catapult.Network.Connections.Config;
 using Catapult.Network.Gateway;
 using FG.Common;
+using FG.Common.Character;
 using FG.Common.CMS;
 using FGClient;
 using FGClient.CatapultServices;
