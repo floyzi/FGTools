@@ -1,15 +1,14 @@
 # FGTools
 Fall Guys mod that adds additional features to the game to improve your experience and help with level editor and rounds training
 
-<a href="https://github.com/floyzi/FGTools/releases/latest" title="Latest Release" target="_blank">
-    <img src="https://img.shields.io/github/v/release/floyzi/FGTools?include_prereleases&display_name=release" />
-</a>
-<a href="https://github.com/floyzi/FGTools/releases/latest" title="Total Downloads" target="_blank">
-    <img src = "https://img.shields.io/github/downloads-pre/floyzi/FGTools/total">
-</a>
-<a href="https://dsc.gg/obedguys" title="Obed Guys Corp Discord" target="_blank">
-    <img src="https://img.shields.io/badge/Join%20The%20Discord-5865F2?logo=Discord&logoColor=fff" />
-</a>
+<p>
+    <a href="https://github.com/floyzi/FGTools/releases/latest" title="Latest Release" target="_blank">
+        <img src="https://img.shields.io/github/v/release/floyzi/FGTools?include_prereleases&display_name=release" /></a>
+    <a href="https://github.com/floyzi/FGTools/releases/latest" title="Total Downloads" target="_blank">
+        <img src = "https://img.shields.io/github/downloads-pre/floyzi/FGTools/total"></a>
+    <a href="https://dsc.gg/obedguys" title="Obed Guys Corp Discord" target="_blank">
+        <img src="https://img.shields.io/badge/Join%20The%20Discord-5865F2?logo=Discord&logoColor=fff" /></a>
+</p>
 
 ## Showcase
 |      |      |
