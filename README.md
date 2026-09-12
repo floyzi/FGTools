@@ -7,7 +7,7 @@ Fall Guys mod that adds additional features to the game to improve your experien
     <a href="https://github.com/floyzi/FGTools/releases/latest" title="Total Downloads" target="_blank">
         <img src = "https://img.shields.io/github/downloads-pre/floyzi/FGTools/total"></a>
     <a href="https://dsc.gg/obedguys" title="Obed Guys Corp Discord" target="_blank">
-        <img src="https://img.shields.io/badge/Join%20The%20Discord-5865F2?logo=Discord&logoColor=fff" /></a>
+    <img src="https://img.shields.io/badge/Join%20The%20Discord-5865F2?logo=Discord&logoColor=fff" /></a>
 </p>
 
 ## Showcase
@@ -59,7 +59,7 @@ Fall Guys mod that adds additional features to the game to improve your experien
 
 ## Deinstallation
 > [!WARNING]
-> Instructions below are for BepInEx deinstallation! If you only need to remove FGTools but keep other mods you have in BepInEx/plugins delete FGTools directory
+> Instructions below are for BepInEx deinstallation! If you only need to remove FGTools in BepInEx/plugins delete FGTools directory
 ### Deinstallation Via FGLauncher
 - On your Fall Guys slot click on the Toggle Mods button. Worth to say that it only disables BepInEx, not removes it completely, if you need to completely remove BepInEx look at manual section
 ### Manual Deinstallation
@@ -75,7 +75,7 @@ Fall Guys mod that adds additional features to the game to improve your experien
 ### FGTools Development
 - Kota - General help with code, some Creative Expansion Pack code
 - [RRM1](https://github.com/RRM101) - General help with code, some [fallguyloadr](https://github.com/RRM101/fallguyloadr) code
-### FGTools Localizators
+### FGTools Translation
 - XiaoBai / Fall Guy 0294 - translated FGTools on Chinese
 - ArenaCloser12 - translated FGTools on Korean
 - Nemui_gamer - translated FGTools on Japanese
@@ -103,8 +103,14 @@ FGTools, as any other Fall Guys mod that allow you to play online, spoofs your p
 ### I want to report a bug, how can i do it
 You can either [create an issue on GitHub](https://github.com/floyzi/FGTools/issues/new) or, if you don't have a GitHub account, [create an issue on the Discord Server](https://discord.com/channels/1156450016408391750/1175624351136108596)
 
+### Windows Defender flags mod as malware
+This is a false positive, FGTools is a FOSS project, it's source code can be viewed in this repository and compiled releases are easy to decompile. If you still don't beleive me you can test it on [Virus Total](https://www.virustotal.com)
+
 ### How do I open FGTools menu
 Default hotkey for menu is `F2`. If pressing it does nothing try pressing `FN + F2`. If you don't have `F2` key at all check [this](https://technicskeyboard.com/how-to-press-an-f-key-that-keyboard-doesnt-have/) or change hotkey in config that you can find in `BepInEx/config/` directory as `flz.fgt.cfg`
+
+### I don't see cursor, how do i get it back!?
+Press `F1`
 
 ### How do I edit config
 In FGTools UI go to `Config` tab, change settings you need. If you need to edit config file manually it can be found in `BepInEx/config/` directory as `flz.fgt.cfg`, shortcut to open config file can be found at the bottom of `Misc` tab
