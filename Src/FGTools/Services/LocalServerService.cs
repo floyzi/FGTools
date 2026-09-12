@@ -241,6 +241,10 @@ namespace FGTools.Services
             GameActions.OnAllPlayersSpawned = null;
             GameActions.OnRoundStarts = null;
 
+            var cSets = FGTServiceManager.GetService<ControllersDataService>();
+            cSets.SetDataPreset("Default");
+            cSets.ActiveControllerData.divePlayerSensitivity = (float)Config.Config.DiveSens.DefaultValue;
+
             GlobalGameStateClient.Instance.NetObjectManager._networkMode = MPGNetObjectManager.NetworkMode.StandaloneClient;
 
             foreach (var fgcc in Resources.FindObjectsOfTypeAll<FallGuysCharacterController>())

@@ -340,7 +340,7 @@ namespace FGTools.Config
             #endregion
 
             #region PHYSICS
-            DiveSens = ConfigFile.Bind(CPSect, "Dive Sensivity", 70f, GetDesc("dive_sens"));
+            DiveSens = ConfigFile.Bind(CPSect, "Dive Sensitivity", 70f, GetDesc("dive_sens"));
             DiveSens.SettingChanged += (sender, args) => {
                 ConfigAction();
             };
