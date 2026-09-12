@@ -42,5 +42,6 @@ static class Constants
 
     #region ASSEMBLIES
     internal const string UniverseLib = $"UniverseLib.BIE.IL2CPP.Interop";
+    internal const string TargetUniverseVersion = "1.5.10";
     #endregion
 }

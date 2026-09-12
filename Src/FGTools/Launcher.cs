@@ -145,9 +145,9 @@ namespace FGTools
                 BuildDate = DateTimeOffset.FromUnixTimeSeconds(FGToolsBuildDetails.BuildTimestamp).UtcDateTime;
 
                 Log.LogMessage($" --- ");
-                Log.LogMessage($"{DisplayName} V{FGToolsBuildDetails.Version}");
+                Log.LogMessage($"{DisplayName} V{FGToolsBuildDetails.Version} [#{FGToolsBuildDetails.BuildNumber}]");
                 Log.LogMessage($"{FGToolsBuildDetails.Description}");
-                Log.LogMessage($"Env: {FGToolsBuildDetails.Config} Commit: #{FGToolsBuildDetails.CommitHashShort} Build Date: {BuildDate}");
+                Log.LogMessage($"Env: {FGToolsBuildDetails.Config} | Commit: #{FGToolsBuildDetails.CommitHashShort} | Build Date: {BuildDate}");
                 Log.LogMessage($" --- ");
 
                 PermanentHarmony.PatchAll(typeof(ServerCorePatches));
@@ -165,8 +165,29 @@ namespace FGTools
                     if (!File.Exists(VariantData))
                         File.Create(VariantData);
 
-                    if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, Constants.UniverseLib, StringComparison.OrdinalIgnoreCase)))
-                        Log.LogWarning($"Unable to find UniverseLib as loaded dll ({Constants.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib needed to render {DisplayName} UI");
+                    var dlls = Directory.GetFiles(Paths.PluginPath, "*.dll", SearchOption.AllDirectories);
+                    if (!dlls.Any(x => x.EndsWith($"{Constants.UniverseLib}.dll")))
+                    {
+                        FLZ_Extensions.QuitWithMessage(
+                            $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort} [{FGToolsBuildDetails.BuildNumber}])",
+                            $"Unable to find UniverseLib dll ({Constants.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib is needed to render {DisplayName} UI");
+                        return;
+                    }
+
+                    var dll = dlls.FirstOrDefault(x => x.EndsWith($"{Constants.UniverseLib}.dll"));
+                    if (!string.IsNullOrEmpty(dll) && File.Exists(dll))
+                    {
+                        var verInfo = FileVersionInfo.GetVersionInfo(dll);
+                        if (verInfo.FileVersion != TargetUniverseVersion)
+                        {
+                            FLZ_Extensions.QuitWithMessage(
+                                $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort} [{FGToolsBuildDetails.BuildNumber}])",
+                                $"Installed UniverseLib version \"{verInfo.FileVersion}\" does not match the required version \"{TargetUniverseVersion}\". Please update UniverseLib to the same version that comes with {DisplayName} release. UniverseLib is needed to render {DisplayName} UI");
+                            return;
+                        }
+                    }
+                    else
+                        Log.LogWarning("[Launcher] Had to skip UniverseLib ver check");
 
                     StartUp();
                 }
@@ -184,7 +205,7 @@ namespace FGTools
             Log.LogFatal("[Launcher] Startup failed. Certain files or folders missing!");
 
             FLZ_Extensions.QuitWithMessage(
-                $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort})",
+                $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort} [{FGToolsBuildDetails.BuildNumber}])",
                 $"Unable to launch {DisplayName} because important files are missing. If you can't fix this by yourself ask for help in the discord server ({DiscordUrl}) or reinstall {DisplayName}\n\nWhat content are missing...\n\n {string.Join($"\n\n", _missingData)}");
         }
 
