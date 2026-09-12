@@ -60,7 +60,20 @@ Fall Guys mod that adds additional features to the game
 - If you still need help ask for it in the [Discord Server](https://dsc.gg/obedguys)
 
 ## Acknowledgements
-TODO
+### FGTools Development
+- Kota - General help with code, some Creative Expansion Pack code
+- [RRM1](https://github.com/RRM101) - General help with code, some [fallguyloadr](https://github.com/RRM101/fallguyloadr) code
+### FGTools Localizators
+- XiaoBai / Fall Guy 0294 - translated FGTools on Chinese
+- ArenaCloser12 - translated FGTools on Korean
+- Nemui_gamer - translated FGTools on Japanese
+- ItzAqua! - translated FGTools on Spanish
+- English & Russian were translated by me
+### Other
+- Special thanks to [sinai-dev](https://github.com/sinai-dev) who made [Unity Explorer](https://github.com/sinai-dev/UnityExplorer) and [Universe Lib](https://github.com/sinai-dev/UniverseLib)
+- Special thanks to [yukieiji](https://github.com/yukieiji) for keeping [Unity Explorer](https://github.com/yukieiji/UnityExplorer) and [Universe Lib](https://github.com/yukieiji/UniverseLib) updated
+- Special thanks to [repinek](https://github.com/repinek) for creating [IMG To FGC](https://github.com/repinek/ImgToFGC)
+
 
 ## Building
 TODO
@@ -80,3 +93,6 @@ Yes! Check out [FGTools Mobile](https://gitlab.com/floyzi/fgtoolsmobile), it was
 
 ### My question is not on the list...
 You can always ask it in the [Discord Server](https://dsc.gg/obedguys). Just make sure it's not dumb!
+
+## License
+[![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)
