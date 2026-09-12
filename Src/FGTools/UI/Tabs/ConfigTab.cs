@@ -39,10 +39,17 @@ namespace FGTools.UI.Tabs
         {
             q = q.ToLower();
 
+            var aliveTitles = new HashSet<string>();
             foreach (var entry in _confEntries)
             {
                 bool val = (string.IsNullOrEmpty(q) || entry.RefEntry.Definition.Key.ToLower().Contains(q) || (entry.RefEntry.Description?.Description?.Contains(q) ?? false)) && (!entry.IsHidden);
                 entry.Content.SetActive(val);
+                if (val) aliveTitles.Add(entry.RefEntry.Definition.Section);
+            }
+
+            foreach (var title in ControlledObject.GetComponentsInChildren<Transform>(true).ToList().FindAll(x => x.name.StartsWith("Title_")))
+            {
+                title.gameObject.SetActive(aliveTitles.Contains(title.GetComponent<Text>().text));
             }
         }
 
