@@ -12,6 +12,9 @@ using UniverseLib.UI;
 using static FGTools.UI.FGToolsUI;
 using static FGTools.Services.LocalizationService;
 using FGTools.Config;
+using FGClient.UI.Core;
+using FGTools.Services;
+using UniverseLib.UI.Models;
 
 namespace FGTools.UI.Tabs
 {
@@ -31,10 +34,11 @@ namespace FGTools.UI.Tabs
         }
 
         List<EntryInfo> _confEntries;
+        InputFieldRef _searchBar;
+        bool _wasFocused;
 
         internal override string TabName => "gui_config";
         internal override string TabTitle => "gui_config";
-
         void SearchConfig(string q)
         {
             q = q.ToLower();
@@ -59,9 +63,9 @@ namespace FGTools.UI.Tabs
 
             ControlledObject = UIFactory.CreateVerticalGroup(root, $"Tab_{Tab}", true, true, true, true, 2, new Vector4(2, 2, 2, 2));
             UIFactory.SetLayoutElement(ControlledObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 9999);
-            var search = UIFactory.CreateInputField(ControlledObject, "configGUI", LocalizedStr("gui_config_search"));
-            search.OnValueChanged += SearchConfig;
-            UIFactory.SetLayoutElement(search.GameObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 25);
+            _searchBar = UIFactory.CreateInputField(ControlledObject, "configGUI", LocalizedStr("gui_config_search"));
+            _searchBar.OnValueChanged += SearchConfig;
+            UIFactory.SetLayoutElement(_searchBar.GameObject, minHeight: 25, flexibleWidth: 9999, flexibleHeight: 25);
             GameObject content = UIFactory.CreateScrollView(ControlledObject, "configGUI", out _, out _, new(0.1f, 0.1f, 0.1f));
             UIFactory.SetLayoutElement(content, preferredHeight: 310, flexibleHeight: 9999, flexibleWidth: 9999);
             var scroll = content.GetComponent<ScrollRect>().content.gameObject;
@@ -132,6 +136,26 @@ namespace FGTools.UI.Tabs
 
             Text bottomLine = UIFactory.CreateLabel(ControlledObject, "config_credits", LocalizedStr("gui_config_credits"), TextAnchor.LowerCenter, default, true, 14);
             UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
+        }
+
+        internal override void Update()
+        {
+            if (_searchBar == null) return;
+            if (_searchBar.Component.isFocused && !_wasFocused)
+            {
+                FGTServiceManager.GetService<DebugDisplayService>().CanTriggerDebug = false;
+                RewiredManager.Instance.DisableMap(0);
+                RewiredManager.Instance.DisableMap(1);
+                _wasFocused = true;
+            }
+
+            if (!_searchBar.Component.isFocused && _wasFocused)
+            {
+                FGTServiceManager.GetService<DebugDisplayService>().CanTriggerDebug = true;
+                RewiredManager.Instance.EnableMap(0);
+                RewiredManager.Instance.EnableMap(1);
+                _wasFocused = false;
+            }
         }
 
         private void ConfigFile_SettingChanged(object sender, SettingChangedEventArgs e)
