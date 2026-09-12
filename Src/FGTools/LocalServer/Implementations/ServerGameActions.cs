@@ -342,7 +342,7 @@ namespace FGTools.LocalServer.Implementations
             });
 
             if (scoreAfter >= ServerManager.CGM.GameRules.ScoreTarget && !ServerManager.CGM.GetPlayerData(playerNetObj.NetID).completedLevel)
-                MarkPlayerAsSuccessful(playerNetObj, true);
+                MarkPlayerAsSuccessful(playerNetObj, LocalServerService.IsUserAloneAndHost && !Config.Config.SpeedrunMode.Value || FGTServiceManager.Instance.GetService<SpeedrunService>().IsSepeedrunsDisabled);
         }
 
         void SetScore(MPGNetObject playerNetObj, int newScore)
