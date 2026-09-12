@@ -16,6 +16,9 @@ namespace FGTools.Content.ContentImpl
         [FGTField("discord_url")]
         public string DiscordUrl { get; set; }
 
+        [FGTField("github_url")]
+        public string GithubUrl { get; set; }
+
         [FGTField("content_version")]
         public string ContentVersion { get; set; }
     }

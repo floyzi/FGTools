@@ -55,8 +55,26 @@ namespace FGTools.UI.Tabs
 
             Text credits = UIFactory.CreateLabel(ControlledObject, "creditsInfo", $"{sb.ToString().Trim()}", TextAnchor.LowerCenter, default, true, 14);
             credits.transform.parent = scrollview.GetComponent<ScrollRect>().content;
+
             Text bottomLine = UIFactory.CreateLabel(ControlledObject, "creditsInfo_2", $"{Launcher.DisplayName} V{FGToolsBuildDetails.Version} {FGToolsBuildDetails.Description[FGToolsBuildDetails.Description.IndexOf("by")..]}", TextAnchor.LowerCenter, default, true, 14);
             UIFactory.SetLayoutElement(bottomLine.gameObject, minHeight: 5);
+
+            GameObject buttons = UIFactory.CreateHorizontalGroup(ControlledObject, "buttons", true, false, true, true, 2, bgColor: new Color(0.07f, 0.07f, 0.07f, 1));
+            UIFactory.SetLayoutElement(buttons.gameObject, minHeight: 25);
+
+            var ghBtn = UIFactory.CreateButton(buttons, "ghBtn", $"{LocalizedStr("gui_github_btn")}");
+            UIFactory.SetLayoutElement(ghBtn.Component.gameObject, flexibleWidth: 9999, minHeight: 25, flexibleHeight: 0);
+            ghBtn.OnClick += () => {
+                if (string.IsNullOrEmpty(OnlineCheck.FGTContent?.Meta?.GithubUrl)) return;
+                Application.OpenURL(OnlineCheck.FGTContent.Meta.GithubUrl); 
+            };
+
+            var discordBtn = UIFactory.CreateButton(buttons, "discordBtn", $"{LocalizedStr("gui_discord_btn")}");
+            UIFactory.SetLayoutElement(discordBtn.Component.gameObject, flexibleWidth: 9999, minHeight: 25, flexibleHeight: 0);
+            discordBtn.OnClick += () => {
+                if (string.IsNullOrEmpty(OnlineCheck.FGTContent?.Meta?.DiscordUrl)) return;
+                Application.OpenURL(OnlineCheck.FGTContent.Meta.DiscordUrl); 
+            };
         }
 
         internal override void Refresh()

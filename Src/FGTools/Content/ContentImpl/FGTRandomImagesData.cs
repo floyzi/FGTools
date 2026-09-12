@@ -25,7 +25,7 @@ namespace FGTools.Content.ContentImpl
         [FGTField("banned_images")]
         public List<int> BannedImages { get; set; }
 
-        [FGTField("fallback")]
+        [FGTField("fallback_path")]
         public string Fallback { get; set; }
     }
 }
