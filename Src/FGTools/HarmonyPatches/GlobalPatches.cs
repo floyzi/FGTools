@@ -1,22 +1,16 @@
 ﻿extern alias wle;
-
-using Catapult.Network.Connections.Config;
 using Catapult.Network.Gateway;
 using FG.Common;
-using FG.Common.Character;
 using FG.Common.CMS;
 using FGClient;
 using FGClient.CatapultServices;
 using FGClient.UI.Core;
-using FGTools.Config;
 using FGTools.Internal.Behaviours;
 using FGTools.Services;
 using FGTools.States.Logic;
-using FGTools.UI;
 using HarmonyLib;
 using System;
 using System.IO;
-using static FGTools.Internal.Behaviours.FallGuyBehaviour;
 using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.States.Logic.FGTStateManager;
@@ -112,6 +106,7 @@ namespace FGTools.HarmonyPatches
             FGTServiceManager.GetService<OnlineCheckService>().Run();
             return false;
         }
+
 
         //[HarmonyPatch(typeof(MainMenuShowSelectorPlayButtonViewModel), nameof(MainMenuShowSelectorPlayButtonViewModel.Play)), HarmonyPrefix]
         //static bool Play(MainMenuShowSelectorPlayButtonViewModel __instance)
