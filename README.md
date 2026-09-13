@@ -82,9 +82,10 @@ Fall Guys mod that adds additional features to the game to improve your experien
 - ItzAqua! - translated FGTools on Spanish
 - English & Russian were translated by me
 ### Other
+- Special thanks to [repinek](https://github.com/repinek) for making original [IMG To FGC](https://github.com/repinek/ImgToFGC) version
+- Special thanks to [loamfy](https://github.com/Loamfy) for updating [IMG To FGC](https://github.com/Loamfy/img2FGC_v2) with HEX support
 - Special thanks to [sinai-dev](https://github.com/sinai-dev) who made [Unity Explorer](https://github.com/sinai-dev/UnityExplorer) and [Universe Lib](https://github.com/sinai-dev/UniverseLib)
 - Special thanks to [yukieiji](https://github.com/yukieiji) for keeping [Unity Explorer](https://github.com/yukieiji/UnityExplorer) and [Universe Lib](https://github.com/yukieiji/UniverseLib) updated
-- Special thanks to [repinek](https://github.com/repinek) for making [IMG To FGC](https://github.com/repinek/ImgToFGC)
 
 
 ## Building
