@@ -114,7 +114,7 @@ namespace FGTools.LocalServer.Implementations
             if (roundEndCondition)
                 LocalServerService.ServerManager.EndRound(true);
 
-            if (shouldDespawn)
+            if (shouldDespawn && isNotInSpeedrun)
                 RequestDestroy(playerNetObject);
 
         }
@@ -168,13 +168,11 @@ namespace FGTools.LocalServer.Implementations
                 NumEliminatedPlayers = (uint)ServerManager.CGM._eliminatedPlayerCount,
             });
 
-            if (isNotInSpeedrun)
-            {
-                if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded)
-                    LocalServerService.ServerManager.EndRound(true);
+            if (ServerManager.CGM.EliminatedPlayerCount >= ServerManager.CGM.RequiredEliminatedPlayerCount && LocalServerService.ServerManager.State != ServerManager.ServerState.GameEnded)
+                LocalServerService.ServerManager.EndRound(true);
 
+            if (isNotInSpeedrun)
                 RequestDestroy(playerNetObject);
-            }
         }
 
         void RequestDestroy(MPGNetObject go)

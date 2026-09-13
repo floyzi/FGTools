@@ -306,15 +306,23 @@ namespace FGTools.Internal.Behaviours
             }
 
             try { AudioMixing.Instance.ResetAllSnapshotParams(); } catch { }
+
+            FGCC.ResetToDefaultState();
+
+            for (var i = 0; i < FGCC.FXController._currentVolumeModifierBuffer.Count; i++)
+                FGCC.FXController.HandleExitVolumeModifier(FGCC.FXController._currentVolumeModifierBuffer[i], null);
+
             CGM.FinishPreparationPhase();
             CGM.GameRules.RemovePlayerFromSuccessfulList(FGCC.NetObject.NetID.m_NetworkID);
 
             CGM.SetClockPaused(false);
             CGM._physicsSimulator.SetRunningPhysicsAutomatically(true);
-            FGBehaviour.FGCC.RigidBody.isKinematic = false;
-            FGBehaviour.FGCC.CustomisationHandler.HandleCostumeVisibility(true);
-            FGBehaviour.FGCC.CustomisationHandler.HandleFallGuyVisibility(true);
-            XRayUtils.AddXRayControllerForCharacter(FGBehaviour.FGCC);
+
+            FGCC.RigidBody.isKinematic = false;
+            FGCC.CustomisationHandler.HandleCostumeVisibility(true);
+            FGCC.CustomisationHandler.HandleFallGuyVisibility(true);
+
+            XRayUtils.AddXRayControllerForCharacter(FGCC);
 
             ServerGameStateActions.Instance.RespawnParticipant(FGCC);
 
