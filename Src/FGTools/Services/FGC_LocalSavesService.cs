@@ -285,8 +285,7 @@ namespace FGTools.Services
 
                 wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels.ResetCurrentLevelAndClearList();
                 var level = wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels.Add(lvlDto, true);
-                if (level == null)
-                    level = new wle.LevelEditorLevel(wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels, 0);
+                level ??= new wle.LevelEditorLevel(wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels, 0);
 
                 options.StartMode = LevelEditorOptionsSingleton.StartModeType.Load;
                 proxy.BlockInputForLoading = true;

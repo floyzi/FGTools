@@ -78,16 +78,6 @@ namespace FGTools.Internal.Extensions
             _ = Launcher.MessageBox(IntPtr.Zero, msg, title, 0x00000010);
         }
 
-        internal static void LaunchCMDWithArgs(string args)
-        {
-            System.Diagnostics.Process process = new();
-            process.StartInfo.FileName = "cmd.exe";
-            process.StartInfo.Arguments = args;
-            process.StartInfo.UseShellExecute = true;
-            process.StartInfo.CreateNoWindow = true;
-            process.Start();
-        }
-
         internal static void ForceExit() => GlobalGameStateClient.Instance._gameStateMachine.ReplaceCurrentState(new StateReloadingToMainMenu(GlobalGameStateClient.Instance._gameStateMachine, GlobalGameStateClient.Instance.CreateClientGameStateData()).Cast<GameStateMachine.IGameState>());
 
         internal struct FLZ_ModalData

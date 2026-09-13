@@ -1,12 +1,23 @@
 ﻿extern alias wle;
-
+using Automation;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using Events;
+using FG.Common;
+using FG.Common.Fraggle;
+using FG.Common.UGCNetworking;
+using FGClient;
 using FGClient.UI;
+using FGClient.UI.Core;
 using FGTools.Content;
+using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.Services.Logic;
 using FGTools.UI.Tabs.Logic;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,6 +31,7 @@ using static FGTools.Internal.Extensions.FLZ_Extensions;
 using static FGTools.Services.LocalizationService;
 using static FGTools.UI.FGToolsUI;
 using static FGTools.UI.ReadyPopups;
+using Debug = UnityEngine.Debug;
 
 namespace FGTools.UI.Tabs
 {
@@ -41,7 +53,7 @@ namespace FGTools.UI.Tabs
         public bool shouldDeleteWhitePixels = false;
         public bool shouldDeleteBlackPixels = false;
         public bool isDigital = false;
-
+        ButtonRef _genLevelBtn;
         internal override string TabName => "gui_img2fgc_tab";
         internal override string TabTitle => "gui_img2fgc";
 
@@ -110,36 +122,39 @@ namespace FGTools.UI.Tabs
 
                 GameObject img2fgc_actions = UIFactory.CreateHorizontalGroup(ControlledObject, "img2fgcActions", false, true, true, true, 2, new Vector4(2, 2, 2, 2));
                 UIFactory.SetLayoutElement(img2fgc_actions, minHeight: 25, flexibleHeight: 0);
-                ButtonRef genLevel = UIFactory.CreateButton(img2fgc_actions, "genLevel", $"{LocalizedStr("gui_img2fgc_gen_level")}", null);
-                genLevel.OnClick += () => { IMG2FGCAlert(); };
-                UIFactory.SetLayoutElement(genLevel.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
-                ButtonRef repAll = UIFactory.CreateButton(img2fgc_actions, "repAll", $"{LocalizedStr("gui_img2fgc_replace")}", GUIRed);
-                repAll.OnClick += () =>
-                {
+                _genLevelBtn = UIFactory.CreateButton(img2fgc_actions, "genLevel", $"{LocalizedStr("gui_img2fgc_gen_level")}", null);
+                _genLevelBtn.OnClick += () => { IMG2FGCAlert(); };
+                UIFactory.SetLayoutElement(_genLevelBtn.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
 
-                    var tiles = Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>().ToList().FindAll(x => x.name.Contains("Clone"));
-                    var lvl = Path.Combine(Application.persistentDataPath, "Img2FGC.json");
+                //deprecated
+                //ButtonRef repAll = UIFactory.CreateButton(img2fgc_actions, "repAll", $"{LocalizedStr("gui_img2fgc_replace")}", GUIRed);
+                //repAll.OnClick += () =>
+                //{
 
-                    if (!File.Exists(lvl))
-                    {
-                        ErrorPopup($"{LocalizedStr("img2fgc_uhh")}");
-                        return;
-                    }
+                //    var tiles = Resources.FindObjectsOfTypeAll<LevelBrowserTileViewModel>().ToList().FindAll(x => x.name.Contains("Clone"));
+                //    var lvl = Path.Combine(Application.persistentDataPath, "Img2FGC.json");
 
-                    if (tiles == null || tiles.Count == 0)
-                    {
-                        ErrorPopup($"{LocalizedStr("img2fgc_no_levels")}");
-                        return;
-                    }
+                //    if (!File.Exists(lvl))
+                //    {
+                //        ErrorPopup($"{LocalizedStr("img2fgc_uhh")}");
+                //        return;
+                //    }
 
-                    foreach (var tile in tiles)
-                    {
-                        if (tile != null && tile.TileData != null && tile.TileData.level != null && tile.TileData.level._levelJSON != null && tile.TileData.level._levelJSON._url != null)
-                            tile.TileData.level._levelJSON._url = $"file://{lvl}";
-                    }
+                //    if (tiles == null || tiles.Count == 0)
+                //    {
+                //        ErrorPopup($"{LocalizedStr("img2fgc_no_levels")}");
+                //        return;
+                //    }
 
-                };
-                UIFactory.SetLayoutElement(repAll.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
+                //    foreach (var tile in tiles)
+                //    {
+                //        if (tile != null && tile.TileData != null && tile.TileData.level != null && tile.TileData.level._levelJSON != null && tile.TileData.level._levelJSON._url != null)
+                //            tile.TileData.level._levelJSON._url = $"file://{lvl}";
+                //    }
+
+                //};
+                //UIFactory.SetLayoutElement(repAll.GameObject, minHeight: 25, flexibleHeight: 0, flexibleWidth: 9999);
+
                 GameObject imageViewport = UIFactory.CreateVerticalGroup(ControlledObject, "ImageViewport", false, false, true, true, bgColor: new(1, 1, 1, 0), childAlignment: TextAnchor.MiddleCenter);
                 UIFactory.SetLayoutElement(imageViewport, flexibleWidth: 9999, flexibleHeight: 9999);
 
@@ -158,24 +173,106 @@ namespace FGTools.UI.Tabs
 
         void IMG2FGCAlert()
         {
-            DoModal(new(LocalizedStr("img2fgc_title"), LocalizedStr("img2fgc_desc"), UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>((wasok) =>
+            DoModal(new(LocalizedStr("img2fgc_title"), $"<size=70%>{LocalizedStr("img2fgc_desc")}</size>", UIModalMessage.ModalType.MT_OK_CANCEL, UIModalMessage.OKButtonType.Disruptive, new Action<bool>((wasok) =>
             {
                 if (wasok)
                 {
-                    List<string> writeInfo = [];
-                    string outputfile = Path.Combine(Application.persistentDataPath, "output.txt");
-                    if (File.Exists(outputfile)) File.Delete(outputfile);
-                    File.Create(outputfile).Close();
-                    writeInfo.Add("path_to_file" + " = " + Launcher.ImgDir + FGTServiceManager.GetService<MediaService>().imgPath);
-                    writeInfo.Add("width" + " = " + imgWidth);
-                    writeInfo.Add("height" + " = " + imgHeight);
-                    writeInfo.Add("shouldDeleteBlackPixels" + " = " + shouldDeleteBlackPixels);
-                    writeInfo.Add("shouldDeleteWhitePixels" + " = " + shouldDeleteWhitePixels);
-                    writeInfo.Add("isDigital" + " = " + isDigital);
-                    File.WriteAllLines(outputfile, writeInfo);
-                    Application.OpenURL(Launcher.IMG2FGCExe);
+                    var args =
+                        $"--path-to-file \"{Path.Combine(Launcher.ImgDir, FGTServiceManager.GetService<MediaService>().imgPath)}\" " +
+                        $"--width \"{imgWidth}\" " +
+                        $"--height \"{imgHeight}\" " +
+                        $"--isDigital \"{isDigital}\" " +
+                        $"--shouldDeleteBlackPixels \"{shouldDeleteBlackPixels}\" " +
+                        $"--shouldDeleteWhitePixels \"{shouldDeleteWhitePixels}\"";
+
+                    var proc = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = $"/c \"\"{Launcher.IMG2FGCExe}\" {args}\"",
+                            WorkingDirectory = Path.GetDirectoryName(Launcher.IMG2FGCExe),
+                            UseShellExecute = true,
+                        },
+                        EnableRaisingEvents = true
+                    };
+
+                    proc.Start();
+
+                    CoroutineRunner.Instance.StartCoroutine(WaitForGen(proc).WrapToIl2Cpp());
                 }
-            }), hideLvl: ModalHideGUIType.KeepHiddenForThisModal));
+            }), hideLvl: ModalHideGUIType.ShowOnCancel));
+        }
+
+        IEnumerator WaitForGen(Process proc)
+        {
+            _genLevelBtn.Component.interactable = false;
+            UIManager.Instance.ShowScreen<ScrimViewModel>();
+            UIManager.Instance.ShowScreen<LoadingSpinnerScreenViewModel>();
+
+            while (!proc.HasExited)
+                yield return null;
+
+            _genLevelBtn.Component.interactable = true;
+            UIManager.Instance.HideScreen<ScrimViewModel>();
+            UIManager.Instance.HideScreen<LoadingSpinnerScreenViewModel>();
+
+            var lvl = Path.Combine(Application.persistentDataPath, "Img2FGC.json");
+
+            if (!File.Exists(lvl))
+            {
+                ErrorPopup($"{LocalizedStr("img2fgc_uhh")}");
+                yield break;
+            }
+
+            var proxy = wle.FG.Common.LevelEditorManagerProxy.Instance;
+
+            var options = LevelEditorOptionsSingleton.Instance;
+            var commonManager = FraggleCommonManager.Instance;
+            var json = File.ReadAllText(lvl);
+
+            var metadata = new Il2CppReferenceArray<LevelVersionMetadataDto>(1);
+
+            var config = new Il2CppSystem.Collections.Generic.Dictionary<string, Il2CppSystem.Object>();
+            config.Add("ingame_theme", isDigital ? "theme_vanilla" : "theme_retro");
+            config.Add("time_limit_seconds", 240);
+            config.Add("qualification_percentage", 70);
+
+            metadata[0] = new LevelVersionMetadataDto()
+            {
+                Version = 1,
+                Title = "Image To FGC Level",
+                Description = "Image To FGC Level",
+                ClientVersion = Application.version,
+                Config = config,
+                SceneUrl = "file://" + lvl,
+                GameModeId = "GAMEMODE_GAUNTLET",
+                LevelThemeId = isDigital ? " THEME_VANILLA" : "THEME_RETRO"
+            };
+
+            var dto = new LevelAggregateDto()
+            {
+                ShareCode = "0000-0000-0000",
+                Author = new(),
+                VersionHistory = metadata
+            };
+
+            wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels.ResetCurrentLevelAndClearList();
+            var level = wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels.Add(dto, true);
+            level ??= new wle.LevelEditorLevel(wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels, 0);
+
+            options.StartMode = LevelEditorOptionsSingleton.StartModeType.Load;
+            proxy.BlockInputForLoading = true;
+            proxy.ShowLoadingScreen();
+
+            var loader = wle.LevelLoader.CreateLevelLoaderFromDownloadedJSON(json, dto);
+            wle.FG.Common.LevelEditorManagerProxy.LevelEditorLevels.SetCurrentLevel(level);
+            options.ClearGameModeRulebookValues();
+
+            level._levelJSON = UGCNFetchedString.CreatePreFetchedResource(json);
+            level.levelLoader = loader;
+            commonManager.IsInLevelEditor = true;
+            Broadcaster.Instance.RaiseEvent<LevelEditorEnterEvent>(new(null, LevelEditorElementType.Unknown));
         }
 
         internal override void Refresh()
