@@ -173,7 +173,7 @@ Also, check [reports history](https://discord.com/channels/1156450016408391750/1
 ## License
 [![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)
 
-<hr>
-
-> This is a fan-made project that is not affiliated with Epic Games <br>
-> © Mediatonic Limited Fall Guys and all related characters and elements are trademarks of Mediatonic Limited
+<div align="center">
+<sub>This is a fan-made project that is not affiliated with Epic Games <br>
+© Mediatonic Limited Fall Guys and all related characters and elements are trademarks of Mediatonic Limited</sub>
+</div>
