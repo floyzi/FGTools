@@ -138,7 +138,7 @@ This error occurs because you launched the game directly from `FallGuys_client_g
 ### "Epic Games Account Error"
 This error may occur for the same reason as ["No exchange code was found"](#no-exchange-code-was-found) error. To fix it make sure you're launching the game from the launcher. This error may also occur when Epic Games services are down, you can check their status [here](https://status.epicgames.com/)
 
-### Antivirus flags mod as malware
+### Antivirus flags mod as a malware
 This is a false positive, FGTools is a FOSS project, it's source code can be viewed in this repository and compiled releases are easy to decompile. If you still don't beleive me you can test it on [Virus Total](https://www.virustotal.com)
 
 ### After entering Main Menu the only thing I see is a grey window that covers up the whole screen
@@ -172,3 +172,8 @@ Also, check [reports history](https://discord.com/channels/1156450016408391750/1
 
 ## License
 [![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)
+
+<hr>
+
+> This is a fan-made project that is not affiliated with Epic Games <br>
+> © Mediatonic Limited Fall Guys and all related characters and elements are trademarks of Mediatonic Limited

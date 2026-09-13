@@ -170,7 +170,8 @@ namespace FGTools
                     {
                         FLZ_Extensions.QuitWithMessage(
                             $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort} [{FGToolsBuildDetails.BuildNumber}])",
-                            $"Unable to find UniverseLib dll ({Constants.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib is needed to render {DisplayName} UI");
+                            $"Unable to find UniverseLib dll ({Constants.UniverseLib}.dll). Please install UniverseLib to ensure correct work of {DisplayName}, it comes up with every {DisplayName} release. UniverseLib is needed to render {DisplayName} UI" +
+                            $"\n\nNeed extra help with this? Check out the Troubleshooting section on the GitHub repository");
                         return;
                     }
 
@@ -182,7 +183,8 @@ namespace FGTools
                         {
                             FLZ_Extensions.QuitWithMessage(
                                 $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort} [{FGToolsBuildDetails.BuildNumber}])",
-                                $"Installed UniverseLib version \"{verInfo.FileVersion}\" does not match the required version \"{TargetUniverseVersion}\". Please update UniverseLib to the same version that comes with {DisplayName} release. UniverseLib is needed to render {DisplayName} UI");
+                                $"Installed UniverseLib version \"{verInfo.FileVersion}\" does not match the required version \"{TargetUniverseVersion}\". Please update UniverseLib to the same version that comes with {DisplayName} release. UniverseLib is needed to render {DisplayName} UI" +
+                                $"\n\nNeed extra help with this? Check out the Troubleshooting section on the GitHub repository");
                             return;
                         }
                     }
@@ -215,7 +217,7 @@ namespace FGTools
 
             FLZ_Extensions.QuitWithMessage(
                 $"FATAL ERROR - {DisplayName} V{FGToolsBuildDetails.Version} (#{FGToolsBuildDetails.CommitHashShort})",
-                $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen!\nIf you can't fix this by yourself try reinstalling {DisplayName}. If reinstalling doesn't help ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}\n\nGame will be closed");
+                $"{DisplayName} encountered an exception on startup. This is NOT supposed to happen! Your game will be closed.\nIf you can't fix this by yourself try reinstalling {DisplayName} and check the troubleshooting section on the GitHub repository for extra help. If nothing helps ask for help in the discord server ({DiscordUrl})\nNOTE: If this happens after the Fall Guys update this means that Mediatonic changed some of the stuff that affects {DisplayName} work, wait for an update that will fix this.\n\nSome nerd info\nException: {e.Message}\nStackTrace: {e.StackTrace}");
         }
 
         bool Valid()

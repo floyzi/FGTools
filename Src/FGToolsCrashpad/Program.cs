@@ -57,7 +57,7 @@ namespace FGToolsCrashpad
             var box = MessageBox(IntPtr.Zero, "Сongratulations! Your game just crashed!\n" +
                 $"A report with name \"{reportName}\" was created\n\n" +
                 $"It is highly recommended for you to send this report in the FGTools Discord Server, it will help me fix the issue that caused this crash and make sure it never happens again (can't promise that though)\n\n" +
-                $"Would you like to open reports folder? This report is saved as \"{reportName}.zip\"", "Welp...", 0x00000004 | 0x00000010);
+                $"Would you like to open reports folder? This report is saved as \"{reportName}.zip\"\n\nNeed extra help with this? Check out the Troubleshooting section on the GitHub repository", "Welp...", 0x00000004 | 0x00000010);
             
             if (box == 6)
             {
