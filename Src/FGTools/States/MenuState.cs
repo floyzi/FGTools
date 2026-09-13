@@ -13,6 +13,7 @@ using FGTools.Internal.Behaviours;
 using FGTools.Internal.Extensions;
 using FGTools.Services;
 using FGTools.States.Logic;
+using FGTools.UI;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using NAudio.Wave;
 using System;
@@ -72,6 +73,9 @@ namespace FGTools.States
             IntroStopwatch.Start();
 
             FGTLog(LogLevel.Info, GetType(), "Time for... GAMING INTRO");
+
+            //temp fix
+            FGToolsUI.Instance?.ToggleUI(false);
 
             var loopEvent = new WaveOutEvent();
             var outp = GameObject.Instantiate(TheIntro.asset);
