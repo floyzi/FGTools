@@ -40,7 +40,7 @@ Fall Guys mod that adds additional features to the game to improve your experien
 
 ## Installation
 ### Installation Via FGLauncher
-1. Get the [Latest Release](https://www.mediafire.com/file/hz04riz2gtmbljh/FGLauncherV1.1.2.zip/file) of FG Launcher
+1. Get the [Latest Release](https://drive.google.com/file/d/10b7N0MEylLPlvMWYOeIxR1_H00g2kwjc/view) of FG Launcher
 2. Extract it into any directory
 3. Launch FGLauncher executable and follow instructions you see
 
